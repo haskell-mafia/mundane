@@ -3,7 +3,8 @@ libraryDependencies ++= Seq(
     "org.scalaz"             %% "scalaz-core"        % "7.0.2",
     "joda-time"              %  "joda-time"          % "2.1",
     "org.joda"               %  "joda-convert"       % "1.1",
-    "com.googlecode.kiama"   %% "kiama"              % "1.5.1"
+    "com.googlecode.kiama"   %% "kiama"              % "1.5.1",
+    "commons-io"             %  "commons-io"         % "2.4"
   )
 
 libraryDependencies ++= Seq(
