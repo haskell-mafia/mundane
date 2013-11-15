@@ -9,6 +9,23 @@ import Rng._
  * This object contains a few additional functions on top of the Rng functionalities
  */
 object Rngx {
+
+  /*
+   * XORShift random number generator
+   */
+  var seed: Long = scala.util.Random.nextLong
+
+  def nextLong: Long = {
+    seed = seed ^ (seed << 21)
+    seed = seed ^ (seed >>> 35)
+    seed = seed ^ (seed << 4)
+    seed 
+  }
+
+  def nextDouble: Double = ((nextLong.toDouble / Long.MaxValue) + 1.0) / 2.0
+
+  def shuffle[A](in: List[A]): List[A] = in sortBy(_ => nextLong)
+
   /**
    * filter for lists or options
    */
