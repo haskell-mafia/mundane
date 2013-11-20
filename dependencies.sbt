@@ -1,5 +1,6 @@
 libraryDependencies ++= Seq(
     "com.nicta"              %% "rng"                % "1.0-SNAPSHOT",
+    
     "org.scalaz"             %% "scalaz-core"        % "7.0.2",
     "joda-time"              %  "joda-time"          % "2.1",
     "org.joda"               %  "joda-convert"       % "1.1",
