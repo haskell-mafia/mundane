@@ -24,22 +24,14 @@ object Files {
 
   def checksumFile(f: File): String \/ Array[Byte] =  {
     val fis = new FileInputStream(f)
-    val res = checksumStream(fis)
-    fis.close()
-    res
+    try checksumStream(fis) finally fis.close()
   }
 
   def checksumStream(is: InputStream): String \/ Array[Byte] = 
     try unsafeChecksum(is).right catch { case t: Throwable => t.getMessage.left }
 
-  def readFile(f: File): String \/ String = {
-    try {
-      val source = scala.io.Source.fromFile(f)
-      val lines = source.getLines.mkString
-      source.close()
-      lines.right
-    } catch { case e: Exception => e.getMessage.left }
-  }
+  def readFile(f: File): String \/ String =
+    readFileBytes(f).map(new String(_))
 
   def readFileBytes(f: File): String \/ Array[Byte] =
     try org.apache.commons.io.FileUtils.readFileToByteArray(f).right catch { case t: Throwable => t.getMessage.left }
@@ -49,9 +41,7 @@ object Files {
 
   def writeInputStreamToFile(is: InputStream, f: File): String \/ File = {
     val os = new FileOutputStream(f)
-    val res = writeInputStream(is, os)
-    os.close()
-    res.map(_ => f)
+    (try writeInputStream(is, os) finally os.close()).map(_ => f)
   }
 
   def printToFile(f: File)(op: java.io.PrintWriter => Unit): String \/ File = {

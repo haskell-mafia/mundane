@@ -10,9 +10,10 @@ class FilesSpec extends Specification with ScalaCheck { def is = s2"""
 Files should be able to:
   read bytes from file                        $e1
   read string from file                       $e2
-  calculate checksum of a file                $e3
-  validate tarball                            $e4
-  validate gzip                               $e5
+  read utf8 string with new line from file    $e3
+  calculate checksum of a file                $e4
+  validate tarball                            $e5
+  validate gzip                               $e6
 """
 
   def e1 = prop((bs: Array[Byte]) => {
@@ -23,15 +24,18 @@ Files should be able to:
     fileBytes.toOption.get === bs
   })
 
-  def e2 = prop((str: String) => {
+  def e2 = prop((str: String) => canReadFile(str)).set(minTestsOk = 1000)
+  def e3 = canReadFile("""섋騚㊼乡왇㛩鴄〫⑁䨜嵏风녇佞ው煓괄ꎮꒀ醆魓ﰺ評떜뻀썲荘㳰锉䤲߶㊢ᅫ㠏⴫⃅⒊逢墵⍓刹军""")
+
+  def canReadFile(str: String) = {
     val tmpFile = File.createTempFile("files-spec", ".string")
     writeString(tmpFile, str)
     val fileStr = Files.readFile(tmpFile)
     tmpFile.delete()
     fileStr.toOption.get === str
-  })
+  }
 
-  def e3 = prop((bs: Array[Byte]) => {
+  def e4 = prop((bs: Array[Byte]) => {
     val tmpFile = File.createTempFile("files-calc-checksum-spec", ".bytes")
     writeBytes(tmpFile, bs)
     val checksum = Files.calcChecksum(tmpFile)
@@ -40,7 +44,7 @@ Files should be able to:
     checksum.toOption === Some(expectedChecksum)
   })
 
-  def e4 = prop((bs: Array[Byte], str: String) => {
+  def e5 = prop((bs: Array[Byte], str: String) => {
     val tmpDir = mkTempDir("files-spec")
     val tmpBinFile = File.createTempFile("files-spec", ".bytes", tmpDir)
     val tmpStrFile = File.createTempFile("files-spec", ".string", tmpDir)
@@ -57,7 +61,7 @@ Files should be able to:
     tmpTgzFile.delete()
   })
 
-  def e5 = prop((str: String) => {
+  def e6 = prop((str: String) => {
     val tmpStrFile = File.createTempFile("files-spec", ".string")
 
     writeString(tmpStrFile, str)
