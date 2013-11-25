@@ -76,3 +76,5 @@ trait DateTimex {
   }
 
 }
+
+object DateTimex extends DateTimex
