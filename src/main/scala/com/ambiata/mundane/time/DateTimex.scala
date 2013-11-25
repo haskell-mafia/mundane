@@ -13,6 +13,13 @@ trait DateTimex {
     def compare(d1: DateTime, d2: DateTime) = d1.compareTo(d2)
   }
 
+  /** Order instance for LocalDate */
+  implicit def LocalDateHasOrder: Order[LocalDate] = Order.fromScalaOrdering[LocalDate]
+
+  implicit def LocalDateHasOrdering: scala.Ordering[LocalDate] = new scala.Ordering[LocalDate] {
+    def compare(d1: LocalDate, d2: LocalDate) = d1.compareTo(d2)
+  }
+
   /** Order instances for Interval */
   implicit def IntervalHasOrder: Order[Interval] = Order.fromScalaOrdering[Interval]
 
