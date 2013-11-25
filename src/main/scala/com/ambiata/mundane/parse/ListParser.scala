@@ -52,13 +52,28 @@ object ListParser {
     s        <- string
     position <- getPosition
     result   <- value(DateTimeFormat.forPattern(format).parseLocalDate(s),
-                { t => s"""Not a local date with format $format at position $position: '$s'""" })
+                      { t => s"""Not a local date with format $format at position $position: '$s'""" })
+  } yield result
+
+  /**
+   * A parser for a local date with the yyyy-MM-dd format
+   */
+  def localDate: ListParser[LocalDate] = localDate("yyyy-MM-dd")
+
+  /**
+   * A parser for a local date with a given format
+   */
+  def localDatetime(format: String): ListParser[LocalDateTime] = for {
+    s        <- string
+    position <- getPosition
+    result   <- value(DateTimeFormat.forPattern(format).parseLocalDateTime(s),
+                      { t => s"""Not a local date time with format $format at position $position: '$s'""" })
   } yield result
 
   /**
    * A parser for a local date with the dd/MM/yyyy format
    */
-  def localDate: ListParser[LocalDate] = localDate("dd/MM/yyyy")
+  def localDateTime: ListParser[LocalDateTime] = localDatetime("yyyy-MM-dd hh:mm:ss")
 
   /**
    * A parser for a Double
