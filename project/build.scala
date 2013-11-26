@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import sbtrelease.ReleasePlugin._
+import com.ambiata.promulgate.Plugin._
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -12,19 +12,26 @@ object build extends Build {
                projectSettings          ++
                compilationSettings      ++
                testingSettings          ++
-               publishingSettings
+               publishingSettings       ++
+               packageSettings
     )
 
   lazy val projectSettings: Seq[Settings] = Seq(
     name := "mundane",
+    version in ThisBuild := "1.2.1",
     organization := "com.ambiata",
-    scalaVersion := "2.10.3")
+    scalaVersion := "2.10.3"
+  )
 
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_"),
     scalacOptions in Test ++= Seq("-Yrangepos")
+  )
+
+  lazy val packageSettings: Seq[Settings] = promulgate.library ++ Seq(
+    promulgate.pkg := "com.ambiata.mundane"
   )
 
   lazy val testingSettings: Seq[Settings] = Seq(
@@ -34,7 +41,7 @@ object build extends Build {
     javaOptions += "-Xmx3G"
   )
 
-  lazy val publishingSettings: Seq[Settings] = releaseSettings ++ Seq(
+  lazy val publishingSettings: Seq[Settings] = Seq(
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { _ => false },
