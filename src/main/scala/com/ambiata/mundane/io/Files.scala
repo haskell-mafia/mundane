@@ -39,10 +39,19 @@ object Files {
   def writeInputStream(is: InputStream, os: OutputStream): String \/ OutputStream =
     try { org.apache.commons.io.IOUtils.copy(is, os); os.right } catch { case t: Throwable => t.getMessage.left }
 
-  def writeInputStreamToFile(is: InputStream, f: File): String \/ File = {
-    val os = new FileOutputStream(f)
-    (try writeInputStream(is, os) finally os.close()).map(_ => f)
+  def writeInputStreamToFile(is: InputStream, f: File, mkdirs: Boolean = false): String \/ File = {
+    val p = Option(f.getParentFile)
+    for {
+      _ <- if(mkdirs && p.isDefined) p.map(mkdir).get else ().right
+      os = new FileOutputStream(f)
+      _ <- (try writeInputStream(is, os) finally os.close())
+    } yield f
   }
+
+  def mkdir(d: File): String \/ File =
+    if(d.exists) if(d.isFile) s"$d is a file which exists!".left else d.right
+    else if(d.mkdirs()) d.right
+    else s"Could not create dir $d!".left
 
   def printToFile(f: File)(op: java.io.PrintWriter => Unit): String \/ File = {
     val p = new java.io.PrintWriter(f)
