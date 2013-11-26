@@ -60,14 +60,14 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
   }
 
   def localDate1 = {
-    localDate.run(List("11/03/2013")).toOption must beSome(new LocalDate(2013, 3, 11))
+    localDate.run(List("2013-03-11")).toOption must beSome(new LocalDate(2013, 3, 11))
     localDate.run(List("blah")).toOption must beNone
 
     // failure message with position
     (for {
       i1 <- int
       i2 <- localDate
-    } yield (i1, i2)).run(List("2", "blah")).toEither must beLeft(startWith("""Not a local date with format dd/MM/yyyy at position 2: 'blah'"""))
+    } yield (i1, i2)).run(List("2", "blah")).toEither must beLeft(startWith("""Not a local date with format yyyy-MM-dd at position 2: 'blah'"""))
   }
 
 
