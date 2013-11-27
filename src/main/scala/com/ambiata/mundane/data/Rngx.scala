@@ -24,7 +24,7 @@ object Rngx {
 
   def nextDouble: Double = ((nextLong.toDouble / Long.MaxValue) + 1.0) / 2.0
 
-  def shuffle[A](in: Seq[A]): Seq[A] = in sortBy(_ => nextLong)
+  def shuffle[A](in: Seq[A]): Seq[A] = in.map((_, nextLong)).sortBy(_._2).map(_._1)
 
   /**
    * filter for lists or options

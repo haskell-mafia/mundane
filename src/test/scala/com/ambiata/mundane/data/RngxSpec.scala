@@ -28,6 +28,9 @@ class RngxSpec extends Specification { def is = s2"""
   We can generate lists of having a size specified by another generator
   ${ chooseint(1, 10).list(chooseint(1, 3)).runIO.size must beBetween(1, 3) }
 
+  We can shuffle a list
+  ${ shuffle((1 to 1000).toList) must_!= (1 to 1000).toList }
+
 """
 
   def beDistinct[T]: Matcher[Seq[T]] = (seq: Seq[T]) => (seq.distinct.size == seq.size, s"$seq doesn't have distinct elements")
