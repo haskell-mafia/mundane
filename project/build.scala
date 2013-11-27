@@ -13,7 +13,8 @@ object build extends Build {
                compilationSettings      ++
                testingSettings          ++
                publishingSettings       ++
-               packageSettings
+               packageSettings          ++
+               promulgate.sources
     )
 
   lazy val projectSettings: Seq[Settings] = Seq(
