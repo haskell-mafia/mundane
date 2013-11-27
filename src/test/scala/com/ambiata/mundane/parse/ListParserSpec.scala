@@ -74,8 +74,14 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
   def consume1 =
     consume(3).run(List("a", "b", "c")).toOption must beSome(())
 
-  def consume2 =
+  def consume2 = {
+    (for {
+      i1 <- int
+      i2 <- consumeRest
+    } yield (i1, i2)).run(List("2", "blah")).toOption must beSome((2, ()))
+
     consumeRest.run(List("a", "b", "c")).toOption must beSome(())
+  }
 
   def value1 =
     ListParser.value(???, (t: Throwable) => "failed").run(Nil).toEither must beLeft("failed")

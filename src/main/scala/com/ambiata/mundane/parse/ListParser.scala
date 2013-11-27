@@ -113,7 +113,7 @@ object ListParser {
       val nupos = pos + n
       str.length match {
         case l if n <= l => (nupos, str.slice(n, l), ()).success
-        case _           => s"Not enough input, expected more then $nupos.".failure
+        case _           => s"Not enough input, expected more than $nupos.".failure
       }
     })
 
