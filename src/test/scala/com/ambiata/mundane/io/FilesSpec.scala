@@ -18,6 +18,7 @@ Files should be able to:
   validate tarball                            $e5
   validate gzip                               $e6
   extract a tarball from a stream             $e7
+  list files in a dir                         $e8
 """
 
   def e1 = prop((bs: Array[Byte]) => {
@@ -97,6 +98,20 @@ Files should be able to:
     rmdir(tmpDir)
     rmdir(outDir)
     tmpTgzFile.delete()
+  }
+
+  def e8 = {
+    val tmpDir = mkTempDir("files-spec")
+    val tmpFile1 = File.createTempFile("files-spec", ".first", tmpDir)
+    val tmpFile2 = File.createTempFile("files-spec", ".second", tmpDir)
+    val tmpFile3 = File.createTempFile("files-spec", ".third", tmpDir)
+    val expected = List(tmpFile1, tmpFile2, tmpFile3)
+
+    writeString(tmpFile1, "first")
+    writeString(tmpFile2, "second")
+    writeString(tmpFile3, "third")
+
+    Files.ls(tmpDir).toEither must beRight { files: List[File] => files must containTheSameElementsAs(expected) }
   }
 
   def mkTempDir(prefix: String, suffix: String = System.nanoTime.toString): File = {

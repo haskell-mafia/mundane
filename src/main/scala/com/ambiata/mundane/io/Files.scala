@@ -68,6 +68,18 @@ object Files {
       case t: Throwable => t.getMessage.left
     }
 
+  def ls(dir: File): String \/ List[File] =
+    if(!dir.exists)
+      s"Directory ${dir.getPath} does not exist!".left
+    else if(!dir.isDirectory)
+      s"${dir.getPath} is not a directory!".left
+    else
+      try
+        Option(dir.listFiles).map(_.toList.right).getOrElse(s"Could not list files under ${dir.getPath}".left)
+      catch {
+        case t: Throwable => s"Got exception when trying to list files under ${dir.getPath} - ${t.getMessage}".left
+      }
+
   def validGzip(f: File): Boolean =
     !gzipError(f).isDefined
 
