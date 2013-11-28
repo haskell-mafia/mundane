@@ -6,7 +6,9 @@ import org.specs2._
 import matcher._
 import java.security.MessageDigest
 
-class FilesSpec extends Specification with ScalaCheck with ContentMatchers { def is = s2"""
+class FilesSpec extends Specification with ScalaCheck with ContentMatchers {
+  
+def is = isolated ^ s2"""
 
 Files should be able to:
   read bytes from file                        $e1
