@@ -3,9 +3,10 @@ package io
 
 import java.io._
 import org.specs2._
+import matcher._
 import java.security.MessageDigest
 
-class FilesSpec extends Specification with ScalaCheck { def is = s2"""
+class FilesSpec extends Specification with ScalaCheck with ContentMatchers { def is = s2"""
 
 Files should be able to:
   read bytes from file                        $e1
@@ -14,6 +15,7 @@ Files should be able to:
   calculate checksum of a file                $e4
   validate tarball                            $e5
   validate gzip                               $e6
+  extract a tarball from a stream             $e7
 """
 
   def e1 = prop((bs: Array[Byte]) => {
@@ -71,6 +73,23 @@ Files should be able to:
     Files.validGzip(tmpStrFile) === false
   })
 
+  def e7 = prop((bs: Array[Byte], str: String) => {
+    val outDir = mkTempDir("files-spec_extract")
+    val tmpDir = mkTempDir("files-spec")
+    val tmpBinFile = File.createTempFile("files-spec", ".bytes", tmpDir)
+    val tmpStrFile = File.createTempFile("files-spec", ".string", tmpDir)
+    val tmpTgzFile = File.createTempFile("files-spec", ".tar.gz")
+
+    writeBytes(tmpBinFile, bs)
+    writeString(tmpStrFile, str)
+    tarball(tmpDir, tmpTgzFile)
+
+    val fis = new FileInputStream(tmpTgzFile)
+    try Files.extractTarballStream(fis, outDir).toEither must beRight finally fis.close()
+    (tmpBinFile, new File(outDir, tmpBinFile.getName)) must haveSameMD5
+    (tmpStrFile, new File(outDir, tmpStrFile.getName)) must haveSameMD5
+    outDir must haveSameFilesAs(tmpDir).withMatcher(haveSameMD5)
+  })
 
   def mkTempDir(prefix: String, suffix: String = System.nanoTime.toString): File = {
     val tmpFile = File.createTempFile(prefix, suffix)

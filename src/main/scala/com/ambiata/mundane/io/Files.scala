@@ -95,4 +95,18 @@ object Files {
     else
       None
   }
+
+  def extractTarballStream(tarball: InputStream, destDir: File, stripLevels: Int = 0): String \/ File = {
+    import scala.sys.process._
+    val cmd = s"tar xz -C ${destDir.getPath} -" + (if(stripLevels > 0) s"-strip-components ${stripLevels} -" else "")
+    val sw = new StringWriter
+    if(!destDir.exists && !destDir.mkdirs())
+      s"Could not create tarball extraction dir ${destDir}!".left
+    else if(!destDir.isDirectory)
+      s"${destDir} is not a directory!".left
+    else if((List("sh", "-c", cmd) #< tarball ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))) != 0)
+      s"Could not extract tarball, stderr - ${sw.toString}".left
+    else
+      destDir.right
+  }
 }
