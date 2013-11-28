@@ -75,7 +75,9 @@ Files should be able to:
     Files.validGzip(tmpStrFile) === false
   })
 
-  def e7 = prop((bs: Array[Byte], str: String) => {
+  def e7 = {
+    val bs: Array[Byte] = Array('a', 'b', '\0')
+    val str: String = "foostring"
     val outDir = mkTempDir("files-spec_extract")
     val tmpDir = mkTempDir("files-spec")
     val tmpBinFile = File.createTempFile("files-spec", ".bytes", tmpDir)
@@ -95,7 +97,7 @@ Files should be able to:
     rmdir(tmpDir)
     rmdir(outDir)
     tmpTgzFile.delete()
-  })
+  }
 
   def mkTempDir(prefix: String, suffix: String = System.nanoTime.toString): File = {
     val tmpFile = File.createTempFile(prefix, suffix)
