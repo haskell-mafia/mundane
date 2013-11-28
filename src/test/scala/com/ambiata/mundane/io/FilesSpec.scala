@@ -89,6 +89,10 @@ Files should be able to:
     (tmpBinFile, new File(outDir, tmpBinFile.getName)) must haveSameMD5
     (tmpStrFile, new File(outDir, tmpStrFile.getName)) must haveSameMD5
     outDir must haveSameFilesAs(tmpDir).withMatcher(haveSameMD5)
+
+    rmdir(tmpDir)
+    rmdir(outDir)
+    tmpTgzFile.delete()
   })
 
   def mkTempDir(prefix: String, suffix: String = System.nanoTime.toString): File = {
