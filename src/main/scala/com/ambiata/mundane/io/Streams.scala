@@ -23,4 +23,12 @@ object Streams {
       out.write(buffer, 0, chunk)
     out.toByteArray
   }
+  
+  def pipeToFile(in: InputStream, filename: File, chunksize: Int = DefaultChunkSize): Unit = {
+    val buffer = Array.ofDim[Byte](chunksize)
+    val out = new FileOutputStream(filename)
+    var chunk = 0
+    while ({ chunk = in.read(buffer); chunk != -1 })
+      out.write(buffer, 0, chunk)
+  }
 }
