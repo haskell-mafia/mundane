@@ -94,6 +94,27 @@ object Files {
       None
   }
 
+  /**
+   * Always writes to the file "output" then returns the path to it.
+   * @param gzip
+   * @param destDir
+   * @return
+   */
+  def extractGzipStream(gzip: InputStream, destDir: File): String \/ File = {
+    import scala.sys.process._
+    val cmd = s"gzip -dc -"
+    val sw = new StringWriter
+    val destFile = new File(s"${destDir.getPath}/output")
+    if(!destDir.exists && !destDir.mkdirs())
+      s"Could not create gzip extraction dir ${destDir}!".left
+    else if(!destDir.isDirectory)
+      s"${destDir} is not a directory!".left
+    else if((List("sh", "-c", cmd) #< gzip #> destFile ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))) != 0)
+      s"Could not extract gzip, stderr - ${sw.toString}".left
+    else
+      destFile.right
+  }
+
   def validTarball(f: File): Boolean =
     !tarballError(f).isDefined
 
