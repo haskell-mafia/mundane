@@ -8,7 +8,7 @@ libraryDependencies ++= Seq(
   )
 
 libraryDependencies ++= Seq(
-    "com.ambiata"         %% "scrutiny"             % "1.1-20131218033533-09bdc55",
+    "com.ambiata"         %% "scrutiny"             % "1.1-20131218035414-e3cb88f",
     "org.specs2"          %% "specs2-matcher-extra" % "2.3.4" ,
     "org.specs2"          %% "specs2-core"          % "2.3.4" ,
     "org.specs2"          %% "specs2-junit"         % "2.3.4" ,
