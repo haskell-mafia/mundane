@@ -1,12 +1,14 @@
-package com.ambiata.mundane
+package com.ambiata
+package mundane
 package io
 
 import java.io._
 import org.specs2._
 import matcher._
 import java.security.MessageDigest
+import scrutiny.files._
 
-class FilesSpec extends Specification with ScalaCheck with ContentMatchers {
+class FilesSpec extends Specification with ScalaCheck with ContentMatchers with LocalFiles {
   
 def is = isolated ^ s2"""
 
@@ -30,7 +32,8 @@ Files should be able to:
   })
 
   def e2 = prop((str: String) => canReadFile(str)).set(minTestsOk = 1000)
-  def e3 = canReadFile("""섋騚㊼乡왇㛩鴄〫⑁䨜嵏风녇佞ው煓괄ꎮꒀ醆魓ﰺ評떜뻀썲荘㳰锉䤲߶㊢ᅫ㠏⴫⃅⒊逢墵⍓刹军""")
+  def e3 = canReadFile("""섋騚㊼
+乡왇㛩鴄〫⑁䨜嵏风녇佞ው煓괄ꎮꒀ醆魓ﰺ評떜뻀썲荘㳰锉䤲߶㊢ᅫ㠏⴫⃅⒊逢墵⍓刹军""")
 
   def canReadFile(str: String) = {
     val tmpFile = File.createTempFile("files-spec", ".string")
@@ -114,40 +117,5 @@ Files should be able to:
     Files.ls(tmpDir).toEither must beRight { files: List[File] => files must containTheSameElementsAs(expected) }
   }
 
-  def mkTempDir(prefix: String, suffix: String = System.nanoTime.toString): File = {
-    val tmpFile = File.createTempFile(prefix, suffix)
-    if(!tmpFile.delete()) sys.error(s"Could not delete temp file '${tmpFile.getAbsolutePath}'")
-    if(!tmpFile.mkdir()) sys.error(s"Could not create temp dir '${tmpFile.getAbsolutePath}'")
-    tmpFile
-  }
-
-  def tarball(inDir: File, outFile: File): File = {
-    import scala.sys.process._
-    Process(List("sh", "-c", s"tar czf ${outFile.getPath} --directory ${inDir.getPath} .")).run(ProcessLogger(stdout => (), println))
-    outFile
-  }
-
-  def gzip(file: File): File = {
-    import scala.sys.process._
-    val gzfile = new File(file.getPath + ".gz")
-    Process(List("sh", "-c", s"gzip -c ${file.getPath} > ${gzfile.getPath}")).run(ProcessLogger(o => (), println))
-    gzfile
-  }
-
-  def writeBytes(f: File, bytes: Array[Byte]) {
-    val fos =  new FileOutputStream(f)
-    fos.write(bytes)
-    fos.close()
-  }
-
-  def writeString(f: File, str: String) {
-    val pw = new PrintWriter(f)
-    pw.write(str)
-    pw.close()
-  }
-
-  def rmdir(d: File) {
-    if(d.isDirectory) d.listFiles.foreach(rmdir) else d.delete
-    d.delete
-  }
+  val basePath = new File("target/")
 }

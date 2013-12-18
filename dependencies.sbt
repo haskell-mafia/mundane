@@ -8,15 +8,17 @@ libraryDependencies ++= Seq(
   )
 
 libraryDependencies ++= Seq(
-    "org.specs2"          %% "specs2-matcher-extra" % "2.3.4"        % "test",
-    "org.specs2"          %% "specs2-core"          % "2.3.4"        % "test",
-    "org.specs2"          %% "specs2-junit"         % "2.3.4"        % "test",
-    "org.specs2"          %% "specs2-scalacheck"    % "2.3.4"        % "test",
-    "org.scalacheck"      %% "scalacheck"           % "1.11.1"       % "test")
+    "com.ambiata"         %% "scrutiny"             % "1.1-20131218033533-09bdc55",
+    "org.specs2"          %% "specs2-matcher-extra" % "2.3.4" ,
+    "org.specs2"          %% "specs2-core"          % "2.3.4" ,
+    "org.specs2"          %% "specs2-junit"         % "2.3.4" ,
+    "org.specs2"          %% "specs2-scalacheck"    % "2.3.4" ,
+    "org.scalacheck"      %% "scalacheck"           % "1.11.1").map(_ % "test")
 
 
 resolvers ++=
   Seq("snapshots", "releases").map(Resolver.sonatypeRepo) ++
   Seq(
     Resolver.typesafeRepo("releases"),
-    "cloudera" at "https://repository.cloudera.com/content/repositories/releases")
+    "artifactory"           at "http://etd-packaging.research.nicta.com.au/artifactory/libs-release-local",
+    "artifactory snapshot"  at "http://etd-packaging.research.nicta.com.au/artifactory/libs-snapshot-local")
