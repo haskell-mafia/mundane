@@ -8,7 +8,7 @@ import matcher._
 import java.security.MessageDigest
 import scrutiny.files._
 
-class FilesSpec extends Specification with ScalaCheck with ContentMatchers with LocalFiles {
+class FilesSpec extends Specification with ScalaCheck with ContentMatchers with LocalFiles with Dirs with ArchiveFiles {
   
 def is = isolated ^ s2"""
 
