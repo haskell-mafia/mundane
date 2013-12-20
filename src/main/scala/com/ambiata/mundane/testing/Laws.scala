@@ -1,7 +1,6 @@
-package com.ambiata.mundane
-package testing
+package com.ambiata.mundane.testing
 
-import org.scalacheck.{Arbitrary, Gen, Prop, Properties}, Prop.forAll
+import org.scalacheck._
 import scalaz._, Scalaz._
 
 /**

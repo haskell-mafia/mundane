@@ -1,9 +1,14 @@
-package com.ambiata.mundane
-package testing
+package com.ambiata.mundane.testing
 
-import control._
-import org.scalacheck._, Arbitrary._
+import org.scalacheck._
 import scalaz._, Scalaz._
+import scalaz.\/-
+import scalaz.-\/
+import com.ambiata.mundane.control.Attempt
+import scalaz.\/-
+import scalaz.-\/
+import scalaz.\/-
+import scalaz.-\/
 
 object Arbitraries {
   implicit def AttemptArbitrary[A: Arbitrary]: Arbitrary[Attempt[A]] =
