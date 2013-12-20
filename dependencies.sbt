@@ -5,7 +5,8 @@ libraryDependencies ++= Seq(
     "org.joda"               %  "joda-convert"       % "1.1",
     "com.googlecode.kiama"   %% "kiama"              % "1.5.1",
     "commons-io"             %  "commons-io"         % "2.4",
-    "org.specs2"             %% "specs2-matcher"     % "2.3.4" % "optional"
+    "org.specs2"             %% "specs2-matcher"     % "2.3.4" % "optional",
+    "org.scalacheck"         %% "scalacheck"         % "1.11.1" % "optional"
   )
 
 libraryDependencies ++= Seq(
@@ -13,8 +14,7 @@ libraryDependencies ++= Seq(
     "org.specs2"          %% "specs2-matcher-extra" % "2.3.4" ,
     "org.specs2"          %% "specs2-core"          % "2.3.4" ,
     "org.specs2"          %% "specs2-junit"         % "2.3.4" ,
-    "org.specs2"          %% "specs2-scalacheck"    % "2.3.4" ,
-    "org.scalacheck"      %% "scalacheck"           % "1.11.1").map(_ % "test")
+    "org.specs2"          %% "specs2-scalacheck"    % "2.3.4" ).map(_ % "test")
 
 
 resolvers ++=

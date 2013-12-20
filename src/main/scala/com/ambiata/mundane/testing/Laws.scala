@@ -1,6 +1,8 @@
 package com.ambiata.mundane.testing
 
 import org.scalacheck._
+import Prop._
+import Arbitrary._
 import scalaz._, Scalaz._
 
 /**
