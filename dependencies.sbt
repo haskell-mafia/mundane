@@ -4,7 +4,8 @@ libraryDependencies ++= Seq(
     "joda-time"              %  "joda-time"          % "2.1",
     "org.joda"               %  "joda-convert"       % "1.1",
     "com.googlecode.kiama"   %% "kiama"              % "1.5.1",
-    "commons-io"             %  "commons-io"         % "2.4"
+    "commons-io"             %  "commons-io"         % "2.4",
+    "org.specs2"             %% "specs2-matcher"     % "2.3.4"
   )
 
 libraryDependencies ++= Seq(
