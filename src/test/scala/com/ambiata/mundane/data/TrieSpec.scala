@@ -16,4 +16,11 @@ class TrieSpec extends Specification {
     trie.get("abd") === Some(3)
   }
 
+  "It is possible to take the size of a large trie" >> {
+    val trie = Trie[Int]()
+    val size = 20000
+    (1 to size).foreach(i => trie.put(i.toString, i))
+    trie.size === size
+  }
+
 }

@@ -37,4 +37,7 @@ case class Trie[V](key: Option[Char] = None, normalise: String => String = (s: S
     if (normalised.isEmpty) Some(this)
     else                    nodes.get(normalised.charAt(0)).flatMap(_.nodeFor(normalised.substring(1)))
   }
+
+  def size: Int =
+    value.map(_ => 1).getOrElse(0) + nodes.values.par.map(_.size).sum
 }
