@@ -100,15 +100,14 @@ object Files {
    * @param destDir
    * @return
    */
-  def extractGzipStream(gzip: InputStream, destDir: File): String \/ File = {
+  def extractGzipStream(gzip: InputStream, destFile: File): String \/ File = {
     import scala.sys.process._
     val cmd = s"gzip -dc -"
     val sw = new StringWriter
-    val destFile = new File(s"${destDir.getPath}/output")
-    if(!destDir.exists && !destDir.mkdirs())
-      s"Could not create gzip extraction dir ${destDir}!".left
-    else if(!destDir.isDirectory)
-      s"${destDir} is not a directory!".left
+    if(!destFile.getParentFile.exists && !destFile.getParentFile.mkdirs())
+      s"Could not create gzip extraction dir ${destFile.getParent}!".left
+    else if(destFile.isDirectory)
+      s"${destFile} is a directory!".left
     else if((List("sh", "-c", cmd) #< gzip #> destFile ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))) != 0)
       s"Could not extract gzip, stderr - ${sw.toString}".left
     else
