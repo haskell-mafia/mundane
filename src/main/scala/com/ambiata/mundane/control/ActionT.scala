@@ -39,8 +39,11 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
 }
 
 object ActionT {
+  def reader[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, A] =
+    ActionT(r => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
+
   def safe[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
+    reader[F, W, R, A](_ => a)
 
   def option[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, Option[A]] =
     ActionT(_ => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
