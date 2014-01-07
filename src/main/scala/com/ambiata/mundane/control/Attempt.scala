@@ -11,6 +11,7 @@ import scalaz._, Scalaz._, \&/._
  *  - a value of type A
  *  - an exception and or a message
  */
+@deprecated("Use Result instead. It has better pattern matching support. Attempt will be removed soon.", "now")
 case class Attempt[+A](run: These[String, Throwable] \/ A) {
   def map[B](f: A => B): Attempt[B] =
     Attempt(run.map(f))
