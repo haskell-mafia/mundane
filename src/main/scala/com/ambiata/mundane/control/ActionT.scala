@@ -22,6 +22,9 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
   def map[B](f: A => B)(implicit W: Monoid[W], F: Functor[F]): ActionT[F, W, R, B] =
     ActionT(r => runT(r).map(f))
 
+  def contramap[B](f: B => R)(implicit W: Monoid[W], F: Functor[F]): ActionT[F, W, B, A] =
+    ActionT(r => runT(f(r)))
+
   def flatMap[B](f: A => ActionT[F, W, R, B])(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, B] =
     ActionT(r => runT(r).flatMap(a => f(a).runT(r)))
 
