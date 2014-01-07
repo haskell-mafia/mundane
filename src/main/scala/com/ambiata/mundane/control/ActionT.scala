@@ -66,23 +66,23 @@ object ActionT {
 
 trait ActionTSupport[F[+_], W, R] {
   def safe[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
+    ActionT.safe(a)
 
   def option[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
-    ActionT(_ => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
+    ActionT.option(a)
 
   def ok[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.ok[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
+    ActionT.ok(a)
 
   def exception[A](t: Throwable)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.exception[({ type l[+a] = WriterT[F, W, a] })#l, A](t))
+    ActionT.exception(t)
 
   def fail[A](message: String)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.fail[({ type l[+a] = WriterT[F, W, a] })#l, A](message))
+    ActionT.fail(message)
 
   def error[A](message: String, t: Throwable)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.error[({ type l[+a] = WriterT[F, W, a] })#l, A](message, t))
+    ActionT.error(message, t)
 
   def these[A](both: These[String, Throwable])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.these[({ type l[+a] = WriterT[F, W, a] })#l, A](both))
+    ActionT.these(both)
 }
