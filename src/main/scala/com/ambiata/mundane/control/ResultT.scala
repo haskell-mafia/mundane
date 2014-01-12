@@ -16,6 +16,9 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
       case Error(e) => Result.these(e).pure[F]
     }))
 
+  def mapError(f: These[String, Throwable] => These[String, Throwable])(implicit F: Functor[F]): ResultT[F, A] =
+    ResultT(run.map(_.mapError(f)))
+
   def isOk(implicit F: Functor[F]): F[Boolean] =
     toOption.map(_.isDefined)
 
