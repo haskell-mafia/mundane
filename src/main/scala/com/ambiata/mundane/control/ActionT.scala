@@ -36,6 +36,12 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
 
   def executeT(r: R)(implicit F: Functor[F]): ResultT[F, A] =
     ResultT(execute(r))
+
+  def |||[AA >: A](otherwise: => ActionT[F, W, R, AA])(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, AA] =
+    ActionT[F, W, R, AA](r => runT(r) ||| otherwise.runT(r))
+
+  def orElse[AA >: A](otherwise: => AA)(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, AA] =
+    |||(ActionT.ok[F, W, R, AA](otherwise))
 }
 
 object ActionT {
