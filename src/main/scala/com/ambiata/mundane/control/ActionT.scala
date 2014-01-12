@@ -69,6 +69,18 @@ object ActionT {
   def these[F[+_]: Monad, W: Monoid, R, A](both: These[String, Throwable]): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.these[({ type l[+a] = WriterT[F, W, a] })#l, A](both))
 
+  def fromDisjunction[F[+_]: Monad, W: Monoid, R, A](either: These[String, Throwable] \/ A): ActionT[F, W, R, A] =
+    ActionT[F, W, R, A](_ => ResultT.fromDisjunction[({ type l[+a] = WriterT[F, W, a] })#l, A](either))
+
+  def fromDisjunctionString[F[+_]: Monad, W: Monoid, R, A](either: String \/ A): ActionT[F, W, R, A] =
+    fromDisjunction[F, W, R, A](either.leftMap(This.apply))
+
+  def fromDisjunctionThrowable[F[+_]: Monad, W: Monoid, R, A](either: Throwable \/ A): ActionT[F, W, R, A] =
+    fromDisjunction[F, W, R, A](either.leftMap(That.apply))
+
+  def fromDisjunctionF[F[+_]: Monad, W: Monoid, R, A](either: F[These[String, Throwable] \/ A]): ActionT[F, W, R, A] =
+    ActionT[F, W, R, A](_ => ResultT.fromDisjunctionF[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(either.map(a => (Monoid[W].zero, a)))))
+
   implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Functor[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)

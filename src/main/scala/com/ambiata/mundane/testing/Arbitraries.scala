@@ -14,7 +14,7 @@ object Arbitraries {
 
   implicit def ResultTArbitrary[F[+_], A](implicit F: Functor[F], A: Arbitrary[F[(String \&/ Throwable) \/ A]]): Arbitrary[ResultT[F, A]] = {
     Functor[F]
-    Arbitrary(arbitrary[F[(String \&/ Throwable) \/ A]].map(ResultT.fromDisjunction[F, A]))
+    Arbitrary(arbitrary[F[(String \&/ Throwable) \/ A]].map(ResultT.fromDisjunctionF[F, A]))
   }
 
   /** WARNING: can't use scalaz-scalacheck-binding because of specs/scalacheck/scalaz compatibility at the moment */

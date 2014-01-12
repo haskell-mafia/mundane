@@ -57,8 +57,11 @@ object ResultT {
   def these[F[+_]: Monad, A](both: These[String, Throwable]): ResultT[F, A] =
     ResultT[F, A](Result.these(both).point[F])
 
-  def fromDisjunction[F[+_]: Functor, A](v: F[These[String, Throwable] \/ A]): ResultT[F, A] =
+  def fromDisjunctionF[F[+_]: Functor, A](v: F[These[String, Throwable] \/ A]): ResultT[F, A] =
     ResultT[F, A](v.map(Result.fromDisjunction))
+
+  def fromDisjunction[F[+_]: Monad, A](v: These[String, Throwable] \/ A): ResultT[F, A] =
+    fromDisjunctionF(v.point[F])
 
   implicit def ResultTMonad[F[+_]: Monad]: Monad[({ type l[a] = ResultT[F, a] })#l] =
     new Monad[({ type l[a] = ResultT[F, a] })#l] {
