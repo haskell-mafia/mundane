@@ -54,17 +54,17 @@ object ActionT {
   def reader[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, A] =
     ActionT(r => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
 
+  def result[F[+_]: Monad, W: Monoid, R, A](f: R => Result[A]): ActionT[F, W, R, A] =
+    ActionT(r => ResultT.result[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
+
+  def option[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, Option[A]] =
+    ActionT(r => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
+
   def safe[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
     reader[F, W, R, A](_ => a)
 
-  def option[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, Option[A]] =
-    ActionT(_ => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
-
   def ok[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.ok[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
-
-  def result[F[+_]: Monad, W: Monoid, R, A](result: Result[A]): ActionT[F, W, R, A] =
-    ActionT(_ => ResultT.result[({ type l[+a] = WriterT[F, W, a] })#l, A](result))
 
   def exception[F[+_]: Monad, W: Monoid, R, A](t: Throwable): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.exception[({ type l[+a] = WriterT[F, W, a] })#l, A](t))
@@ -98,17 +98,20 @@ object ActionT {
 }
 
 trait ActionTSupport[F[+_], W, R] {
+  def reader[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.reader(f)
+
+  def result[A](f: R => Result[A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.result(f)
+
+  def option[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
+    ActionT.option(f)
+
   def safe[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.safe(a)
 
-  def option[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
-    ActionT.option(a)
-
   def ok[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.ok(a)
-
-  def result[A](result: Result[A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
-    ActionT.result(result)
 
   def exception[A](t: Throwable)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.exception(t)
