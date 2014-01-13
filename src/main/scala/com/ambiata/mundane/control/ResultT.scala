@@ -51,6 +51,9 @@ object ResultT {
   def ok[F[+_]: Monad, A](value: A): ResultT[F, A] =
     ResultT[F, A](Result.ok(value).point[F])
 
+  def result[F[+_]: Monad, A](result: Result[A]): ResultT[F, A] =
+    ResultT[F, A](result.point[F])
+
   def exception[F[+_]: Monad, A](t: Throwable): ResultT[F, A] =
     these[F, A](That(t))
 

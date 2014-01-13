@@ -63,6 +63,9 @@ object ActionT {
   def ok[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.ok[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
 
+  def result[F[+_]: Monad, W: Monoid, R, A](result: Result[A]): ActionT[F, W, R, A] =
+    ActionT(_ => ResultT.result[({ type l[+a] = WriterT[F, W, a] })#l, A](result))
+
   def exception[F[+_]: Monad, W: Monoid, R, A](t: Throwable): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.exception[({ type l[+a] = WriterT[F, W, a] })#l, A](t))
 
@@ -103,6 +106,9 @@ trait ActionTSupport[F[+_], W, R] {
 
   def ok[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.ok(a)
+
+  def result[A](result: Result[A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.result(result)
 
   def exception[A](t: Throwable)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.exception(t)
