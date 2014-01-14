@@ -17,9 +17,7 @@ libraryDependencies ++= Seq(
     "org.specs2"          %% "specs2-scalacheck"    % "2.3.4" ).map(_ % "test")
 
 
-resolvers ++=
-  Seq("snapshots", "releases").map(Resolver.sonatypeRepo) ++
-  Seq(
-    Resolver.typesafeRepo("releases"),
-    "artifactory"           at "http://etd-packaging.research.nicta.com.au/artifactory/libs-release-local",
-    "artifactory snapshot"  at "http://etd-packaging.research.nicta.com.au/artifactory/libs-snapshot-local")
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("releases"),
+  Resolver.typesafeRepo("releases"),
+  "artifactory"           at "http://etd-packaging.research.nicta.com.au/artifactory/libs-release-local")
