@@ -124,6 +124,11 @@ object Result {
     case (Both(m, t)) => s"${m}, caused by:\n${Throwables.renderWithStack(t)}}"
   }
 
+  def prependThis(these: These[String, Throwable], prepend: String): These[String, Throwable] =
+    these.fold(m      => This(prepend + " - " + m),
+      t      => Both(prepend, t),
+      (m, t) => Both(prepend + " - " + m, t))
+
   implicit def ResultMonad: Monad[Result] = new Monad[Result] {
     def point[A](v: => A) = ok(v)
     def bind[A, B](m: Result[A])(f: A => Result[B]) = m.flatMap(f)

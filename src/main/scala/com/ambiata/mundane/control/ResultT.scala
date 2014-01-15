@@ -16,6 +16,12 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
       case Error(e) => Result.these(e).pure[F]
     }))
 
+  def onResult[B](f: Result[A] => Result[B])(implicit F: Functor[F]): ResultT[F, B] =
+    ResultT(run.map(f))
+
+  def mapError(f: These[String, Throwable] => These[String, Throwable])(implicit F: Functor[F]): ResultT[F, A] =
+    onResult(_.mapError(f))
+
   def isOk(implicit F: Functor[F]): F[Boolean] =
     toOption.map(_.isDefined)
 
@@ -45,6 +51,9 @@ object ResultT {
   def ok[F[+_]: Monad, A](value: A): ResultT[F, A] =
     ResultT[F, A](Result.ok(value).point[F])
 
+  def result[F[+_]: Monad, A](result: Result[A]): ResultT[F, A] =
+    ResultT[F, A](result.point[F])
+
   def exception[F[+_]: Monad, A](t: Throwable): ResultT[F, A] =
     these[F, A](That(t))
 
@@ -57,8 +66,11 @@ object ResultT {
   def these[F[+_]: Monad, A](both: These[String, Throwable]): ResultT[F, A] =
     ResultT[F, A](Result.these(both).point[F])
 
-  def fromDisjunction[F[+_]: Functor, A](v: F[These[String, Throwable] \/ A]): ResultT[F, A] =
+  def fromDisjunctionF[F[+_]: Functor, A](v: F[These[String, Throwable] \/ A]): ResultT[F, A] =
     ResultT[F, A](v.map(Result.fromDisjunction))
+
+  def fromDisjunction[F[+_]: Monad, A](v: These[String, Throwable] \/ A): ResultT[F, A] =
+    fromDisjunctionF(v.point[F])
 
   implicit def ResultTMonad[F[+_]: Monad]: Monad[({ type l[a] = ResultT[F, a] })#l] =
     new Monad[({ type l[a] = ResultT[F, a] })#l] {

@@ -28,6 +28,12 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
   def flatMap[B](f: A => ActionT[F, W, R, B])(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, B] =
     ActionT(r => runT(r).flatMap(a => f(a).runT(r)))
 
+  def onResult[B](f: Result[A] => Result[B])(implicit W: Monoid[W], F: Functor[F]): ActionT[F, W, R, B] =
+    ActionT(r => runT(r).onResult(f))
+
+  def mapError(f: These[String, Throwable] => These[String, Throwable])(implicit W: Monoid[W], F: Functor[F]): ActionT[F, W, R, A] =
+    onResult(_.mapError(f))
+
   def run(r: R): F[(W, Result[A])] =
     runT(r).run.run
 
@@ -36,17 +42,26 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
 
   def executeT(r: R)(implicit F: Functor[F]): ResultT[F, A] =
     ResultT(execute(r))
+
+  def |||[AA >: A](otherwise: => ActionT[F, W, R, AA])(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, AA] =
+    ActionT[F, W, R, AA](r => runT(r) ||| otherwise.runT(r))
+
+  def orElse[AA >: A](otherwise: => AA)(implicit W: Monoid[W], F: Monad[F]): ActionT[F, W, R, AA] =
+    |||(ActionT.ok[F, W, R, AA](otherwise))
 }
 
 object ActionT {
   def reader[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, A] =
     ActionT(r => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
 
+  def result[F[+_]: Monad, W: Monoid, R, A](f: R => Result[A]): ActionT[F, W, R, A] =
+    ActionT(r => ResultT.result[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
+
+  def option[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, Option[A]] =
+    ActionT(r => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
+
   def safe[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
     reader[F, W, R, A](_ => a)
-
-  def option[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, Option[A]] =
-    ActionT(_ => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
 
   def ok[F[+_]: Monad, W: Monoid, R, A](a: => A): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.ok[({ type l[+a] = WriterT[F, W, a] })#l, A](a))
@@ -63,6 +78,18 @@ object ActionT {
   def these[F[+_]: Monad, W: Monoid, R, A](both: These[String, Throwable]): ActionT[F, W, R, A] =
     ActionT(_ => ResultT.these[({ type l[+a] = WriterT[F, W, a] })#l, A](both))
 
+  def fromDisjunction[F[+_]: Monad, W: Monoid, R, A](either: These[String, Throwable] \/ A): ActionT[F, W, R, A] =
+    ActionT[F, W, R, A](_ => ResultT.fromDisjunction[({ type l[+a] = WriterT[F, W, a] })#l, A](either))
+
+  def fromDisjunctionString[F[+_]: Monad, W: Monoid, R, A](either: String \/ A): ActionT[F, W, R, A] =
+    fromDisjunction[F, W, R, A](either.leftMap(This.apply))
+
+  def fromDisjunctionThrowable[F[+_]: Monad, W: Monoid, R, A](either: Throwable \/ A): ActionT[F, W, R, A] =
+    fromDisjunction[F, W, R, A](either.leftMap(That.apply))
+
+  def fromDisjunctionF[F[+_]: Monad, W: Monoid, R, A](either: F[These[String, Throwable] \/ A]): ActionT[F, W, R, A] =
+    ActionT[F, W, R, A](_ => ResultT.fromDisjunctionF[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(either.map(a => (Monoid[W].zero, a)))))
+
   implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Functor[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
@@ -71,11 +98,17 @@ object ActionT {
 }
 
 trait ActionTSupport[F[+_], W, R] {
+  def reader[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.reader(f)
+
+  def result[A](f: R => Result[A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.result(f)
+
+  def option[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
+    ActionT.option(f)
+
   def safe[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.safe(a)
-
-  def option[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
-    ActionT.option(a)
 
   def ok[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.ok(a)
