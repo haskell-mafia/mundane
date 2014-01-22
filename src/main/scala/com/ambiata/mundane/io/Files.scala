@@ -30,8 +30,8 @@ object Files {
   def checksumStream(is: InputStream): String \/ Array[Byte] = 
     try unsafeChecksum(is).right catch { case t: Throwable => t.getMessage.left }
 
-  def readFile(f: File): String \/ String =
-    readFileBytes(f).map(new String(_))
+  def readFile(f: File, encoding: String = "UTF-8"): String \/ String =
+    readFileBytes(f).map(new String(_, encoding))
 
   def readFileBytes(f: File): String \/ Array[Byte] =
     try org.apache.commons.io.FileUtils.readFileToByteArray(f).right catch { case t: Throwable => t.getMessage.left }
@@ -53,19 +53,24 @@ object Files {
     else if(d.mkdirs()) d.right
     else s"Could not create dir $d!".left
 
-  def printToFile(f: File)(op: java.io.PrintWriter => Unit): String \/ File = {
-    val p = new java.io.PrintWriter(f)
+  def printToFile(f: File, encoding: String = "UTF-8")(op: java.io.PrintStream => Unit): String \/ File = {
+    val fos = new FileOutputStream(f)
+    val p = new java.io.PrintStream(fos, false, encoding)
     try { op(p) }
     catch { case e: Exception => "Could not write to file '${f.getPath}' - '${e.getMessage}".left }
-    finally { p.close() }
+    finally { p.close(); fos.close() }
     f.right
   }
 
-  def printToFiles[A](fs: List[(A, File)])(op: (A => java.io.PrintWriter) => Unit): String \/ List[(A, File)] = {
-    val ps = fs .map { case (a, f) => (a, new java.io.PrintWriter(f)) } .toMap
+  def printToFiles[A](fs: List[(A, File)], encoding: String = "UTF-8")(op: (A => java.io.PrintStream) => Unit): String \/ List[(A, File)] = {
+    val foss = fs .map { case (a, f) => (a, new FileOutputStream(f)) }
+    val ps = foss .map { case (a, fos) => (a, new java.io.PrintStream(fos, false, encoding)) } .toMap
     try { op(ps) }
     catch { case e: Exception => s"Could not write to file - '${e.getMessage}".left }
-    finally { ps.values.foreach(_.close()) }
+    finally {
+      ps.values.foreach(_.close())
+      foss.map(_._2).foreach(_.close())
+    }
     fs.right
   }
 
