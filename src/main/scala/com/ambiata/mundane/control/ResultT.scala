@@ -2,6 +2,7 @@ package com.ambiata.mundane.control
 
 import scala.util.control.NonFatal
 import scalaz._, Scalaz._, \&/._
+import scalaz.effect._
 
 /**
  * Transformer version of Result.
@@ -41,7 +42,7 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
     ResultT[F, AA](isOk.flatMap(ok => if (ok) this.run else otherwise.run))
 }
 
-object ResultT {
+object ResultT extends LowPriorityResultT {
   def safe[F[+_]: Monad, A](thunk: => A): ResultT[F, A] =
     ResultT[F, A](Result.safe(thunk).point[F])
 
@@ -72,6 +73,9 @@ object ResultT {
   def fromDisjunction[F[+_]: Monad, A](v: These[String, Throwable] \/ A): ResultT[F, A] =
     fromDisjunctionF(v.point[F])
 
+  def fromIO[A](v: IO[A]): ResultT[IO, A] =
+    ResultT(v.map(Result.ok))
+
   implicit def ResultTMonad[F[+_]: Monad]: Monad[({ type l[a] = ResultT[F, a] })#l] =
     new Monad[({ type l[a] = ResultT[F, a] })#l] {
       def point[A](v: => A) = ok[F, A](v)
@@ -80,4 +84,13 @@ object ResultT {
 
   implicit def ResultTEqual[F[+_], A](implicit E: Equal[F[Result[A]]]): Equal[ResultT[F, A]] =
     implicitly[Equal[F[Result[A]]]].contramap(_.run)
+}
+
+trait LowPriorityResultT {
+  implicit def ResultTMonadIO[F[+_]: MonadIO]: MonadIO[({ type l[a] = ResultT[F, a] })#l] =
+    new MonadIO[({ type l[a] = ResultT[F, a] })#l] {
+      def point[A](v: => A) = ResultT.ok[F, A](v)
+      def bind[A, B](m: ResultT[F, A])(f: A => ResultT[F, B]) = m.flatMap(f)
+      def liftIO[A](ioa: IO[A]): ResultT[F, A] = ResultT(ioa.liftIO[F].map(Result.ok))
+    }
 }
