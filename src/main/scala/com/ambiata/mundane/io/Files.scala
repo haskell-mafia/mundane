@@ -61,6 +61,14 @@ object Files {
     f.right
   }
 
+  def printToFiles[A](fs: List[(A, File)])(op: (A => java.io.PrintWriter) => Unit): String \/ List[(A, File)] = {
+    val ps = fs .map { case (a, f) => (a, new java.io.PrintWriter(f)) } .toMap
+    try { op(ps) }
+    catch { case e: Exception => s"Could not write to file - '${e.getMessage}".left }
+    finally { ps.values.foreach(_.close()) }
+    fs.right
+  }
+
   def mv(src: File, dest: File): String \/ File =
     try
       if(src.renameTo(dest)) dest.right else s"Could not move ${src.getPath} to ${dest.getPath}".left
