@@ -90,7 +90,7 @@ object ActionT {
   def fromDisjunctionF[F[+_]: Monad, W: Monoid, R, A](either: F[These[String, Throwable] \/ A]): ActionT[F, W, R, A] =
     ActionT[F, W, R, A](_ => ResultT.fromDisjunctionF[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(either.map(a => (Monoid[W].zero, a)))))
 
-  implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Functor[({ type l[a] = ActionT[F, W, R, a] })#l] =
+  implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Monad[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
       def point[A](a: => A) = ok[F, W, R, A](a)
