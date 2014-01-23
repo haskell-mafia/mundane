@@ -3,7 +3,7 @@ package com.ambiata.mundane.parse
 object Delimited {
 
   def parsePsv(str: String) =
-    pipeParser.parseRow(str)
+    DelimitedParser2(str, "|").row.run()
 
   def parseCsv(str: String) =
     commaParser.parseRow(str)
@@ -27,6 +27,7 @@ object Delimited {
 }
 
 import scala.util.parsing.combinator.RegexParsers
+import org.parboiled2._
 
 /**
  * This parser can parse rows with different delimiters
@@ -51,3 +52,19 @@ trait DelimitedParser extends RegexParsers {
 }
 
 
+case class DelimitedParser2(input: ParserInput, DELIMITER: String) extends Parser {
+
+  def DQUOTE: Rule0  = rule("\"")
+  def DELIMITER_TOKEN: Rule1[String] = rule(capture(DELIMITER))
+  def DQUOTE2: Rule1[String] = rule(capture("\"\"") ~> ((s: String) => "\""))  // combine 2 dquotes into 1
+  def CRLF: Rule1[String]    = rule(capture("\r\n" | "\n"))
+  def TXT: Rule1[String]     = rule(capture(!anyOf(s""""$DELIMITER\r\n""")))
+  def SPACES: Rule0          = rule(oneOrMore(anyOf(" \t")))
+
+  def escaped: Rule1[String] = rule(optional(SPACES) ~ DQUOTE ~ (zeroOrMore(DELIMITER_TOKEN|TXT|CRLF|DQUOTE2) ~ DQUOTE ~ optional(SPACES)) ~> ((_:Seq[_]).mkString("")))
+  def nonEscaped: Rule1[String] = rule(zeroOrMore(TXT) ~> ((t: Seq[String]) => t.mkString("")))
+  def field = rule(escaped | nonEscaped)
+  def row: Rule1[Seq[String]] = rule(oneOrMore(field).separatedBy(DELIMITER))
+//
+//  def parseRow(str: String): List[String] = super.parse(row, str).getOrElse(Nil)
+}

@@ -5,12 +5,13 @@ libraryDependencies ++= Seq(
     "org.joda"               %  "joda-convert"       % "1.1",
     "com.googlecode.kiama"   %% "kiama"              % "1.5.1",
     "commons-io"             %  "commons-io"         % "2.4",
+    "org.parboiled"          %% "parboiled"          % "2.0-M1",
     "org.specs2"             %% "specs2-matcher"     % "2.3.4" % "optional",
     "org.scalacheck"         %% "scalacheck"         % "1.11.1" % "optional"
   )
 
 libraryDependencies ++= Seq(
-    "com.ambiata"         %% "scrutiny"             % "1.1-20131219001155-75b92c8",
+    "com.ambiata"         %% "scrutiny"             % "1.1-20131224033803-9095a20",
     "org.specs2"          %% "specs2-matcher-extra" % "2.3.4" ,
     "org.specs2"          %% "specs2-core"          % "2.3.4" ,
     "org.specs2"          %% "specs2-junit"         % "2.3.4" ,
