@@ -21,7 +21,7 @@ object Checksum {
 
   def file(f: File, algorithm: ChecksumAlgorithm): IO[Checksum] =  {
     val in = new FileInputStream(f)
-    try stream(in, algorithm) finally in.close()
+    stream(in, algorithm).ensuring(IO { in.close() })
   }
 
   def string(s: String, algorithm: ChecksumAlgorithm): Checksum =
