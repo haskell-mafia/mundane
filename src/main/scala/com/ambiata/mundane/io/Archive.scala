@@ -9,7 +9,10 @@ import scala.sys.process._
 import scalaz._, Scalaz._, \&/._
 import scalaz.effect._
 
-case class Archive(archive: File, checksum: File)
+case class Archive(archiveFile: File, checksumFile: File, contents: List[File], checksum: Checksum) {
+  def files: List[File] =
+    List(archiveFile, checksumFile)
+}
 
 object Archive {
   // FIX This is the original copper publish code, for creating archives, but it has some ill-defined sematics
@@ -25,7 +28,7 @@ object Archive {
       case 0 => for {
         checksum <- Checksum.file(targetFile, MD5).liftIO[ResultTIO]
         _        <- IO { Streams.write(new FileOutputStream(md5File), checksum.hash) }.liftIO[ResultTIO]
-      } yield Archive(targetFile, md5File)
+      } yield Archive(targetFile, md5File, contents, checksum)
       case e =>
         ResultT.fail[IO, Archive](s"Error compressing files, tar exit code <$e>")
     })
