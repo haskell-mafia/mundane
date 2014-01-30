@@ -21,6 +21,7 @@ Files should be able to:
   validate gzip                               $e6
   extract a tarball from a stream             $e7
   list files in a dir                         $e8
+  flatten an output stream                    $e9
 """
 
   def e1 = prop((bs: Array[Byte]) => {
@@ -118,4 +119,31 @@ Files should be able to:
   }
 
   val basePath = new File("target/")
+  
+
+  
+  def e9 = {
+    val bs: Array[Byte] = Array('a', 'b', '\0')
+    val str: String = "foostring"
+    val outDir = mkTempDir("files-spec_extract")
+    val tmpDir = mkTempDir("files-spec")
+    // TODO: make sub directory, test it is flattened
+    val tmpBinFile = File.createTempFile("files-spec", ".bytes", tmpDir)
+    val tmpStrFile = File.createTempFile("files-spec", ".string", tmpDir)
+    val tmpTgzFile = File.createTempFile("files-spec", ".tar.gz")
+
+    writeBytes(tmpBinFile, bs)
+    writeString(tmpStrFile, str)
+    tarball(tmpDir, tmpTgzFile)
+
+    val fis = new FileInputStream(tmpTgzFile)
+    try Files.extractTarballStreamFlat(fis, outDir).toEither must beRight finally fis.close()
+    (tmpBinFile, new File(outDir, tmpBinFile.getName)) must haveSameMD5
+    (tmpStrFile, new File(outDir, tmpStrFile.getName)) must haveSameMD5
+    outDir must haveSameFilesAs(tmpDir).withMatcher(haveSameMD5)
+
+    rmdir(tmpDir)
+    rmdir(outDir)
+    tmpTgzFile.delete()
+  }
 }
