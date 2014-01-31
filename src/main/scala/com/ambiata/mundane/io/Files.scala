@@ -148,7 +148,7 @@ object Files {
       s"Could not extract tarball, stderr - ${sw.toString}".left
     else {
       val dest = destDir.getAbsolutePath
-      val cmdFlat = s"find $dest -exec mv {} $dest \\;"
+      val cmdFlat = s"find $dest -type f -exec mv {} $dest \\;"
       List("sh", "-c", cmdFlat) ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))
       destDir.right
     }
