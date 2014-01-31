@@ -94,7 +94,7 @@ Files should be able to:
     tarball(tmpDir, tmpTgzFile)
 
     val fis = new FileInputStream(tmpTgzFile)
-    try Files.extractTarballStream(fis, outDir).toEither must beRight finally fis.close()
+    try Files.extractTarballStream(fis, outDir, 0).toEither must beRight finally fis.close()
     (tmpBinFile, new File(outDir, tmpBinFile.getName)) must haveSameMD5
     (tmpStrFile, new File(outDir, tmpStrFile.getName)) must haveSameMD5
     outDir must haveSameFilesAs(tmpDir).withMatcher(haveSameMD5)

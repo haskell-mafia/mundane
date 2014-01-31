@@ -120,7 +120,7 @@ object Files {
       None
   }
 
-  def extractTarballStream(tarball: InputStream, destDir: File, stripLevels: Int = 0): String \/ File = {
+  def extractTarballStream(tarball: InputStream, destDir: File, stripLevels: Int): String \/ File = {
     import scala.sys.process._
 
     val cmd = s"tar xz -C ${destDir.getPath} -" + (if(stripLevels > 0) s"-strip-components ${stripLevels}" else "")
@@ -138,7 +138,7 @@ object Files {
   def extractTarballStreamFlat(tarball: InputStream, destDir: File): String \/ File = {
     import scala.sys.process._
     
-    val cmd = s"tar xz -C ${destDir.getPath} -"
+    val cmd = s"tar xz -C ${destDir.getPath}"
     val sw = new StringWriter
     if(!destDir.exists && !destDir.mkdirs())
       s"Could not create tarball extraction dir ${destDir}!".left
