@@ -17,8 +17,8 @@ Checksum Known Answer Tests
 Checksum Properties
 -------------------
 
-  Algoithm is always maintained (MD5)                     ${algorithm(MD5)}
-  Algoithm is always maintained (SHA1)                    ${algorithm(SHA1)}
+  Algorithm is always maintained (MD5)                    ${algorithm(MD5)}
+  Algorithm is always maintained (SHA1)                   ${algorithm(SHA1)}
 
 """
 

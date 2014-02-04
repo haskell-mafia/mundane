@@ -56,6 +56,4 @@ Directories
       val base = new File(tmp, s"${uuid}")
       Directories.exists(base).unsafePerformIO must beFalse
     })
-
-
 }
