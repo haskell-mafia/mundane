@@ -25,7 +25,7 @@ LineCount
     try {
       Streams.write(new FileOutputStream(file), Lists.prepareForFile(data.map(_.toString)))
       run(file)
-    } finally if (file.exists) file.delete
+    } finally if (file.exists) { file.delete; () }
   }
 
   def memory =
