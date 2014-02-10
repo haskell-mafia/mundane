@@ -2,6 +2,7 @@ package com.ambiata.mundane.control
 
 import scala.util.control.NonFatal
 import scalaz._, Scalaz._, \&/._
+import scalaz.effect._
 
 /**
  * A data type for holding computations that can fail with exceptions.
@@ -50,7 +51,10 @@ case class ActionT[F[+_], W, R, +A](runT: R => ResultT[({ type l[+a] = WriterT[F
     |||(ActionT.ok[F, W, R, AA](otherwise))
 }
 
-object ActionT {
+object ActionT extends ActionTLowPriority {
+  def ask[F[+_]: Monad, W: Monoid, R]: ActionT[F, W, R, R] =
+    reader(identity)
+
   def reader[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, A] =
     ActionT(r => ResultT.safe[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
 
@@ -90,6 +94,9 @@ object ActionT {
   def fromDisjunctionF[F[+_]: Monad, W: Monoid, R, A](either: F[These[String, Throwable] \/ A]): ActionT[F, W, R, A] =
     ActionT[F, W, R, A](_ => ResultT.fromDisjunctionF[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(either.map(a => (Monoid[W].zero, a)))))
 
+  def fromIO[F[+_]: MonadIO, W: Monoid, R, A](v: IO[A]): ActionT[F, W, R, A] =
+    ActionT[F, W, R, A](_ => ResultT[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(v.map(a => (Monoid[W].zero, Result.ok(a))).liftIO[F])))
+
   implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Monad[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
@@ -97,7 +104,19 @@ object ActionT {
     }
 }
 
+trait ActionTLowPriority {
+  implicit def ActionTMonadIO[F[+_]: MonadIO, W: Monoid, R]: MonadIO[({ type l[a] = ActionT[F, W, R, a] })#l] =
+    new MonadIO[({ type l[a] = ActionT[F, W, R, a] })#l] {
+      def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
+      def point[A](a: => A) = ActionT.ok[F, W, R, A](a)
+      def liftIO[A](a: IO[A]) = ActionT.fromIO[F, W, R, A](a)
+    }
+}
+
 trait ActionTSupport[F[+_], W, R] {
+  def ask(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, R] =
+    ActionT.ask
+
   def reader[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.reader(f)
 
