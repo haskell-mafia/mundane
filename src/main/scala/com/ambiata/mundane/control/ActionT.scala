@@ -97,6 +97,9 @@ object ActionT extends ActionTLowPriority {
   def fromIO[F[+_]: MonadIO, W: Monoid, R, A](v: IO[A]): ActionT[F, W, R, A] =
     ActionT[F, W, R, A](_ => ResultT[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT(v.map(a => (Monoid[W].zero, Result.ok(a))).liftIO[F])))
 
+  def fromIOResult[F[+_]: MonadIO, W: Monoid, R, A](v: IO[Result[A]]): ActionT[F, W, R, A] =
+    fromIO[F, W, R, Result[A]](v).flatMap(r => result(_ => r))
+
   implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Monad[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
@@ -112,6 +115,7 @@ trait ActionTLowPriority {
       def liftIO[A](a: IO[A]) = ActionT.fromIO[F, W, R, A](a)
     }
 }
+
 
 trait ActionTSupport[F[+_], W, R] {
   def ask(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, R] =
@@ -131,6 +135,12 @@ trait ActionTSupport[F[+_], W, R] {
 
   def ok[A](a: => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.ok(a)
+
+  def fromIO[A](v: IO[A])(implicit M: MonadIO[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.fromIO(v)
+
+  def fromIOResult[A](v: IO[Result[A]])(implicit M: MonadIO[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.fromIOResult(v)
 
   def exception[A](t: Throwable)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.exception(t)

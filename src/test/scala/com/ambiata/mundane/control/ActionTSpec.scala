@@ -13,14 +13,16 @@ class ActionTSpec extends Specification with ScalaCheck with ThrownExpectations 
  ActionT Examples
  ================
 
-   logging                    $logging
+   logging                                    $logging
+   creation of action from an IO[Result[A]]   $fromIOResult
 
 """
 
+  type Logger = String => IO[Unit]
+  type ExampleIOAction[+A] = ActionT[IO, Unit, Logger, A]
+  object ExampleIOAction extends ActionTSupport[IO, Unit, Logger]
+
   def logging = {
-    type Logger = String => IO[Unit]
-    type ExampleIOAction[+A] = ActionT[IO, Unit, Logger, A]
-    object ExampleIOAction extends ActionTSupport[IO, Unit, Logger]
 
     def log(s: String): ExampleIOAction[Unit] =
       ExampleIOAction.ask.flatMap(logger =>
@@ -36,6 +38,11 @@ class ActionTSpec extends Specification with ScalaCheck with ThrownExpectations 
 
     action.execute(logger).unsafePerformIO must beOkValue("hello")
     state.toList  must_== List("hello")
+  }
+
+  def fromIOResult = {
+    val logger = (s: String) => IO(())
+    ExampleIOAction.fromIOResult(IO(Result.ok("hello"))).execute(logger).unsafePerformIO must beOkValue("hello")
   }
 
 
