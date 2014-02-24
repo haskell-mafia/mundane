@@ -2,7 +2,7 @@ package com.ambiata
 package mundane
 package testing
 
-import control._
+import control.Attempt
 import org.specs2._
 import matcher._
 import execute._

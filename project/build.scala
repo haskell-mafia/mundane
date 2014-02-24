@@ -26,7 +26,8 @@ object build extends Build {
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_"),
+    incOptions := incOptions.value.withNameHashing(true),
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-value-discard"),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 

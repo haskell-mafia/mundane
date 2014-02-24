@@ -12,6 +12,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
  Parsing a list can:
    extract the position of each element $position1
    extract a string                     $string1
+   extract a nonempty string            $nonemptystring1
    extract an int                       $int1
    extract a double                     $double1
    extract a LocalDate                  $localDate1
@@ -35,6 +36,11 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
 
   def string1 =
     string.run(List("a")).toOption must beSome("a")
+
+  def nonemptystring1 = {
+    string.nonempty.run(List("a")).toOption must beSome("a")
+    string.nonempty.run(List("")).toOption must beNone
+  }
 
   def int1 = {
     int.run(List("1")).toOption must beSome(1)

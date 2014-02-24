@@ -2,36 +2,15 @@ package com.ambiata.mundane
 package io
 
 import java.io._
-import java.security.MessageDigest
 import scalaz._, Scalaz._
+import scalaz.effect._
 
 object Files {
   def calcChecksum(f: File): String \/ String =
-    checksumFile(f).map(toHexString)
+    Checksum.file(f, MD5).map(_.hash.right[String]).except(t => IO { t.getMessage.left[String] }).unsafePerformIO
 
-  def toHexString(bytes: Array[Byte]): String =
-    bytes.map("%02X".format(_)).mkString.toLowerCase
-
-  def unsafeChecksum(is: InputStream): Array[Byte] = {
-    val buffer = Array.ofDim[Byte](4096)
-    var length = 0
-    val digester = MessageDigest.getInstance("MD5")
-    while ({ length = is.read(buffer, 0, buffer.length); length != -1 }) {
-      digester.update(buffer, 0, length)
-    }
-    digester.digest
-  }
-
-  def checksumFile(f: File): String \/ Array[Byte] =  {
-    val fis = new FileInputStream(f)
-    try checksumStream(fis) finally fis.close()
-  }
-
-  def checksumStream(is: InputStream): String \/ Array[Byte] = 
-    try unsafeChecksum(is).right catch { case t: Throwable => t.getMessage.left }
-
-  def readFile(f: File): String \/ String =
-    readFileBytes(f).map(new String(_))
+  def readFile(f: File, encoding: String = "UTF-8"): String \/ String =
+    readFileBytes(f).map(new String(_, encoding))
 
   def readFileBytes(f: File): String \/ Array[Byte] =
     try org.apache.commons.io.FileUtils.readFileToByteArray(f).right catch { case t: Throwable => t.getMessage.left }
@@ -53,12 +32,25 @@ object Files {
     else if(d.mkdirs()) d.right
     else s"Could not create dir $d!".left
 
-  def printToFile(f: File)(op: java.io.PrintWriter => Unit): String \/ File = {
-    val p = new java.io.PrintWriter(f)
+  def printToFile(f: File, encoding: String = "UTF-8")(op: java.io.PrintStream => Unit): String \/ File = {
+    val fos = new FileOutputStream(f)
+    val p = new java.io.PrintStream(fos, false, encoding)
     try { op(p) }
     catch { case e: Exception => "Could not write to file '${f.getPath}' - '${e.getMessage}".left }
-    finally { p.close() }
+    finally { p.close(); fos.close() }
     f.right
+  }
+
+  def printToFiles[A](fs: List[(A, File)], encoding: String = "UTF-8")(op: (A => java.io.PrintStream) => Unit): String \/ List[(A, File)] = {
+    val foss = fs .map { case (a, f) => (a, new FileOutputStream(f)) }
+    val ps = foss .map { case (a, fos) => (a, new java.io.PrintStream(fos, false, encoding)) } .toMap
+    try { op(ps) }
+    catch { case e: Exception => s"Could not write to file - '${e.getMessage}".left }
+    finally {
+      ps.values.foreach(_.close())
+      foss.map(_._2).foreach(_.close())
+    }
+    fs.right
   }
 
   def mv(src: File, dest: File): String \/ File =
@@ -100,15 +92,14 @@ object Files {
    * @param destDir
    * @return
    */
-  def extractGzipStream(gzip: InputStream, destDir: File): String \/ File = {
+  def extractGzipStream(gzip: InputStream, destFile: File): String \/ File = {
     import scala.sys.process._
     val cmd = s"gzip -dc -"
     val sw = new StringWriter
-    val destFile = new File(s"${destDir.getPath}/output")
-    if(!destDir.exists && !destDir.mkdirs())
-      s"Could not create gzip extraction dir ${destDir}!".left
-    else if(!destDir.isDirectory)
-      s"${destDir} is not a directory!".left
+    if(!destFile.getParentFile.exists && !destFile.getParentFile.mkdirs())
+      s"Could not create gzip extraction dir ${destFile.getParent}!".left
+    else if(destFile.isDirectory)
+      s"${destFile} is a directory!".left
     else if((List("sh", "-c", cmd) #< gzip #> destFile ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))) != 0)
       s"Could not extract gzip, stderr - ${sw.toString}".left
     else
@@ -129,9 +120,10 @@ object Files {
       None
   }
 
-  def extractTarballStream(tarball: InputStream, destDir: File, stripLevels: Int = 0): String \/ File = {
+  def extractTarballStream(tarball: InputStream, destDir: File, stripLevels: Int): String \/ File = {
     import scala.sys.process._
-    val cmd = s"tar xz -C ${destDir.getPath} -" + (if(stripLevels > 0) s"-strip-components ${stripLevels} -" else "")
+
+    val cmd = s"tar xz -C ${destDir.getPath} -" + (if(stripLevels > 0) s"-strip-components ${stripLevels}" else "")
     val sw = new StringWriter
     if(!destDir.exists && !destDir.mkdirs())
       s"Could not create tarball extraction dir ${destDir}!".left
@@ -141,5 +133,24 @@ object Files {
       s"Could not extract tarball, stderr - ${sw.toString}".left
     else
       destDir.right
+  }
+  
+  def extractTarballStreamFlat(tarball: InputStream, destDir: File): String \/ File = {
+    import scala.sys.process._
+    
+    val cmd = s"tar xz -C ${destDir.getPath}"
+    val sw = new StringWriter
+    if(!destDir.exists && !destDir.mkdirs())
+      s"Could not create tarball extraction dir ${destDir}!".left
+    else if(!destDir.isDirectory)
+      s"${destDir} is not a directory!".left
+    else if((List("sh", "-c", cmd) #< tarball ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))) != 0)
+      s"Could not extract tarball, stderr - ${sw.toString}".left
+    else {
+      val dest = destDir.getAbsolutePath
+      val cmdFlat = s"find $dest -type f -exec mv {} $dest \\;"
+      List("sh", "-c", cmdFlat) ! ProcessLogger(o => (), e => sw.write(s"${e}\n"))
+      destDir.right
+    }
   }
 }

@@ -23,6 +23,12 @@ case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, 
         case Success((nuposition, nustate, a)) => f(a).parse(nuposition, nustate)
         case Failure(error)                    => Failure(error)
       })
+
+  def nonempty(implicit ev: A =:= String) =
+    flatMap(a => ListParser((position, state) =>
+      if(ev(a).isEmpty) s"Expected string at position $position to be non empty".failure
+      else (position, state, a).success
+    ))
 }
 
 /**
