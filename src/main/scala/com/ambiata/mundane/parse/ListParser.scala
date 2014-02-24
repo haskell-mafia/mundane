@@ -29,6 +29,19 @@ case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, 
       if(ev(a).isEmpty) s"Expected string at position $position to be non empty".failure
       else (position, state, a).success
     ))
+
+  def option(implicit ev: A =:= String): ListParser[Option[A]] =
+    flatMap(a => ListParser((position, state) =>
+      if (ev(a).isEmpty) (position, state, None).success
+      else               (position, state, Some(a)).success
+    ))
+
+  def delimited(implicit ev: A =:= String, delimiter: Char=','): ListParser[Seq[String]] =
+    flatMap(a => ListParser((position, state) =>
+      if (ev(a).isEmpty) (position, state, Seq()).success
+      else               (position, state, Delimited.parseRow(a, delimiter)).success
+    ))
+
 }
 
 /**
