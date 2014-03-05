@@ -10,6 +10,10 @@ object Delimited {
 
   def parseTsv(str: String) =
     DelimitedParser2(str, "\t", " ").parseRow
+
+  def parseRow(str: String, delimiter: Char) =
+    DelimitedParser2(str, delimiter.toString).parseRow
+
 }
 
 import org.parboiled2._
@@ -34,3 +38,4 @@ case class DelimitedParser2(input: ParserInput, DELIMITER: String, whiteSpace: S
 
   def parseRow = row.run().toOption.getOrElse(Nil)
 }
+
