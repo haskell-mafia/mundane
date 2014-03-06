@@ -17,6 +17,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
    extract a nonempty string            $nonemptystring1
    extract an int                       $int1
    extract a double                     $double1
+   extract a boolean                    $boolean1
    extract a LocalDate                  $localDate1
    consume elements                     $consume1
    consume all remaining elements       $consume2
@@ -71,6 +72,18 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
       d1 <- double
       d2 <- double
     } yield (d1, d2)).run(List("2", "a")).toEither must beLeft("""Not a double at position 2: 'a'""")
+  }
+
+  def boolean1 = {
+    boolean.run(List("false")).toOption must beSome(false)
+    boolean.run(List("true")).toOption must beSome(true)
+    boolean.run(List("0")).toOption must beNone
+
+    // failure message with position
+    (for {
+      b1 <- boolean
+      b2 <- boolean
+    } yield (b1, b2)).run(List("true", "a")).toEither must beLeft("""Not a boolean at position 2: 'a'""")
   }
 
   def localDate1 = {

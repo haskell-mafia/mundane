@@ -104,6 +104,15 @@ object ListParser {
   } yield result
 
   /**
+   * A parser for a Boolean
+   */
+  def boolean: ListParser[Boolean] = for {
+    s         <- string
+    position  <- getPosition
+    result    <- value(s.parseBoolean.leftMap(_ => s"""Not a boolean at position $position: '$s'"""))
+  } yield result
+
+  /**
    * A parser for a String
    */
   def string: ListParser[String] =
