@@ -3,51 +3,39 @@ package com.ambiata.mundane.parse
 object Delimited {
 
   def parsePsv(str: String) =
-    pipeParser.parseRow(str)
+    DelimitedParser2(str, "|").parseRow
 
   def parseCsv(str: String) =
-    commaParser.parseRow(str)
+    DelimitedParser2(str, ",").parseRow
 
   def parseTsv(str: String) =
-    tabParser.parseRow(str)
+    DelimitedParser2(str, "\t", " ").parseRow
 
-  private val pipeParser = new DelimitedParser {
-    lazy val DELIMITER = "|"
-  }
-
-  private val commaParser = new DelimitedParser {
-    lazy val DELIMITER = ","
-  }
-
-  private val tabParser = new DelimitedParser {
-    lazy val DELIMITER = "\t"
-    override val whiteSpace = " ".r
-  }
+  def parseRow(str: String, delimiter: Char) =
+    DelimitedParser2(str, delimiter.toString).parseRow
 
 }
 
-import scala.util.parsing.combinator.RegexParsers
+import org.parboiled2._
+import org.parboiled2.Parser
 
-/**
- * This parser can parse rows with different delimiters
- */
-trait DelimitedParser extends RegexParsers {
-  override val skipWhitespace = false
-  override val whiteSpace = """[ \t]""".r
+case class DelimitedParser2(input: ParserInput, DELIMITER: String, whiteSpace: String = " \t") extends Parser {
 
-  def DELIMITER: String
-  def DQUOTE  = "\""
-  def DQUOTE2 = "\"\"" ^^ { case _ => "\"" }  // combine 2 dquotes into 1
-  def CRLF    = "\r\n" | "\n"
-  def TXT     = s"""[^\"$DELIMITER\r\n]""".r
-  def SPACES  = "[ \t]+".r
+  val DQUOTE = '"'
+  val DELIMITERS = s""""$DELIMITER\r\n"""
+  val WHITESPACE = CharPredicate(whiteSpace)
 
-  def field: Parser[String]            = escaped|nonEscaped
-  def row: Parser[List[String]]        = repsep(field, DELIMITER)
-  def escaped: Parser[String]          = ((SPACES?) ~> DQUOTE ~> ((TXT|DELIMITER|CRLF|DQUOTE2)*) <~ DQUOTE <~ (SPACES?)).map(_.mkString(""))
-  def nonEscaped: Parser[String]       = (TXT*).map(_.mkString(""))
+  def DELIMITER_TOKEN = rule(capture(DELIMITER))
+  def DQUOTE2         = rule("\"\"" ~ push("\""))  // combine 2 dquotes into 1
+  def CRLF            = rule(capture("\r\n" | "\n"))
+  def TXT             = rule(capture(!anyOf(DELIMITERS) ~ ANY))
+  def SPACES          = rule(oneOrMore(WHITESPACE))
 
-  def parseRow(str: String): List[String] = super.parse(row, str).getOrElse(Nil)
+  def escaped    = rule(optional(SPACES) ~ DQUOTE ~ (zeroOrMore(DELIMITER_TOKEN|TXT|CRLF|DQUOTE2) ~ DQUOTE ~ optional(SPACES)) ~> (_.mkString("")))
+  def nonEscaped = rule(zeroOrMore(TXT) ~> (_.mkString("")))
+  def field      = rule(escaped | nonEscaped)
+  def row        = rule(zeroOrMore(field).separatedBy(DELIMITER))
+
+  def parseRow = row.run().toOption.getOrElse(Nil)
 }
-
 
