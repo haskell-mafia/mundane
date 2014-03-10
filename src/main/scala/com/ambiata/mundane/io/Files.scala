@@ -71,6 +71,9 @@ object Files {
       catch {
         case t: Throwable => s"Got exception when trying to list files under ${dir.getPath} - ${t.getMessage}".left
       }
+  
+  def lsFiles(dir: File): String \/ List[File] =
+    ls(dir).map(_.filterNot(_.isDirectory))
 
   def validGzip(f: File): Boolean =
     !gzipError(f).isDefined
