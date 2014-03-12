@@ -2,6 +2,7 @@ libraryDependencies ++= Seq(
     "com.nicta"              %% "rng"                % "1.2.1",
     "joda-time"              %  "joda-time"          % "2.1",
     "org.joda"               %  "joda-convert"       % "1.1",
+    "com.github.scopt"       %% "scopt"              % "3.1.0",
     "com.googlecode.kiama"   %% "kiama"              % "1.5.1",
     "commons-io"             %  "commons-io"         % "2.4",
     "org.parboiled"          %% "parboiled"          % "2.0-M2",
