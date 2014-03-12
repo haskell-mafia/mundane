@@ -11,6 +11,7 @@ class DelimitedSpec extends Specification with ThrownExpectations { def is = s2"
    pipe  $pipe
    comma $comma
    tab   $tab
+   dot   $dot
 
  If a field contains a separator, this field can be protected with quotes $escaped
    empty field $emptyField
@@ -32,6 +33,11 @@ class DelimitedSpec extends Specification with ThrownExpectations { def is = s2"
   def tab = {
     parseTsv("a\tb\tc") must_== List("a", "b", "c")
     parseTsv("a\tb\tc\t") must_== List("a", "b", "c", "")
+  }
+
+  def dot = {
+    parseDot("a.b.c") must_== List("a", "b", "c")
+    parseDot("a.b.c.") must_== List("a", "b", "c", "")
   }
 
   def escaped = {

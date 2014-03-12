@@ -2,16 +2,19 @@ package com.ambiata.mundane.parse
 
 object Delimited {
 
-  def parsePsv(str: String) =
+  def parsePsv(str: String): List[String] =
     DelimitedParser2(str, "|").parseRow
 
-  def parseCsv(str: String) =
+  def parseCsv(str: String): List[String] =
     DelimitedParser2(str, ",").parseRow
 
-  def parseTsv(str: String) =
+  def parseTsv(str: String): List[String] =
     DelimitedParser2(str, "\t", " ").parseRow
 
-  def parseRow(str: String, delimiter: Char) =
+  def parseDot(str: String): List[String] =
+    DelimitedParser2(str, ".", " ").parseRow
+
+  def parseRow(str: String, delimiter: Char): List[String] =
     DelimitedParser2(str, delimiter.toString).parseRow
 
 }
@@ -36,6 +39,6 @@ case class DelimitedParser2(input: ParserInput, DELIMITER: String, whiteSpace: S
   def field      = rule(escaped | nonEscaped)
   def row        = rule(zeroOrMore(field).separatedBy(DELIMITER))
 
-  def parseRow = row.run().toOption.getOrElse(Nil)
+  def parseRow: List[String] = row.run().toOption.getOrElse(Nil).toList
 }
 
