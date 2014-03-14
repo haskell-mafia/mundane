@@ -11,6 +11,7 @@ object build extends Build {
     , settings = standardSettings          
     , aggregate = Seq(cli, control, data, error, io, parse, reflect, testing, time)
     )
+    .dependsOn(cli, control, data, error, io, parse, reflect, testing, time)
 
   lazy val standardSettings = Defaults.defaultSettings ++
                    projectSettings          ++
@@ -66,8 +67,7 @@ object build extends Build {
       name := "mundane-io"
     ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.commonsio ++ depend.specs2 ++ depend.scrutiny)
   )
-  .dependsOn(control)
-  .dependsOn(data)
+  .dependsOn(control, data)
 
   lazy val parse = Project(
     id = "parse"
