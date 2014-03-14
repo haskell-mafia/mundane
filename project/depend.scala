@@ -9,6 +9,7 @@ object depend {
                    , "org.joda"             %  "joda-convert"   % "1.1")
 
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"         
+                   , "org.specs2"           %% "specs2-junit"         
                    , "org.specs2"           %% "specs2-scalacheck").map(_ % "2.3.10")
 
   val parboiled = Seq("org.parboiled"       %% "parboiled"      % "2.0-M2")
