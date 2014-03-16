@@ -1,11 +1,21 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.control._
 import java.io._
 import scalaz._, Scalaz._
 import scalaz.effect._
 
 object Files {
+  def read(file: File, encoding: String = "UTF-8"): ResultT[IO, String] =
+    ResultT.safe[IO, String] { Streams.read(new FileInputStream(file), encoding) }
+
+  def write(file: File, content: String, encoding: String = "UTF-8"): ResultT[IO, Unit] =
+    ResultT.safe[IO, Unit] {
+      Option(file.getParentFile).foreach(_.mkdirs)
+      Streams.write(new FileOutputStream(file), content, encoding)
+    }
+
   def calcChecksum(f: File): String \/ String =
     Checksum.file(f, MD5).map(_.hash.right[String]).except(t => IO { t.getMessage.left[String] }).unsafePerformIO
 
@@ -71,7 +81,7 @@ object Files {
       catch {
         case t: Throwable => s"Got exception when trying to list files under ${dir.getPath} - ${t.getMessage}".left
       }
-  
+
   def lsFiles(dir: File): String \/ List[File] =
     ls(dir).map(_.filterNot(_.isDirectory))
 
@@ -137,10 +147,10 @@ object Files {
     else
       destDir.right
   }
-  
+
   def extractTarballStreamFlat(tarball: InputStream, destDir: File): String \/ File = {
     import scala.sys.process._
-    
+
     val cmd = s"tar xz -C ${destDir.getPath}"
     val sw = new StringWriter
     if(!destDir.exists && !destDir.mkdirs())
