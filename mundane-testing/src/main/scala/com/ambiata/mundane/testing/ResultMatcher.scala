@@ -1,5 +1,4 @@
-package com.ambiata
-package mundane
+package com.ambiata.mundane
 package testing
 
 import control._
