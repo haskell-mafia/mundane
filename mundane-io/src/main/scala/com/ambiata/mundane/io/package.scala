@@ -17,4 +17,7 @@ package object io {
   /** log a value, using the logger coming from the Reader environment */
   def log[R](r: R): IOAction[Unit] =
     IOActions.ask.flatMap(logger => logger(r.toString).liftIO[IOAction])
+
+  implicit def StringToFilePathSyntax(s: String): FilePathSyntax =
+    FilePathSyntax(s)
 }

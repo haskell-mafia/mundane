@@ -1,8 +1,10 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.testing.ResultTIOMatcher._
 import java.io._
 import org.specs2._
+import scalaz._, Scalaz._
 
 class StreamsSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -16,24 +18,23 @@ Streams should be able to:
 
   def read = prop((s: String) => {
     val in = new ByteArrayInputStream(s.getBytes("UTF-8"))
-    Streams.read(in, "UTF-8") === s
+    Streams.read(in, "UTF-8") must beOkValue(s)
   })
 
   def write = prop((s: String) => {
     val out = new ByteArrayOutputStream()
-    Streams.write(out, s)
-    out.toByteArray === s.getBytes("UTF-8")
+    Streams.write(out, s).map(_ => out.toByteArray) must beOkValue(s.getBytes("UTF-8"))
   })
 
   def roundtrip = prop((s: String) => {
     val out = new ByteArrayOutputStream()
-    Streams.write(out, s, "UTF-8")
-    val in = new ByteArrayInputStream(out.toByteArray)
-    Streams.read(in, "UTF-8") === s
+    def in = new ByteArrayInputStream(out.toByteArray)
+    val action = Streams.write(out, s, "UTF-8") >> Streams.read(in, "UTF-8")
+    action must beOkValue(s)
   })
 
   def bytes =  prop((bs: Array[Byte]) => {
     val in = new ByteArrayInputStream(bs)
-    Streams.bytes(in) === bs
+    Streams.readBytes(in) must beOkValue(bs)
   })
 }

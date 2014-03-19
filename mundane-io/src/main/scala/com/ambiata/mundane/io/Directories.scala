@@ -1,37 +1,38 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.control._
+
 import java.io.File
 
 import scalaz._, Scalaz._
 import scalaz.effect._
 
 object Directories {
-  def mkdirs(file: File): IO[Unit] = IO {
-    file.mkdirs
-    ()
-  }
+  def mkdirs(path: FilePath): ResultT[IO, Unit] =
+    ResultT.safe[IO, Boolean] { path.toFile.mkdirs } void
 
-  def list(file: File): IO[List[File]] = IO {
+  def list(path: FilePath): ResultT[IO, List[FilePath]] = ResultT.safe[IO, List[FilePath]] {
     def loop(file: File): List[File] =
       if (file.isDirectory)
         Option(file.listFiles).cata(_.toList, Nil).flatMap(loop)
       else
         List(file)
-    loop(file)
+    loop(path.toFile).map(f => FilePath(f.getPath))
   }
 
-  def delete(file: File): IO[Unit] = IO {
+  def delete(path: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
     def loop(file: File): Unit = {
       if (file.isDirectory)
         Option(file.listFiles).cata(_.toList, Nil).foreach(loop)
       file.delete
       ()
     }
-    loop(file)
+    loop(path.toFile)
   }
 
-  def exists(file: File): IO[Boolean] = IO {
+  def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    val file = path.toFile
     file.exists && file.isDirectory
   }
 }
