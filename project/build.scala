@@ -8,7 +8,7 @@ object build extends Build {
   lazy val mundane = Project(
       id = "mundane"
     , base = file(".")
-    , settings = standardSettings          
+    , settings = standardSettings
     , aggregate = Seq(cli, control, data, error, io, parse, reflect, testing, time)
     )
     .dependsOn(cli, control, data, error, io, parse, reflect, testing, time)
@@ -18,7 +18,7 @@ object build extends Build {
                    compilationSettings      ++
                    testingSettings          ++
                    publishingSettings       ++
-                   packageSettings         
+                   packageSettings
 
   lazy val projectSettings: Seq[Settings] = Seq(
       name := "mundane"
@@ -107,7 +107,7 @@ object build extends Build {
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
     // incOptions := incOptions.value.withNameHashing(true),
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-value-discard"),
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint"),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
@@ -136,9 +136,9 @@ object build extends Build {
     credentials += Credentials(Path.userHome / ".credentials")
   )
 
-  lazy val prompt = shellPrompt in ThisBuild := { state => 
+  lazy val prompt = shellPrompt in ThisBuild := { state =>
     val name = Project.extract(state).currentRef.project
-    (if (name == "mundane") "" else name) + "> " 
+    (if (name == "mundane") "" else name) + "> "
   }
 
 }

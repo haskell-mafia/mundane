@@ -14,29 +14,19 @@ Functions should be composeable with:
 
   def prop_or = prop((f: Int => Boolean, g: Int => Boolean, v: Int) => {
     val actual = (f || g)(v)
-    val lhs = f(v)
-    val expected = if (!lhs) {
-      g(v)
-    } else {
-      lhs
-    }
+    val expected = f(v) || g(v)
     expected === actual
   })
 
   def prop_and = prop((f: Int => Boolean, g: Int => Boolean, v: Int) => {
     val actual = (f && g)(v)
-    val lhs = f(v)
-    val expected = if (lhs) {
-      g(v)
-    } else {
-      lhs
-    }
+    val expected = f(v) && g(v)
     expected === actual
   })
 
   def prop_not = prop((f: Int => Boolean, v: Int) => {
     val actual = (! f)(v)
-    val expected = f(v)
-    !expected === actual
+    val expected = !f(v)
+    expected === actual
   })
 }
