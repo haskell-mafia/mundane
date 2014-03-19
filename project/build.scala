@@ -44,6 +44,15 @@ object build extends Build {
   )
   .dependsOn(error)
 
+  lazy val daemon = Project(
+    id = "daemon"
+  , base = file("mundane-daemon")
+  , settings = standardSettings ++ Seq[Settings](
+      name := "mundane-daemon"
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.scrutiny)
+  )
+  .dependsOn(control, io)
+
   lazy val data = Project(
     id = "data"
   , base = file("mundane-data")
