@@ -5,7 +5,7 @@ import com.ambiata.mundane.control._
 import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => SpecsError, _}
 import scalaz.effect.IO
 
-object ResultTMatcher extends ThrownExpectations {
+object ResultTIOMatcher extends ThrownExpectations {
   def beOk[A]: Matcher[ResultT[IO, A]] =
     beOkLike(_ => Success())
 
