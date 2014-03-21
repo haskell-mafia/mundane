@@ -74,7 +74,7 @@ object build extends Build {
   , base = file("mundane-io")
   , settings = standardSettings ++ Seq[Settings](
       name := "mundane-io"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.commonsio ++ depend.specs2 ++ depend.scrutiny)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++ depend.scrutiny)
   )
   .dependsOn(control, data)
 
