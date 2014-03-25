@@ -5,5 +5,12 @@ mundane
 mundane, adjective, lacking interest or excitement; dull.
 ```
 
-Low-level tools for the ambiata platform. This is for really common bits of
-code that don't have dependencies.
+Low-level scala tools for building applications that might actually work.
+
+Specifically mundane includes basic tools to help with:
+ - parsing
+ - unix tooling
+ - dates & time (via joda)
+ - monad transformer stacks to help deal with java style IO apis
+ - io libraries
+ 
