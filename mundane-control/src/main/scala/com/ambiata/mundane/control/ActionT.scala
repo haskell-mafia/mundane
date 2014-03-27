@@ -61,6 +61,9 @@ object ActionT extends ActionTLowPriority {
   def result[F[+_]: Monad, W: Monoid, R, A](f: R => Result[A]): ActionT[F, W, R, A] =
     ActionT(r => ResultT.result[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
 
+  def resultT[F[+_]: Monad, W: Monoid, R, A](f: R => ResultT[F, A]): ActionT[F, W, R, A] =
+    ActionT(r => ResultT[({ type l[+a] = WriterT[F, W, a] })#l, A](WriterT[F, W, Result[A]](f(r).run.map(a => (Monoid[W].zero, a)))))
+
   def option[F[+_]: Monad, W: Monoid, R, A](f: R => A): ActionT[F, W, R, Option[A]] =
     ActionT(r => ResultT.option[({ type l[+a] = WriterT[F, W, a] })#l, A](f(r)))
 
@@ -126,6 +129,9 @@ trait ActionTSupport[F[+_], W, R] {
 
   def result[A](f: R => Result[A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
     ActionT.result(f)
+
+  def resultT[A](f: R => ResultT[F, A])(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, A] =
+    ActionT.resultT(f)
 
   def option[A](f: R => A)(implicit M: Monad[F], W: Monoid[W]): ActionT[F, W, R, Option[A]] =
     ActionT.option(f)
