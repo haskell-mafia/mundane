@@ -76,6 +76,15 @@ object ResultT extends LowPriorityResultT {
   def fromIO[A](v: IO[A]): ResultT[IO, A] =
     ResultT(v.map(Result.ok))
 
+  def using[A: Resource, B <: A, C](a: ResultT[IO, B])(run: B => ResultT[IO, C]): ResultT[IO, C] =
+    ResultT(a.run.bracket((aa: Result[B]) => aa match {
+      case Error(e) => IO { () }
+      case Ok(aaa) => implicitly[Resource[A]].close(aaa)
+    })((aa: Result[B]) => aa match {
+      case Error(e) => IO { Error(e) }
+      case Ok(aaa) => run(aaa).run
+    }))
+
   implicit def ResultTMonad[F[+_]: Monad]: Monad[({ type l[a] = ResultT[F, a] })#l] =
     new Monad[({ type l[a] = ResultT[F, a] })#l] {
       def point[A](v: => A) = ok[F, A](v)

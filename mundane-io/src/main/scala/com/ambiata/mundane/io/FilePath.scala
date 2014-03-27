@@ -2,6 +2,8 @@ package com.ambiata.mundane
 package io
 
 import java.io._
+import com.ambiata.mundane.control._
+import scalaz.effect.IO
 
 // CONSIDER: Split into directory / files.
 case class FilePath(path: String) {
@@ -20,11 +22,11 @@ case class FilePath(path: String) {
   def toFile: File =
     new File(path)
 
-  def toOutputStream: FileOutputStream =
-    new FileOutputStream(path)
+  def toOutputStream: ResultT[IO, OutputStream] =
+    ResultT.safe { new FileOutputStream(path) }
 
-  def toInputStream: FileInputStream =
-    new FileInputStream(path)
+  def toInputStream: ResultT[IO, InputStream] =
+    ResultT.safe { new FileInputStream(path) }
 
   def </>(path: FilePath): FilePath =
     FilePath(new java.io.File(toFile, path.path).getPath)

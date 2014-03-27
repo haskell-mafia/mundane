@@ -7,7 +7,7 @@ import java.io._
 import java.security.MessageDigest
 
 import scalaz._, Scalaz._, \&/._
-import scalaz.effect._
+import scalaz.effect._, Effect._
 
 case class Checksum(algorithm: ChecksumAlgorithm, hash: String)
 
@@ -19,12 +19,13 @@ object Checksum {
   def toHexString(bytes: Array[Byte]): String =
     bytes.map("%02X".format(_)).mkString.toLowerCase
 
-  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): ResultT[IO, Checksum] = ResultT.safe[IO, Checksum]  { unsafe(is, algorithm, bufferSize) }
+  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): ResultT[IO, Checksum] =
+    ResultT.safe[IO, Checksum]  { unsafe(is, algorithm, bufferSize) }
 
-  def file(f: FilePath, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =  {
-    val in = f.toInputStream
-    stream(in, algorithm)
-  }
+  def file(f: FilePath, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =
+    ResultT.using(f.toInputStream) { in =>
+      stream(in, algorithm)
+    }
 
   def string(s: String, algorithm: ChecksumAlgorithm): Checksum =
     bytes(s.getBytes("UTF-8"), algorithm)

@@ -6,28 +6,30 @@ import java.io._
 import java.nio.file.{Files => NFiles}
 import java.nio.file.StandardCopyOption._
 import scalaz._, Scalaz._
-import scalaz.effect._
+import scalaz.effect._, Effect._
 
 object Files {
   def read(path: FilePath, encoding: String = "UTF-8"): ResultT[IO, String] =
-    Streams.read(path.toInputStream, encoding)
+    ResultT.using(path.toInputStream) { in =>
+      Streams.read(in, encoding) }
 
   def write(path: FilePath, content: String, encoding: String = "UTF-8"): ResultT[IO, Unit] = for {
     _ <- Directories.mkdirs(path.dirname)
-    _ <- Streams.write(path.toOutputStream, content, encoding)
+    _ <- ResultT.using(path.toOutputStream) { out =>
+      Streams.write(out, content, encoding) }
   } yield ()
 
   def readBytes(path: FilePath): ResultT[IO, Array[Byte]] =
-    Streams.readBytes(path.toInputStream)
+    ResultT.using(path.toInputStream)(Streams.readBytes(_))
 
   def writeBytes(path: FilePath, content: Array[Byte]): ResultT[IO, Unit] =  for {
     _ <- Directories.mkdirs(path.dirname)
-    _ <- Streams.writeBytes(path.toOutputStream, content)
+    _ <- ResultT.using(path.toOutputStream)(Streams.writeBytes(_, content))
   } yield ()
 
   def writeStream(path: FilePath, content: InputStream): ResultT[IO, Unit] =  for {
     _ <- Directories.mkdirs(path.dirname)
-    _ <- Streams.pipe(content, path.toOutputStream)
+    _ <- ResultT.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield ()
 
   def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
