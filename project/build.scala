@@ -74,7 +74,7 @@ object build extends Build {
   , base = file("mundane-io")
   , settings = standardSettings ++ Seq[Settings](
       name := "mundane-io"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.commonsio ++ depend.specs2 ++ depend.scrutiny)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++ depend.scrutiny)
   )
   .dependsOn(control, data)
 
@@ -100,9 +100,9 @@ object build extends Build {
   , base = file("mundane-testing")
   , settings = standardSettings ++ Seq[Settings](
       name := "mundane-testing"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2 ++ depend.scrutiny)
   )
-  .dependsOn(control)
+  .dependsOn(control, io)
 
   lazy val time = Project(
     id = "time"

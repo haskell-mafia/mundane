@@ -23,7 +23,7 @@ LineCount
     val tmp = new File(System.getProperty("java.io.tmpdir", "/tmp"))
     val file = new File(tmp, scala.util.Random.nextInt.toString)
     try {
-      Streams.write(new FileOutputStream(file), Lists.prepareForFile(data.map(_.toString)))
+      Streams.write(new FileOutputStream(file), Lists.prepareForFile(data.map(_.toString))).run.unsafePerformIO
       run(file)
     } finally if (file.exists) { file.delete; () }
   }

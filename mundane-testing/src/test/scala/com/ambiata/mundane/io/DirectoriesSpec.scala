@@ -1,10 +1,14 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.testing.ResultTIOMatcher._
+
 import java.util.UUID
 import java.io._
+
 import org.specs2._
 import org.scalacheck._, Arbitrary._
+
 import scalaz._, Scalaz._
 import scalaz.effect.IO
 
@@ -23,37 +27,42 @@ Directories
   implicit def ArbitraryUUID: Arbitrary[UUID] =
     Arbitrary(arbitrary[Int] map (_ => UUID.randomUUID))
 
-  lazy val tmp = new File(System.getProperty("java.io.tmpdir", "/tmp"))
+  lazy val tmp = new File(System.getProperty("java.io.tmpdir", "/tmp")).getPath
 
-  def paths(files: List[File]): List[String] =
-    files.map(_.getAbsolutePath).sorted
+  def paths(files: List[FilePath]): List[FilePath] =
+    files.map(_.absolute).sortBy(_.path)
 
   def list =
     prop((tree: FileTree, uuid: UUID) => {
-      val base = new File(tmp, s"${uuid}")
+      val base = tmp </> s"${uuid}"
       val action = tree.create(base) >> Directories.list(base)
-      try paths(action.unsafePerformIO) must_== paths(tree.files(base))
-      finally Directories.delete(base).unsafePerformIO
+      try action.map(paths) must beOkValue(paths(tree.files(base)))
+      finally clean(base)
     })
 
   def delete =
     prop((tree: FileTree, uuid: UUID) => {
-      val base = new File(tmp, s"${uuid}")
+      val base = tmp </> s"${uuid}"
       val action = tree.create(base) >> Directories.delete(base) >> Directories.exists(base)
-      action.unsafePerformIO must beFalse
+      action must beOkValue(false)
     })
 
   def exists =
     prop((uuid: UUID) => {
-      val base = new File(tmp, s"${uuid}")
+      val base = tmp </> s"${uuid}"
       val action = Directories.mkdirs(base) >> Directories.exists(base)
-      try action.unsafePerformIO must beTrue
-      finally Directories.delete(base).unsafePerformIO
+      try action must beOkValue(true)
+      finally clean(base)
     })
 
   def notExists =
     prop((uuid: UUID) => {
-      val base = new File(tmp, s"${uuid}")
-      Directories.exists(base).unsafePerformIO must beFalse
+      val base = tmp </> s"${uuid}"
+      Directories.exists(base) must beOkValue(false)
     })
+
+  def clean(path: FilePath): Unit = {
+    Directories.delete(path).run.unsafePerformIO
+    ()
+  }
 }

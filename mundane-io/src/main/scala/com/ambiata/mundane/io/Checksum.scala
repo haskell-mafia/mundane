@@ -1,6 +1,8 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.control._
+
 import java.io._
 import java.security.MessageDigest
 
@@ -17,15 +19,18 @@ object Checksum {
   def toHexString(bytes: Array[Byte]): String =
     bytes.map("%02X".format(_)).mkString.toLowerCase
 
-  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): IO[Checksum] = IO { unsafe(is, algorithm, bufferSize) }
+  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): ResultT[IO, Checksum] = ResultT.safe[IO, Checksum]  { unsafe(is, algorithm, bufferSize) }
 
-  def file(f: File, algorithm: ChecksumAlgorithm): IO[Checksum] =  {
-    val in = new FileInputStream(f)
-    stream(in, algorithm).ensuring(IO { in.close() })
+  def file(f: FilePath, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =  {
+    val in = f.toInputStream
+    stream(in, algorithm)
   }
 
   def string(s: String, algorithm: ChecksumAlgorithm): Checksum =
-    unsafe(new ByteArrayInputStream(s.getBytes("UTF-8")), algorithm)
+    bytes(s.getBytes("UTF-8"), algorithm)
+
+  def bytes(bs: Array[Byte], algorithm: ChecksumAlgorithm): Checksum =
+    unsafe(new ByteArrayInputStream(bs), algorithm)
 
   private def unsafe(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): Checksum = {
     val buffer = Array.ofDim[Byte](bufferSize)

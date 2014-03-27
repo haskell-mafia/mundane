@@ -8,13 +8,11 @@ object depend {
   val joda   = Seq(  "joda-time"            %  "joda-time"      % "2.1"
                    , "org.joda"             %  "joda-convert"   % "1.1")
 
-  val specs2 = Seq(  "org.specs2"           %% "specs2-core"         
-                   , "org.specs2"           %% "specs2-junit"         
+  val specs2 = Seq(  "org.specs2"           %% "specs2-core"
+                   , "org.specs2"           %% "specs2-junit"
                    , "org.specs2"           %% "specs2-scalacheck").map(_ % "2.3.10")
 
   val parboiled = Seq("org.parboiled"       %% "parboiled"      % "2.0-M2")
-
-  val commonsio = Seq("commons-io"          %  "commons-io"     % "2.4")
 
   val scrutiny = Seq("com.ambiata"          %% "scrutiny"       % "1.1-20140122014104-1b0d7e9" % "test")
 

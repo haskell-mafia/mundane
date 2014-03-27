@@ -1,38 +1,39 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.control._
 import java.io._
 import org.scalacheck._, Arbitrary._
 import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 sealed trait FileTree {
-  def files(base: File): List[File] =
+  def files(base: FilePath): List[FilePath] =
     this match {
       case FileTreeLeaf(label) =>
-        List(new File(base, label))
+        List(base </> label)
       case FileTreeDirectory(label, children) =>
-        children.flatMap(_.files(new File(base, label)))
+        children.flatMap(_.files(base </> label))
     }
 
-  def dirs(base: File): List[File] =
+  def dirs(base: FilePath): List[FilePath] =
     this match {
       case FileTreeLeaf(label) =>
         List()
       case FileTreeDirectory(label, children) =>
-        val dir = new File(base, label)
+        val dir = base </> label
         dir :: children.flatMap(_.dirs(dir))
     }
 
-  def create(base: File): IO[Unit] =
+  def create(base: FilePath): ResultT[IO, Unit] =
     this match {
       case FileTreeLeaf(label) =>
-        val path = new File(base, label)
-        IO { base.mkdirs; Streams.write(new FileOutputStream(path), s"contents of $label") }
+        val path = base </> label
+        Files.write(path, s"contents of $label")
       case FileTreeDirectory(label, children) =>
-        val path = new File(base, label)
-        IO { new File(base, label).mkdirs } >>
-          children.traverse(_.create(path)).as(())
+        val path = base </> label
+        Directories.mkdirs(path) >>
+          children.traverseU(_.create(path)).void
     }
 }
 
