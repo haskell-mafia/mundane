@@ -12,6 +12,7 @@ class FilePathSpec extends Specification { def is = s2"""
 
  It is possible to get the portion of a FilePath from the root
    ${ FilePath("test/hello/world").fromRoot === FilePath("hello/world") }
+   ${ FilePath("test/hello/world").rootname </> FilePath("test/hello/world").fromRoot === FilePath("test/hello/world") }
 
  It is possible to get a the portion of a FilePath that is relative to another one
    ${ FilePath("test/hello/world/eric").relativeTo(FilePath("test/hello"))  === FilePath("world/eric") }
