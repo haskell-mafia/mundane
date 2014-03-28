@@ -14,7 +14,7 @@ object depend {
 
   val parboiled = Seq("org.parboiled"       %% "parboiled"      % "2.0-M2")
 
-  val scrutiny = Seq("com.ambiata"          %% "scrutiny"       % "1.1-20140122014104-1b0d7e9" % "test")
+  val scrutiny = Seq("com.ambiata"          %% "scrutiny"       % "1.1-20140316092635-8dfec97" % "test")
 
   val rng =      Seq("com.nicta"            %% "rng"            % "1.2.1")
 
