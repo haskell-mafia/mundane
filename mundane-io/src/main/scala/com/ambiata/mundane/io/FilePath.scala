@@ -14,13 +14,19 @@ case class FilePath(path: String) {
     FilePath(toFile.getName)
 
   def dirname: FilePath =
-    FilePath(Option(toFile.getParentFile).map(_.getPath).getOrElse("."))
+    parent.getOrElse(FilePath("."))
+
+  def rootname: FilePath =
+    parent.map(_.rootname).getOrElse(basename)
 
   def absolute: FilePath =
     FilePath(toFile.getAbsolutePath)
 
   def toFile: File =
     new File(path)
+
+  def parent: Option[FilePath] =
+    Option(toFile.getParentFile).map(f => FilePath(f.getPath))
 
   def toOutputStream: ResultT[IO, OutputStream] =
     ResultT.safe { new FileOutputStream(path) }
@@ -33,6 +39,22 @@ case class FilePath(path: String) {
 
   def </>(path: String): FilePath =
     </>(FilePath(path))
+
+  /**
+   * @return the portion of a file path that is relative to another
+   */
+  def relativeTo(other: FilePath): FilePath =
+    FilePath {
+      if (path.startsWith(other.path)) {
+        val relative = path.replace(other.path, "")
+        if (relative.startsWith("/")) relative.drop(1)
+        else                          relative
+      }
+      else path
+    }
+
+  def fromRoot: FilePath =
+    relativeTo(rootname)
 }
 
 case class FilePathSyntax(raw: String) {
