@@ -24,7 +24,7 @@ object build extends Build {
       name := "mundane"
     , version in ThisBuild := "1.2.1"
     , organization := "com.ambiata"
-    , scalaVersion := "2.10.3"
+    , scalaVersion := "2.10.4"
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
