@@ -17,6 +17,12 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
       case Error(e) => Result.these(e).pure[F]
     }))
 
+  def flatMapError[AA >: A](f: These[String, Throwable] => ResultT[F, AA])(implicit F: Monad[F]): ResultT[F, AA] =
+    ResultT(run.flatMap({
+      case Ok(a)    => Ok(a).pure[F]
+      case Error(e) => f(e).run
+    }))
+
   def onResult[B](f: Result[A] => Result[B])(implicit F: Functor[F]): ResultT[F, B] =
     ResultT(run.map(f))
 
