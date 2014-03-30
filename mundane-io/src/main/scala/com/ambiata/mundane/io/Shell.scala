@@ -25,8 +25,9 @@ trait Shell {
           err => resultErr.append(err))
 
         val returnValue = Process(Seq("sh", "-c", cmd + arguments.mkString(" ", " ", "")), None, env.toSeq:_*) ! processLogger
-        if (returnValue == 0) Result.ok(resultOut.mkString("\n"))
-        else                  Result.fail(makeErrorMessage(cmd, commandType, resultErr.mkString("\n"), returnValue, env))
+        val errorMessage = makeErrorMessage(cmd, commandType, resultErr.mkString("\n"), returnValue, env)
+        if (returnValue == 0) Result.ok(resultOut.mkString("\n") + (if (resultErr.nonEmpty) errorMessage  else ""))
+        else                  Result.fail(errorMessage)
       }
     } yield r
 
