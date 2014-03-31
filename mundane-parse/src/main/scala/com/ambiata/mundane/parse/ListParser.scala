@@ -14,6 +14,9 @@ case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, 
       case (_, x, _)   => s"There was more input not consumed: $x".failure
     }
 
+  def preprocess(f: String => String): ListParser[A] =
+    ListParser[A]((i: Int, list: List[String]) => parse(i, list.map(f)))
+
   def map[B](f: A => B): ListParser[B] =
     flatMap(a => ListParser.value(f(a).success))
 
