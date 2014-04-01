@@ -16,8 +16,10 @@ object Directories {
     def loop(file: File): List[File] =
       if (file.isDirectory)
         Option(file.listFiles).cata(_.toList, Nil).flatMap(loop)
-      else
+      else if (file.exists)
         List(file)
+      else
+        List()
     loop(path.toFile).map(f => FilePath(f.getPath))
   }
 
