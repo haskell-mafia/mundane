@@ -144,9 +144,7 @@ object build extends Build {
     publishArtifact in Test := false,
     pomIncludeRepository := { _ => false },
     publishTo <<= version { v =>
-      val artifactory = "http://etd-packaging.research.nicta.com.au/artifactory/"
-      val flavour = if (v.trim.endsWith("SNAPSHOT")) "libs-snapshot-local" else "libs-release-local"
-      val url = artifactory + flavour
+      val url = "http://etd-packaging.research.nicta.com.au/artifactory/libs-release-local"
       val name = "etd-packaging.research.nicta.com.au"
       Some(Resolver.url(name, new URL(url)))
     },
