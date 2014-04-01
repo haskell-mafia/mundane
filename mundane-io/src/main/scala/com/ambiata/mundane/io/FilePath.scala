@@ -55,6 +55,9 @@ case class FilePath(path: String) {
 
   def fromRoot: FilePath =
     relativeTo(rootname)
+
+  override def toString =
+    path
 }
 
 case class FilePathSyntax(raw: String) {
