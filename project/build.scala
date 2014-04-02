@@ -18,7 +18,8 @@ object build extends Build {
                    compilationSettings      ++
                    testingSettings          ++
                    publishingSettings       ++
-                   promulgate.library
+                   promulgate.library       ++
+                   Seq(resolvers ++= depend.resolvers)
 
   lazy val projectSettings: Seq[Settings] = Seq(
       name := "mundane"
@@ -83,9 +84,9 @@ object build extends Build {
   , base = file("mundane-store")
   , settings = standardSettings ++ packageSettings("store") ++ Seq[Settings](
       name := "mundane-store"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.bits ++ depend.stream)
   )
-  .dependsOn(control, data, io)
+  .dependsOn(control, data, io, testing % "test")
 
   lazy val parse = Project(
     id = "parse"
