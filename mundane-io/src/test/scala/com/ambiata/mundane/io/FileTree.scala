@@ -1,5 +1,4 @@
-package com.ambiata.mundane
-package io
+package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
 import java.io._

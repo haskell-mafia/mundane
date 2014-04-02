@@ -49,7 +49,7 @@ object build extends Build {
   , base = file("mundane-daemon")
   , settings = standardSettings ++ lib("daemon") ++ Seq[Settings](
       name := "mundane-daemon"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.scrutiny)
   )
   .dependsOn(control, io)
 
@@ -74,7 +74,7 @@ object build extends Build {
   , base = file("mundane-io")
   , settings = standardSettings ++ lib("io") ++ Seq[Settings](
       name := "mundane-io"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++ depend.scrutiny)
   )
   .dependsOn(control, data, testing % "test")
 
@@ -109,7 +109,7 @@ object build extends Build {
   , base = file("mundane-testing")
   , settings = standardSettings ++ lib("testing") ++ Seq[Settings](
       name := "mundane-testing"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2 ++ depend.scrutiny)
   )
   .dependsOn(control)
 

@@ -60,6 +60,10 @@ case class FilePath(path: String) {
     path
 }
 
+object FilePath {
+  def root: FilePath = FilePath("/")
+}
+
 case class FilePathSyntax(raw: String) {
   def toFilePath =
     FilePath(raw)

@@ -40,4 +40,20 @@ object Files {
     else
       NFiles.move(srcf.toPath, destf.toPath, REPLACE_EXISTING)
   }
+
+  def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    path.toFile.exists
+  }
+
+  def isFile(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    path.toFile.isFile
+  }
+
+  def delete(path: FilePath): ResultT[IO, Unit] = for {
+    e <- exists(path)
+    f <- isFile(path)
+    _ <- if (e && f) ResultT.safe[IO, Boolean] { path.toFile.delete }
+         else if (e) ResultT.fail[IO, Boolean](s"Can't delete <$path>, it is a directory.")
+         else        ResultT.ok[IO, Boolean] { true }
+  } yield ()
 }
