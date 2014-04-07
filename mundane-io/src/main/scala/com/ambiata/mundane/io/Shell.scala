@@ -15,9 +15,9 @@ trait Shell {
   /**
    * execute a shell command
    */
-  def execute(cmd: String, env: Env, commandType: String = "command", arguments: Seq[String] = Seq(), verbose: Boolean = false): IOAction[String] =
+  def execute(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
     for {
-      _ <- if (verbose) log(s"[$commandType] executing command '$cmd'") else IOActions.ok(())
+      _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")}" executing command '$cmd'""") else IOActions.ok(())
       r <- IOActions.result { logger =>
         val resultOut = new scala.collection.mutable.ListBuffer[String]
         val resultErr = new scala.collection.mutable.ListBuffer[String]
@@ -31,7 +31,7 @@ trait Shell {
       }
     } yield r
 
-  private def makeErrorMessage(cmd: String, commandType: String, err: String, returnValue: Int, env: Env): String = {
+  private def makeErrorMessage(cmd: String, commandType: Option[String], err: String, returnValue: Int, env: Env): String = {
     val errString    = if (err.trim.nonEmpty) s"\n the error is $err\n" else ""
     val returnString = if (returnValue != 0) ", the return value is "+returnValue else ""
     val content      = if (new File(cmd).exists)
@@ -40,7 +40,7 @@ trait Shell {
         scriptFileContent(cmd, env)+
         "\n\n================\n\n" else ""
 
-    s"can not execute $commandType: $cmd\n" + returnString + errString + content
+    s"can not execute${commandType.map(" "+_).getOrElse("")}: $cmd\n" + returnString + errString + content
   }
 
   /**
@@ -57,12 +57,12 @@ trait Shell {
   /**
    * execute a shell command remotely
    */
-  def executeRemotely(command: String, env: Env, remote: Remote): IOAction[String] =
-    execute(s"ssh -i ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}@${remote.remoteHost} '$command'", env)
+  def executeRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+    execute(s"ssh -i ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}@${remote.remoteHost} '$command'", env, Seq(), verbose, commandType)
 
   /** upload a file to a remote server */
-  def upload(file: File, destination: String, env: Env, remote: Remote): IOAction[String] =
-    execute(s"scp -i ${remote.remoteKey} -P ${remote.remotePort} ${file.getPath} ${remote.remoteUser}@${remote.remoteHost}:$destination", env)
+  def upload(file: File, destination: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+    execute(s"scp -i ${remote.remoteKey} -P ${remote.remotePort} ${file.getPath} ${remote.remoteUser}@${remote.remoteHost}:$destination", env, Seq(), verbose, commandType)
 
 }
 
