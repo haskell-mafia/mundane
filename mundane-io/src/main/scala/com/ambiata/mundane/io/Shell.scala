@@ -15,9 +15,9 @@ trait Shell {
   /**
    * execute a shell command
    */
-  def execute(cmd: String, env: Env, commandType: String = "command", arguments: Seq[String] = Seq()): IOAction[String] =
+  def execute(cmd: String, env: Env, commandType: String = "command", arguments: Seq[String] = Seq(), verbose: Boolean = false): IOAction[String] =
     for {
-      _ <- log(s"executing command '$cmd'")
+      _ <- if (verbose) log(s"[$commandType] executing command '$cmd'") else IOActions.ok(())
       r <- IOActions.result { logger =>
         val resultOut = new scala.collection.mutable.ListBuffer[String]
         val resultErr = new scala.collection.mutable.ListBuffer[String]
@@ -40,7 +40,7 @@ trait Shell {
         scriptFileContent(cmd, env)+
         "\n\n================\n\n" else ""
 
-    s"can not execute the $commandType: $cmd\n" + returnString + errString + content
+    s"can not execute $commandType: $cmd\n" + returnString + errString + content
   }
 
   /**
