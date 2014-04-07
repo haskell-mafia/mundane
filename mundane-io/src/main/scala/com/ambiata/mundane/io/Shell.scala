@@ -17,7 +17,7 @@ trait Shell {
    */
   def execute(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
     for {
-      _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")}" executing command '$cmd'""") else IOActions.ok(())
+      _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")} executing command '$cmd'""") else IOActions.ok(())
       r <- IOActions.result { logger =>
         val resultOut = new scala.collection.mutable.ListBuffer[String]
         val resultErr = new scala.collection.mutable.ListBuffer[String]
