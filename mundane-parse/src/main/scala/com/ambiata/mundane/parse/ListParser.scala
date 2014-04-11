@@ -68,6 +68,15 @@ object ListParser {
   } yield result
 
   /**
+   * A parser for a Short
+   */
+  def short: ListParser[Short] = for {
+    s         <- string
+    position  <- getPosition
+    result    <- value(s.parseShort.leftMap(_ => s"""Not a short at position $position: '$s'"""))
+  } yield result
+
+  /**
    * A parser for a local date with a given format
    */
   def localDate(format: String): ListParser[LocalDate] = for {
