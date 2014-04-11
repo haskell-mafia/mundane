@@ -104,7 +104,7 @@ object ListParser {
   /**
    * A parser for a local date with the dd/MM/yyyy format
    */
-  def localDateTime: ListParser[LocalDateTime] = localDatetime("yyyy-MM-dd hh:mm:ss")
+  def localDateTime: ListParser[LocalDateTime] = localDatetime("yyyy-MM-dd HH:mm:ss")
 
   /**
    * A parser for a Double
