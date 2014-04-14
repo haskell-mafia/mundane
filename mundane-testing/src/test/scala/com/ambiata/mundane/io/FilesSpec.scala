@@ -1,6 +1,6 @@
 package com.ambiata.mundane.io
 
-import com.ambiata.scrutiny.files._
+import com.ambiata.mundane.testing._
 import com.ambiata.mundane.testing.ResultTIOMatcher._
 
 import java.io._
