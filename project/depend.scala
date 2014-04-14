@@ -11,11 +11,10 @@ object depend {
   val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"  % "0.3.1")
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-junit"
-                   , "org.specs2"           %% "specs2-scalacheck").map(_ % "2.3.10")
+                   , "org.specs2"           %% "specs2-scalacheck"
+                   , "org.specs2"           %% "specs2-matcher-extra").map(_ % "2.3.10")
 
   val parboiled = Seq("org.parboiled"       %% "parboiled"      % "2.0-M2")
-
-  val scrutiny = Seq("com.ambiata"          %% "scrutiny"       % "1.1-20140316092635-8dfec97" % "test")
 
   val rng =      Seq("com.nicta"            %% "rng"            % "1.2.1")
 
@@ -24,6 +23,5 @@ object depend {
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")
     , Resolver.typesafeRepo("releases")
-    , "artifactory"           at "http://etd-packaging.research.nicta.com.au/artifactory/libs-release-local"
     , "Scalaz Bintray Repo"   at "http://dl.bintray.com/scalaz/releases")
 }
