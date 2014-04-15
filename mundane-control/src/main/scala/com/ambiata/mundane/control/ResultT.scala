@@ -46,6 +46,9 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
 
   def |||[AA >: A](otherwise: => ResultT[F, AA])(implicit F: Monad[F]): ResultT[F, AA] =
     ResultT[F, AA](isOk.flatMap(ok => if (ok) this.run else otherwise.run))
+
+  def zip[B](other: ResultT[F, B])(implicit F: Monad[F]): ResultT[F, (A, B)] =
+    flatMap(a => other.map(a -> _))
 }
 
 object ResultT extends LowPriorityResultT {

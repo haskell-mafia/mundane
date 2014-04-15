@@ -6,7 +6,10 @@ import org.scalacheck._, Arbitrary._
 import scalaz._, Scalaz._
 import scalaz.effect.IO
 
-case class Entry(path: String, value: Int)
+case class Entry(path: String, value: Int) {
+  def full =
+    path + "/" + value.toString
+}
 case class Paths(entries: List[Entry])
 
 object Paths {
@@ -46,9 +49,14 @@ object Paths {
       } yield children)
     )
 
-  implicit def EntryArbitrary: Arbitrary[Entry] =
-    Arbitrary(for { prefix <- path; e <- entriy(prefix) } yield e)
 
   implicit def PathsArbitrary: Arbitrary[Paths] =
     Arbitrary(for { prefix <- path; es <- entries(prefix) } yield Paths(es))
+}
+
+object Entry {
+  import Paths._
+
+  implicit def EntryArbitrary: Arbitrary[Entry] =
+    Arbitrary(for { prefix <- path; e <- entry(prefix) } yield e)
 }

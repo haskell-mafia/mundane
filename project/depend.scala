@@ -8,7 +8,7 @@ object depend {
   val joda   = Seq(  "joda-time"            %  "joda-time"      % "2.1"
                    , "org.joda"             %  "joda-convert"   % "1.1")
   val bits   = Seq(  "org.typelevel"        %% "scodec-bits"    % "1.0.0")
-  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"  % "0.3.1")
+  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"  % "0.4")
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-junit"
                    , "org.specs2"           %% "specs2-scalacheck"

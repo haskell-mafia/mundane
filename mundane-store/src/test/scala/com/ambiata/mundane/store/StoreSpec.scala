@@ -1,6 +1,8 @@
 package com.ambiata.mundane.store
 
+import scala.io.Codec
 import scalaz.{Store => _, _}, Scalaz._, \&/._, effect.IO
+import scodec.bits.ByteVector
 import org.specs2._
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.io._
@@ -26,7 +28,9 @@ class StoreSpec extends Specification with ScalaCheck { def is = isolated ^ s2""
   deleteAll                                       $deleteAll
 
   move                                            $move
+  move and read                                   $moveRead
   copy                                            $copy
+  copy and read                                   $copyRead
   mirror                                          $mirror
 
   moveTo                                          $moveTo
@@ -35,28 +39,22 @@ class StoreSpec extends Specification with ScalaCheck { def is = isolated ^ s2""
 
   checksum                                        $checksum
 
-  read bytes                                      $readBytes
-  write bytes                                     $writeBytes
+  read / write bytes                              $bytes
 
-  read strings                                    $readStrings
-  write strings                                   $writeStrings
+  read / write strings                            $strings
 
-  read utf8 strings                               $readUtf8Strings
-  write utf8 strings                              $writeUtf8Strings
+  read / write utf8 strings                       $utf8Strings
 
-  read lines                                      $readLines
-  write lines                                     $writeLines
+  read / write lines                              $lines
 
-  read utf8 lines                                 $readUtf8Lines
-  write utf8 lines                                $writeUtf8Lines
-
-  read unsafe                                     $readUnsafe
-  write unsafe                                    $writeUnsafe
+  read / write utf8 lines                         $utf8Lines
 
   """
 
-  val tmp = System.getProperty("java.io.tmpdir", "/tmp") </> s"StoreSpec.${UUID.randomUUID}"
-  val store = PosixStore(tmp)
+  val tmp1 = System.getProperty("java.io.tmpdir", "/tmp") </> s"StoreSpec.${UUID.randomUUID}"
+  val tmp2 = System.getProperty("java.io.tmpdir", "/tmp") </> s"StoreSpec.${UUID.randomUUID}"
+  val store = PosixStore(tmp1)
+  val alternate = PosixStore(tmp2)
 
   def list =
     prop((paths: Paths) => clean(paths) { filepaths =>
@@ -99,75 +97,77 @@ class StoreSpec extends Specification with ScalaCheck { def is = isolated ^ s2""
       (store.deleteAll(FilePath.root) >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
 
   def move =
-    prop((m: Entry, n: Entry) => clean(Paths(m)) { _ =>
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.move(m.full.toFilePath, n.full.toFilePath) >>
+       store.exists(m.full.toFilePath).zip(store.exists(n.full.toFilePath))) must beOkValue(false -> true) })
 
-      (store.deleteAll(FilePath.root) >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
-    pending
+  def moveRead =
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.move(m.full.toFilePath, n.full.toFilePath) >>
+       store.utf8.read(n.full.toFilePath)) must beOkValue(m.value.toString) })
 
   def copy =
-    pending
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.copy(m.full.toFilePath, n.full.toFilePath) >>
+       store.exists(m.full.toFilePath).zip(store.exists(n.full.toFilePath))) must beOkValue(true -> true) })
+
+  def copyRead =
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.copy(m.full.toFilePath, n.full.toFilePath) >>
+       store.utf8.read(m.full.toFilePath).zip(store.utf8.read(n.full.toFilePath))) must beOkLike({ case (in, out) => in must_== out }) })
 
   def mirror =
-    pending
+    prop((paths: Paths) => clean(paths) { filepaths =>
+      store.mirror(FilePath.root, FilePath.root </> "mirror") >> store.list(FilePath.root </> "mirror") must beOkValue(filepaths.map("mirror" </> _)) })
 
   def moveTo =
-    pending
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.moveTo(alternate, m.full.toFilePath, n.full.toFilePath) >>
+       store.exists(m.full.toFilePath).zip(alternate.exists(n.full.toFilePath))) must beOkValue(false -> true) })
 
   def copyTo =
-    pending
+    prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
+      (store.copyTo(alternate, m.full.toFilePath, n.full.toFilePath) >>
+       store.exists(m.full.toFilePath).zip(alternate.exists(n.full.toFilePath))) must beOkValue(true -> true) })
 
   def mirrorTo =
-    pending
+    prop((paths: Paths) => clean(paths) { filepaths =>
+      store.mirrorTo(alternate, FilePath.root, FilePath.root </> "mirror") >> alternate.list(FilePath.root </> "mirror") must beOkValue(filepaths.map("mirror" </> _)) })
 
   def checksum =
-    pending
+    prop((m: Entry) => clean(Paths(m :: Nil)) { _ =>
+      store.checksum(m.full.toFilePath, MD5) must beOkValue(Checksum.string(m.value.toString, MD5)) })
 
-  def readBytes =
-    pending
+  def bytes =
+    prop((m: Entry, bytes: Array[Byte]) => clean(Paths(m :: Nil)) { _ =>
+      (store.bytes.write(m.full.toFilePath, ByteVector(bytes)) >> store.bytes.read(m.full.toFilePath)) must beOkValue(ByteVector(bytes)) })
 
-  def writeBytes =
-    pending
+  def strings =
+    prop((m: Entry, s: String) => clean(Paths(m :: Nil)) { _ =>
+      (store.strings.write(m.full.toFilePath, s, Codec.UTF8) >> store.strings.read(m.full.toFilePath, Codec.UTF8)) must beOkValue(s) })
 
-  def readStrings =
-    pending
+  def utf8Strings =
+    prop((m: Entry, s: String) => clean(Paths(m :: Nil)) { _ =>
+      (store.utf8.write(m.full.toFilePath, s) >> store.utf8.read(m.full.toFilePath)) must beOkValue(s) })
 
-  def writeStrings =
-    pending
+  def lines =
+    prop((m: Entry, s: List[Int]) => clean(Paths(m :: Nil)) { _ =>
+      (store.lines.write(m.full.toFilePath, s.map(_.toString), Codec.UTF8) >> store.lines.read(m.full.toFilePath, Codec.UTF8)) must beOkValue(s.map(_.toString)) })
 
-  def readUtf8Strings =
-    pending
-
-  def writeUtf8Strings =
-    pending
-
-  def readLines =
-    pending
-
-  def writeLines =
-    pending
-
-  def readUtf8Lines =
-    pending
-
-  def writeUtf8Lines =
-    pending
-
-  def readUnsafe =
-    pending
-
-  def writeUnsafe =
-    pending
+  def utf8Lines =
+    prop((m: Entry, s: List[Int]) => clean(Paths(m :: Nil)) { _ =>
+      (store.linesUtf8.write(m.full.toFilePath, s.map(_.toString)) >> store.linesUtf8.read(m.full.toFilePath)) must beOkValue(s.map(_.toString)) })
 
   def files(paths: Paths): List[FilePath] =
-    paths.entries.map(e => e.path.toFilePath </> e.value.toString).sortBy(_.path)
+    paths.entries.map(e => e.full.toFilePath).sortBy(_.path)
 
   def create(paths: Paths): ResultT[IO, Unit] =
     paths.entries.traverseU(e =>
-      Files.write(tmp </> e.path </> e.value.toString, e.value.toString)).void
+      Files.write(tmp1 </> e.full, e.value.toString)).void
 
   def clean[A](paths: Paths)(run: List[FilePath] => A): A = {
     create(paths).run.unsafePerformIO
     try run(files(paths))
-    finally Directories.delete(tmp).run.unsafePerformIO
+    finally (Directories.delete(tmp1) >> Directories.delete(tmp2)).run.unsafePerformIO
   }
 }

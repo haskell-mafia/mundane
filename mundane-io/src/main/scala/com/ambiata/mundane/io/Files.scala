@@ -37,8 +37,21 @@ object Files {
     val destf = dest.toFile
     if (destf.isDirectory)
       NFiles.move(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
-    else
+    else {
+      destf.getParentFile.mkdirs
       NFiles.move(srcf.toPath, destf.toPath, REPLACE_EXISTING)
+    }
+  }
+
+  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
+    val srcf = src.toFile
+    val destf = dest.toFile
+    if (destf.isDirectory)
+      NFiles.copy(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
+    else {
+      destf.getParentFile.mkdirs
+      NFiles.copy(srcf.toPath, destf.toPath, REPLACE_EXISTING)
+    }
   }
 
   def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
