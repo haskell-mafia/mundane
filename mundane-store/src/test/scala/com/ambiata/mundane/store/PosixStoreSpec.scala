@@ -10,10 +10,9 @@ import com.ambiata.mundane.testing._, ResultTIOMatcher._
 import java.io.{File, FileOutputStream, ByteArrayInputStream}
 import java.util.UUID
 
-
-class StoreSpec extends Specification with ScalaCheck { def is = isolated ^ s2"""
-  Store Usage
-  ==========
+class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^ s2"""
+  Posix Store Usage
+  =================
 
   list path                                       $list
   filter listed paths                             $filter

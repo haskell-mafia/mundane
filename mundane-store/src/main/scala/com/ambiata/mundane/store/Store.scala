@@ -6,16 +6,16 @@ import scala.io.Codec
 import scalaz._, Scalaz._, scalaz.stream._, scalaz.concurrent._
 import scodec.bits.ByteVector
 
-trait Store[F[_]] {
-  def readOnly: ReadOnlyStore[F]
+trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
+  val bytes: StoreBytes[F]
+  val strings: StoreStrings[F]
+  val utf8: StoreUtf8[F]
+  val lines: StoreLines[F]
+  val linesUtf8: StoreLinesUtf8[F]
+  val unsafe: StoreUnsafe[F]
+}
 
-  def list(prefix: FilePath): F[List[FilePath]]
-
-  def filter(prefix: FilePath, predicate: FilePath => Boolean): F[List[FilePath]]
-  def find(prefix: FilePath, predicate: FilePath => Boolean): F[Option[FilePath]]
-
-  def exists(path: FilePath): F[Boolean]
-
+trait WriteOnlyStore[F[_]] {
   def delete(path: FilePath): F[Unit]
   def deleteAll(prefix: FilePath): F[Unit]
 
@@ -23,18 +23,12 @@ trait Store[F[_]] {
   def copy(in: FilePath, out: FilePath): F[Unit]
   def mirror(in: FilePath, out: FilePath): F[Unit]
 
-  def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
-  def copyTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
-  def mirrorTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
-
-  def checksum(path: FilePath, algorithm: ChecksumAlgorithm): F[Checksum]
-
-  val bytes: StoreBytes[F]
-  val strings: StoreStrings[F]
-  val utf8: StoreUtf8[F]
-  val lines: StoreLines[F]
-  val linesUtf8: StoreLinesUtf8[F]
-  val unsafe: StoreUnsafe[F]
+  val bytes: StoreBytesWrite[F]
+  val strings: StoreStringsWrite[F]
+  val utf8: StoreUtf8Write[F]
+  val lines: StoreLinesWrite[F]
+  val linesUtf8: StoreLinesUtf8Write[F]
+  val unsafe: StoreUnsafeWrite[F]
 }
 
 trait ReadOnlyStore[F[_]] {
