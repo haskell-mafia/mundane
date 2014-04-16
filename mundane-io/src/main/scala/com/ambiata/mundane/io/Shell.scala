@@ -69,6 +69,12 @@ trait Shell {
   def executeRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
     execute(s"ssh -i ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}@${remote.remoteHost} '$command'", env, Seq(), verbose, commandType)
 
+  /**
+   * attempt a shell command remotely
+   */
+  def attemptRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[(Int, List[String], List[String])] =
+    attempt(s"ssh -i ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}@${remote.remoteHost} '$command'", env, Seq(), verbose, commandType)
+
   /** upload a file to a remote server */
   def upload(file: File, destination: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
     execute(s"scp -i ${remote.remoteKey} -P ${remote.remotePort} ${file.getPath} ${remote.remoteUser}@${remote.remoteHost}:$destination", env, Seq(), verbose, commandType)
