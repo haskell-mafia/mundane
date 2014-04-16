@@ -16,6 +16,17 @@ trait Shell {
    * execute a shell command
    */
   def execute(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+    attempt(cmd, env, arguments, verbose, commandType).flatMap({
+      case (returnValue, out, err) =>
+        val dud = makeErrorMessage(cmd, commandType, err.mkString("\n"), returnValue, env)
+        if (returnValue == 0) IOActions.ok(out.mkString("\n") + (if (err.isEmpty) "" else dud))
+        else                  IOActions.fail(dud)
+    })
+
+  /**
+   * execute a shell command
+   */
+  def attempt(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[(Int, List[String], List[String])] =
     for {
       _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")} executing command '$cmd'""") else IOActions.ok(())
       r <- IOActions.result { logger =>
@@ -25,9 +36,7 @@ trait Shell {
           err => resultErr.append(err))
 
         val returnValue = Process(Seq("sh", "-c", cmd + arguments.mkString(" ", " ", "")), None, env.toSeq:_*) ! processLogger
-        val errorMessage = makeErrorMessage(cmd, commandType, resultErr.mkString("\n"), returnValue, env)
-        if (returnValue == 0) Result.ok(resultOut.mkString("\n") + (if (resultErr.nonEmpty) errorMessage  else ""))
-        else                  Result.fail(errorMessage)
+        Result.ok((returnValue, resultOut.toList, resultErr.toList))
       }
     } yield r
 
@@ -87,4 +96,3 @@ case class Remote(host: Option[String] = None, user: Option[String] = None, key:
   override def toString =
     s"host $remoteHost (user=$remoteUser, key=$remoteKey, port=$remotePort)"
 }
-
