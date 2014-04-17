@@ -30,10 +30,10 @@ trait Shell {
     for {
       _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")} executing command '$cmd'""") else IOActions.ok(())
       r <- IOActions.result { logger =>
-        val out = new scala.collection.mutable.ListBuffer[String]
-        val err = new scala.collection.mutable.ListBuffer[String]
+        val resultOut = new scala.collection.mutable.ListBuffer[String]
+        val resultErr = new scala.collection.mutable.ListBuffer[String]
         val processLogger = ProcessLogger(out => { logger(out).unsafePerformIO; resultOut.append(out) },
-          err => logger(err).unsafePerformIO; erresultErr.append(err))
+          err => { logger(err).unsafePerformIO; resultErr.append(err) })
 
         val returnValue = Process(Seq("sh", "-c", cmd + arguments.mkString(" ", " ", "")), None, env.toSeq:_*) ! processLogger
         Result.ok((returnValue, resultOut.toList, resultErr.toList))
