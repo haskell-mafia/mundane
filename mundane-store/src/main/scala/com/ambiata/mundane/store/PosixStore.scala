@@ -8,6 +8,7 @@ import scala.io.Codec
 import scalaz._, Scalaz._, scalaz.stream._, scalaz.concurrent._, effect.IO, effect.Effect._
 import scodec.bits.ByteVector
 
+// FIX pull out "derived" functions so the implementation can be shared with s3/hdfs impls.
 case class PosixStore(root: FilePath) extends Store[ResultTIO] with ReadOnlyStore[ResultTIO] {
   def readOnly: ReadOnlyStore[ResultTIO] =
     this

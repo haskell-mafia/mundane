@@ -11,14 +11,14 @@ object Streams {
   def read(in: InputStream, encoding: String = "UTF-8"): ResultT[IO, String] =
     readBytes(in).map(new String(_, encoding))
 
-  def write(out: OutputStream, data: String, encoding: String = "UTF-8"): ResultT[IO, Unit] = 
+  def write(out: OutputStream, data: String, encoding: String = "UTF-8"): ResultT[IO, Unit] =
     ResultT.safe(writeToStream(out, data, encoding))
-  
+
   def writeToStream(out: OutputStream, data: String, encoding: String = "UTF-8") = {
     val writer = new PrintStream(out, false, encoding)
     try     writer.print(data)
     finally writer.close
-  } 
+  }
 
   def readBytes(in: InputStream, chunksize: Int = DefaultChunkSize): ResultT[IO, Array[Byte]] =
     ResultT.safe(readFromStream(in, chunksize))
