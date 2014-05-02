@@ -18,7 +18,7 @@ object depend {
 
   val rng =      Seq("com.nicta"            %% "rng"            % "1.2.1")
 
-  val kiama =    Seq("com.googlecode.kiama" %% "kiama"          % "1.5.1")
+  val kiama =    Seq("com.googlecode.kiama" %% "kiama"          % "1.5.2")
 
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")
