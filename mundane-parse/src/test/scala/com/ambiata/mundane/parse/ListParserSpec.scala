@@ -3,28 +3,30 @@ package parse
 
 import scalaz._, Scalaz._
 import org.specs2._
-import org.specs2.matcher.ThrownExpectations
+import org.specs2.matcher.{ValueCheck, Matcher, ThrownExpectations}
 import ListParser._
 import org.joda.time._
 
 class ListParserSpec extends Specification with ThrownExpectations { def is = s2"""
 
- Parsing a list can:
-   extract the position of each element $position1
-   extract a string                     $string1
-   extract a nonempty string            $nonemptystring1
-   extract an int                       $int1
-   extract a short                      $short1
-   extract a double                     $double1
-   extract a LocalDate                  $localDate1
-   consume elements                     $consume1
-   consume all remaining elements       $consume2
-   lift a value                         $value1
-   lift a validation                    $validation1
-   extract multiple values              $multi1
-   error if not parsed all elements     $leftover1
-   preprocess the input string          $preprocess1
-                                        """
+ Parsing a list will:
+   extract the position of each element                                             $position1
+   extract a string                                                                 $string1
+   extract a nonempty string                                                        $nonemptystring1
+   extract an int                                                                   $int1
+   extract a short                                                                  $short1
+   extract a double                                                                 $double1
+   extract a LocalDate                                                              $localDate1
+   consume elements                                                                 $consume1
+   consume all remaining elements                                                   $consume2
+   lift a value                                                                     $value1
+   lift a validation                                                                $validation1
+   extract multiple values                                                          $multi1
+   error if not parsed all elements                                                 $leftover1
+   preprocess the input string                                                      $preprocess1
+
+   return a message containing the full list and the first failure if parsing fails $fail1
+                                                                                    """
 
   def position1 = {
     getPosition.run(List()).toOption must beSome(0)
@@ -52,7 +54,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
     (for {
       i1 <- int
       i2 <- int
-    } yield (i1, i2)).run(List("2", "a")).toEither must beLeft("""Not an int at position 2: 'a'""")
+    } yield (i1, i2)).parse(List("2", "a")) must failAt(2, "not an int: 'a'")
   }
 
   def short1 = {
@@ -66,7 +68,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
     (for {
       s1 <- short
       s2 <- short
-    } yield (s1, s2)).run(List("2", "a")).toEither must beLeft("""Not a short at position 2: 'a'""")
+    } yield (s1, s2)).parse(List("2", "a")) must failAt(2, "not a short: 'a'")
   }
 
   def double1 = {
@@ -78,7 +80,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
     (for {
       d1 <- double
       d2 <- double
-    } yield (d1, d2)).run(List("2", "a")).toEither must beLeft("""Not a double at position 2: 'a'""")
+    } yield (d1, d2)).parse(List("2", "a")) must failAt(2, "not a double: 'a'")
   }
 
   def localDate1 = {
@@ -89,7 +91,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
     (for {
       i1 <- int
       i2 <- localDate
-    } yield (i1, i2)).run(List("2", "blah")).toEither must beLeft(startWith("""Not a local date with format yyyy-MM-dd at position 2: 'blah'"""))
+    } yield (i1, i2)).parse(List("2", "blah")) must failAt(2, startWith("not a local date with format yyyy-MM-dd: 'blah'"))
   }
 
 
@@ -118,9 +120,35 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
   } yield (s1, i, s2)).run(List("a", "1", "b")).toOption must beSome(("a", 1, "b"))
 
   def leftover1 =
-    string.run(List("a", "b")).toEither must beLeft("There was more input not consumed: List(b)")
+    string.run(List("a", "b")).toEither must beLeft(
+      """|Parsed successfully: List(a, b) up to position 1
+         | -> but the rest of the list was not consumed: List(b)""".stripMargin)
 
   def preprocess1 =
     string.preprocess(_ => "b").run(List("a")).toOption must beSome("b")
+
+  def fail1 = {
+    val parser = for {
+      s1 <- string
+      i  <- int
+      s2 <- string
+    } yield (s1, i, s2)
+
+    parser.run(List("aaaaaaaaaaaaaaa", "bbb", "ccccc")).toEither.leftMap(_.replace(" ", "_")) must beLeft(
+      """|aaaaaaaaaaaaaaa, bbb, ccccc
+         |                  ^
+         |          not an int: 'bbb' (position: 2)""".stripMargin.replace(" ", "_"))
+  }
+
+
+  /**
+   * TEST METHODS
+   */
+  def failAt[A](position: Int, check: ValueCheck[String]): Matcher[ParseResult[A]] =  { result: ParseResult[A] =>
+    result.toEither must beLeft { r: (Int, String) =>
+      { r._1 must_== position } and check.check(r._2)
+    }
+  }
+
 
 }

@@ -3,15 +3,43 @@ package com.ambiata.mundane.parse
 import scalaz._, Scalaz._
 import org.joda.time._
 import format.DateTimeFormat
+import scalaz.Failure
+import scala.Some
+import scalaz.Success
+import ListParser._
 
 /**
  * Parser for a list of strings, returning a Failure[String] if the parse failed, or an object A
  */
-case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, List[String], A)]) {
+case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
+  def parse(input: List[String]): ParseResult[A] =
+    parse(0, input)
+
   def run(input: List[String]): Validation[String, A] =
-    parse(0, input).flatMap {
-      case (_, Nil, a) => a.success
-      case (_, x, _)   => s"There was more input not consumed: $x".failure
+    parse(input) match {
+      case Success(s) =>
+        s match {
+          case (_, Nil, a) => a.success
+          case (p, x, _)   =>
+            s"""|Parsed successfully: $input up to position $p
+                | -> but the rest of the list was not consumed: $x""".stripMargin.failure
+
+        }
+
+      case Failure((i, f)) =>
+        input match {
+          case Nil => Failure(f)
+          case head :: rest =>
+            val caretPosition = input.take(i - 1).map(_.size + 2).sum + input(i - 1).size / 2
+            val messagePosition = scala.math.max(0, caretPosition - (f.size / 2))
+            val finalMessage =
+              input.mkString(", ") + "\n" +
+              (" " * caretPosition) + "^\n" +
+              (" " * messagePosition) + f + s" (position: $i)"
+
+            finalMessage.failure
+        }
+
     }
 
   def preprocess(f: String => String): ListParser[A] =
@@ -29,7 +57,7 @@ case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, 
 
   def nonempty(implicit ev: A =:= String) =
     flatMap(a => ListParser((position, state) =>
-      if(ev(a).isEmpty) s"Expected string at position $position to be non empty".failure
+      if (ev(a).isEmpty) (position, s"Expected string at position $position to be non empty").failure
       else (position, state, a).success
     ))
 
@@ -51,6 +79,8 @@ case class ListParser[A](parse: (Int, List[String]) => Validation[String, (Int, 
  * Standard List parsers
  */
 object ListParser {
+  type ParseResult[A] = Validation[(Int, String), (Int, List[String], A)]
+
   /**
    * a parser returning the current position (1-based) but does not consume any input
    * If the input has no elements the position is 0
@@ -64,7 +94,7 @@ object ListParser {
   def int: ListParser[Int] = for {
     s         <- string
     position  <- getPosition
-    result    <- value(s.parseInt.leftMap(_ => s"""Not an int at position $position: '$s'"""))
+    result    <- value(s.parseInt.leftMap(_ => s"""not an int: '$s'"""))
   } yield result
 
   /**
@@ -73,7 +103,7 @@ object ListParser {
   def short: ListParser[Short] = for {
     s         <- string
     position  <- getPosition
-    result    <- value(s.parseShort.leftMap(_ => s"""Not a short at position $position: '$s'"""))
+    result    <- value(s.parseShort.leftMap(_ => s"""not a short: '$s'"""))
   } yield result
 
   /**
@@ -83,7 +113,7 @@ object ListParser {
     s        <- string
     position <- getPosition
     result   <- value(DateTimeFormat.forPattern(format).parseLocalDate(s),
-                      { t => s"""Not a local date with format $format at position $position: '$s'""" })
+                      { t => s"""not a local date with format $format: '$s'""" })
   } yield result
 
   /**
@@ -98,7 +128,7 @@ object ListParser {
     s        <- string
     position <- getPosition
     result   <- value(DateTimeFormat.forPattern(format).parseLocalDateTime(s),
-                      { t => s"""Not a local date time with format $format at position $position: '$s'""" })
+                      { t => s"""not a local date time with format $format: '$s'""" })
   } yield result
 
   /**
@@ -112,7 +142,7 @@ object ListParser {
   def double: ListParser[Double] = for {
     s         <- string
     position  <- getPosition
-    result    <- value(s.parseDouble.leftMap(_ => s"""Not a double at position $position: '$s'"""))
+    result    <- value(s.parseDouble.leftMap(_ => s"""not a double: '$s'"""))
   } yield result
 
   /**
@@ -121,7 +151,7 @@ object ListParser {
   def boolean: ListParser[Boolean] = for {
     s         <- string
     position  <- getPosition
-    result    <- value(s.parseBoolean.leftMap(_ => s"""Not a boolean at position $position: '$s'"""))
+    result    <- value(s.parseBoolean.leftMap(_ => s"""not a boolean: '$s'"""))
   } yield result
 
   /**
@@ -130,14 +160,14 @@ object ListParser {
   def string: ListParser[String] =
     ListParser((pos, str) => str match {
       case h :: t => (pos + 1, t, h).success
-      case Nil    => s"Not enough input, expected more than $pos fields.".failure
+      case Nil    => (pos, s"not enough input, expected more than $pos fields.").failure
     })
 
   /**
    * A parser for a value of type A
    */
   def value[A](f: =>Validation[String, A]): ListParser[A] =
-    ListParser((position, str) => f.map((position, str, _)))
+    ListParser((position, str) => f.bimap((position,_), (position, str, _)))
 
   /**
    * A parser for a value of type A with a failure message in case of an exception
@@ -153,7 +183,7 @@ object ListParser {
       val nupos = pos + n
       str.length match {
         case l if n <= l => (nupos, str.slice(n, l), ()).success
-        case _           => s"Not enough input, expected more than $nupos.".failure
+        case _           => (nupos, s"not enough input, expected more than $nupos.").failure
       }
     })
 
