@@ -123,6 +123,17 @@ trait ActionTLowPriority {
       def point[A](a: => A) = ActionT.ok[F, W, R, A](a)
       def liftIO[A](a: IO[A]) = ActionT.fromIO[F, W, R, A](a)
     }
+
+  implicit def ActionTMonadPlus[F[+_]: MonadIO, W: Monoid, R]: MonadPlus[({ type l[a] = ActionT[F, W, R, a] })#l] =
+    new MonadPlus[({ type l[a] = ActionT[F, W, R, a] })#l] {
+      type M[A] = ActionT[F, W, R, A]
+      val monad = implicitly[MonadIO[M]]
+      def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) =
+        monad.bind(a)(f)
+      def point[A](a: => A) = monad.point(a)
+      def empty[A] = ActionT.fail[F, W, R, A]("fail")
+      def plus[A](fa: M[A], fb: =>M[A]): M[A] = fa >> fb
+    }
 }
 
 
