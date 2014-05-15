@@ -132,7 +132,7 @@ trait ActionTLowPriority {
         monad.bind(a)(f)
       def point[A](a: => A) = monad.point(a)
       def empty[A] = ActionT.fail[F, W, R, A]("fail")
-      def plus[A](fa: M[A], fb: =>M[A]): M[A] = fa >> fb
+      def plus[A](fa: M[A], fb: =>M[A]): M[A] = monad.bind(fa)(_ => fb)
     }
 }
 
