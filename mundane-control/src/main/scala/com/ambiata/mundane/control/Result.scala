@@ -118,6 +118,18 @@ object Result {
   def fromDisjunction[A](v: These[String, Throwable] \/ A): Result[A] =
     v.fold(these, ok)
 
+  def fromEitherString[A](v: Either[String, A]): Result[A] =
+    v.fold(fail, ok)
+
+  def fromEitherThrowable[A](v: Either[Throwable, A]): Result[A] =
+    v.fold(exception, ok)
+
+  def fromDisjunctionString[A](v: String \/ A): Result[A] =
+    v.fold(fail, ok)
+
+  def fromDisjunctionThrowable[A](v: Throwable \/ A): Result[A] =
+    v.fold(exception, ok)
+
   def asString(these: These[String, Throwable]) = these match {
     case (This(m)) => m
     case (That(t)) => Throwables.renderWithStack(t)
