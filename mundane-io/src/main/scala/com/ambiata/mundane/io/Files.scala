@@ -13,6 +13,9 @@ object Files {
     ResultT.using(path.toInputStream) { in =>
       Streams.read(in, encoding) }
 
+  def readLines(path: FilePath, encoding: String = "UTF-8"): ResultT[IO, Vector[String]] =
+    read(path, encoding).map(_.split("\n").toVector)
+
   def write(path: FilePath, content: String, encoding: String = "UTF-8"): ResultT[IO, Unit] = for {
     _ <- Directories.mkdirs(path.dirname)
     _ <- ResultT.using(path.toOutputStream) { out =>
@@ -22,7 +25,12 @@ object Files {
   def readBytes(path: FilePath): ResultT[IO, Array[Byte]] =
     ResultT.using(path.toInputStream)(Streams.readBytes(_))
 
-  def writeBytes(path: FilePath, content: Array[Byte]): ResultT[IO, Unit] =  for {
+  def writeLines(path: FilePath, content: Seq[String], encoding: String = "UTF-8"): ResultT[IO, Unit] = for {
+    _ <- Directories.mkdirs(path.dirname)
+    _ <- ResultT.using(path.toOutputStream)(Streams.write(_, content.mkString("\n"), encoding))
+  } yield ()
+
+  def writeBytes(path: FilePath, content: Array[Byte]): ResultT[IO, Unit] = for {
     _ <- Directories.mkdirs(path.dirname)
     _ <- ResultT.using(path.toOutputStream)(Streams.writeBytes(_, content))
   } yield ()
