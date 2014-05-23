@@ -10,7 +10,7 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
-    , aggregate = Seq(cli, control, data, error, io, parse, reflect, store, testing, time)
+    , aggregate = Seq(cli, control, data, error, io, parse, reflect, store, testing, testingExtra, time)
     )
     .dependsOn(cli, control, data, error, io, parse, reflect, store, testing, time)
 
@@ -112,6 +112,14 @@ object build extends Build {
     ) ++ Seq[Settings](libraryDependencies ++= depend.specs2)
   )
   .dependsOn(control)
+
+  lazy val testingExtra = Project(
+    id = "testing-extra"
+    , base = file("mundane-testing-extra")
+    , settings = standardSettings ++ lib("testing") ++ Seq[Settings](
+      name := "mundane-testing-extra"
+    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2 ++ depend.specs2Extra)
+  ).dependsOn(testing)
 
   lazy val time = Project(
     id = "time"

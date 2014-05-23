@@ -28,7 +28,7 @@ trait ExamplesTimeout extends AroundExample with MustMatchers with TerminationMa
   def upTo(to: Duration) = new Around {
     def around[T : AsResult](t: =>T) = {
       lazy val result = t
-      val termination = result must terminate[T](retries = 10, sleep = (to.inMillis / 10).millis).orSkip((ko: String) => "TIMEOUT: "+to)
+      val termination = result must terminate(retries = 10, sleep = (to.inMillis / 10).millis).orSkip((ko: String) => "TIMEOUT: "+to)
 
       if (!termination.toResult.isSkipped) AsResult(result)
       else termination.toResult
