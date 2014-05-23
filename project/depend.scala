@@ -10,8 +10,8 @@ object depend {
   val bits   = Seq(  "org.typelevel"        %% "scodec-bits"    % "1.0.0")
   val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"  % "0.4")
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
-                   , "org.specs2"           %% "specs2-scalacheck").map(_ % "2.3.10") ++
-               Seq("org.specs2"           %% "specs2-junit").map(_ % "2.3.10" % "test")
+                   , "org.specs2"           %% "specs2-scalacheck"
+                   , "org.specs2"           %% "specs2-junit").map(_ % "2.3.10") 
 
   val specs2Extra = Seq("org.specs2"           %% "specs2-matcher-extra" % "2.3.10")
 
