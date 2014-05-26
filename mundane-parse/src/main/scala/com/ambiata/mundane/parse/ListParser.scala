@@ -61,10 +61,10 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else (position, state, a).success
     ))
 
-  def option(implicit ev: A =:= String): ListParser[Option[A]] =
+  def option(implicit ev: A =:= String): ListParser[Option[String]] =
     flatMap(a => ListParser((position, state) =>
       if (ev(a).isEmpty) (position, state, None).success
-      else               (position, state, Some(a)).success
+      else               (position, state, Some(ev(a))).success
     ))
 
   def delimited(implicit ev: A =:= String, delimiter: Char=','): ListParser[Seq[String]] =
@@ -73,6 +73,12 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else               (position, state, Delimited.parseRow(a, delimiter)).success
     ))
 
+  def |||(x: ListParser[A]): ListParser[A] =
+    ListParser((n, ls) =>
+      x.parse(n, ls) match {
+        case s @ Success(_) => s
+        case Failure(_)     => x.parse(n, ls)
+      })
 }
 
 /**
@@ -95,6 +101,12 @@ object ListParser {
     s         <- string
     position  <- getPosition
     result    <- value(s.parseInt.leftMap(_ => s"""not an int: '$s'"""))
+  } yield result
+
+  def optionint: ListParser[Option[Int]] = for {
+    s         <- string
+    position  <- getPosition
+    result    <- value(if (s.isEmpty) None.success else s.parseInt.map(Some.apply).leftMap(_ => s"""Not an int at position $position: '$s'"""))
   } yield result
 
   /**
