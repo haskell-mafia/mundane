@@ -20,6 +20,8 @@ trait WriteOnlyStore[F[_]] {
   def deleteAll(prefix: FilePath): F[Unit]
 
   def move(in: FilePath, out: FilePath): F[Unit]
+  def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
+
   def copy(in: FilePath, out: FilePath): F[Unit]
   def mirror(in: FilePath, out: FilePath): F[Unit]
 
@@ -39,7 +41,6 @@ trait ReadOnlyStore[F[_]] {
 
   def exists(path: FilePath): F[Boolean]
 
-  def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
   def copyTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
   def mirrorTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
 
