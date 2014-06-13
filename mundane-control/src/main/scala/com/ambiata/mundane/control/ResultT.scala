@@ -104,7 +104,7 @@ object ResultT extends LowPriorityResultT {
   implicit def ResultTEqual[F[+_], A](implicit E: Equal[F[Result[A]]]): Equal[ResultT[F, A]] =
     implicitly[Equal[F[Result[A]]]].contramap(_.run)
 
-  def toTask[A](result: ResultT[IO, A]): Task[A] =
+  def toTask[A](result: =>ResultT[IO, A]): Task[A] =
     Task.delay {
       result.run.unsafePerformIO.foldAll(
         a => Task.delay(a),
