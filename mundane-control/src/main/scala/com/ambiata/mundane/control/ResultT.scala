@@ -2,6 +2,7 @@ package com.ambiata.mundane.control
 
 import scala.util.control.NonFatal
 import scalaz._, Scalaz._, \&/._
+import scalaz.concurrent.Task
 import scalaz.effect._
 
 /**
@@ -102,6 +103,16 @@ object ResultT extends LowPriorityResultT {
 
   implicit def ResultTEqual[F[+_], A](implicit E: Equal[F[Result[A]]]): Equal[ResultT[F, A]] =
     implicitly[Equal[F[Result[A]]]].contramap(_.run)
+
+  def toTask[A](result: ResultT[IO, A]): Task[A] =
+    Task.delay {
+      result.run.unsafePerformIO.foldAll(
+        a => Task.delay(a),
+        m => Task.fail(new Exception(m)),
+        Task.fail,
+        (m, e) => Task.fail(new Exception(m, e))
+      )
+    }.flatMap(identity)
 }
 
 trait LowPriorityResultT {
