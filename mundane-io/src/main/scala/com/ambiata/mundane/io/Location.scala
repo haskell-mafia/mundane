@@ -1,6 +1,6 @@
 package com.ambiata.mundane.io
 
-import scalaz.\/
+import scalaz._, Scalaz._
 
 sealed trait Location {
   def path: FilePath
