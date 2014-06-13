@@ -1,5 +1,8 @@
 package com.ambiata.mundane.daemon
 
+import scalaz._, Scalaz._
+import scalaz.effect._
+
 trait Daemon[A] {
   def env: String \/ A
 
