@@ -7,7 +7,7 @@ import java.util.UUID
 
 trait Dirs {
 
-  def mkRandomDir(prefix: String = "", base: File): File = {
+  def mkRandomDir(prefix: String = "target/test", base: File): File = {
     val d = mkdir(s"${prefix}${UUID.randomUUID()}", base)
     d.mkdirs()
     d
