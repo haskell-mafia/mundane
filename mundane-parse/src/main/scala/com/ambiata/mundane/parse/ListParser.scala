@@ -61,11 +61,11 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else (position, state, a).success
     ))
 
-  def option(implicit ev: A =:= String): ListParser[Option[String]] =
-    flatMap(a => ListParser((position, state) =>
-      if (ev(a).isEmpty) (position, state, None).success
-      else               (position, state, Some(ev(a))).success
-    ))
+  def option: ListParser[Option[A]] =
+    ListParser((position, state) => state match {
+      case "" :: t => (position + 1, t, None).success
+      case xs => parse(position, xs).map(_.map(Option.apply[A]))
+    })
 
   def delimited(implicit ev: A =:= String, delimiter: Char=','): ListParser[Seq[String]] =
     flatMap(a => ListParser((position, state) =>

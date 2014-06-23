@@ -24,6 +24,9 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
    extract multiple values                                                          $multi1
    error if not parsed all elements                                                 $leftover1
    preprocess the input string                                                      $preprocess1
+   option set                                                                       $option1
+   option not set                                                                   $option2
+   option invalid                                                                   $option3
 
    return a message containing the full list and the first failure if parsing fails $fail1
                                                                                     """
@@ -140,6 +143,14 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
          |          not an int: 'bbb' (position: 2)""".stripMargin.replace(" ", "_"))
   }
 
+  def option1 =
+    ListParser.int.option.run(List("123")) must_== Some(123).success
+
+  def option2 =
+    ListParser.int.option.run(List("")) must_== None.success
+
+  def option3 =
+    ListParser.int.option.run(List("not-an-int")).toOption must_== None
 
   /**
    * TEST METHODS
