@@ -103,12 +103,6 @@ object ListParser {
     result    <- value(s.parseInt.leftMap(_ => s"""not an int: '$s'"""))
   } yield result
 
-  def optionint: ListParser[Option[Int]] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(if (s.isEmpty) None.success else s.parseInt.map(Some.apply).leftMap(_ => s"""Not an int at position $position: '$s'"""))
-  } yield result
-
   /**
    * A parser for a Short
    */
