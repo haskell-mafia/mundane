@@ -27,7 +27,14 @@ sealed trait BytesQuantity {
   def toMegabytes: Megabytes
   def toGigabytes: Gigabytes
   def toTerabytes: Terabytes
+  def show =
+       if (toTerabytes.value > 0) toTerabytes.value+"Tb"
+  else if (toGigabytes.value > 0) toGigabytes.value+"Gb"
+  else if (toMegabytes.value > 0) toMegabytes.value+"Mb"
+  else if (toKilobytes.value > 0) toKilobytes.value+"Mb"
+  else                            toBytes.value+" bytes"
 }
+
 case class Bytes(value: Long) extends BytesQuantity {
   def toBytes    = this
   def toKilobytes = Kilobytes(value / 1024)
