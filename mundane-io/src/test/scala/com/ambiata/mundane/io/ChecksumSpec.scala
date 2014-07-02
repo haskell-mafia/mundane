@@ -3,15 +3,12 @@ package io
 
 import com.ambiata.mundane.testing.ResultTIOMatcher._
 
-import java.io._
-import java.util.UUID
-
-import org.specs2._, matcher._, specification._
+import org.specs2._
 import org.scalacheck._, Arbitrary._
 
 import scalaz._, Scalaz._
 
-class ChecksumSpec extends Specification with ScalaCheck with AfterExample { def is = isolated ^ s2"""
+class ChecksumSpec extends Specification with ScalaCheck { def is = s2"""
 
 Checksum Known Answer Tests
 ---------------------------
@@ -30,8 +27,6 @@ Checksum Properties
 """
 
 
-  val work = System.getProperty("java.io.tmpdir", "/tmp") </> s"ChecksumSpec.${UUID.randomUUID}"
-
   def md5 =
     Checksum.string("hello", MD5).hash must_== "5d41402abc4b2a76b9719d911017c592"
 
@@ -42,18 +37,13 @@ Checksum Properties
     prop((s: String) =>
       Checksum.string(s, alg).algorithm must_== alg)
 
-  def text = prop((s: String) => {
+  def text = prop((s: String) => Temporary.using { work =>
     val path = work </> "text"
-    val action = Files.write(path, s) >> Checksum.file(path, MD5)
-    action must beOkValue(Checksum.string(s, MD5))
-  })
+    Files.write(path, s) >> Checksum.file(path, MD5)
+  } must beOkValue(Checksum.string(s, MD5)))
 
-  def bytes = prop((b: Array[Byte]) => {
+  def bytes = prop((b: Array[Byte]) => Temporary.using { work =>
     val path = work </> "bytes"
-    val action = Files.writeBytes(path, b) >> Checksum.file(path, MD5)
-    action must beOkValue(Checksum.bytes(b, MD5))
-  })
-
-  def after =
-    Directories.delete(work).run.unsafePerformIO
+    Files.writeBytes(path, b) >> Checksum.file(path, MD5)
+  } must beOkValue(Checksum.bytes(b, MD5)))
 }
