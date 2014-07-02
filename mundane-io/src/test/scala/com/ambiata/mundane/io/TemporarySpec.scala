@@ -6,10 +6,10 @@ import com.ambiata.mundane.testing.ResultTIOMatcher._
 import java.io._
 import java.util.UUID
 
-import org.specs2._, matcher._, specification._
+import org.specs2._, specification._
 import org.scalacheck._, Arbitrary._
 
-import scalaz._, Scalaz._
+import scalaz._
 
 class TemporarySpec extends Specification with ScalaCheck with AfterExample { def is = isolated ^ s2"""
 

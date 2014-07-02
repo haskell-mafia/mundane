@@ -3,8 +3,6 @@ package io
 
 import com.ambiata.mundane.control._
 
-import java.io.File
-
 import org.joda.time.format.DateTimeFormat
 
 import scalaz._, Scalaz._
