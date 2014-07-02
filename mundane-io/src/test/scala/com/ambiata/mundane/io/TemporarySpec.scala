@@ -1,6 +1,7 @@
 package com.ambiata.mundane
 package io
 
+import com.ambiata.mundane.control._
 import com.ambiata.mundane.testing.ResultTIOMatcher._
 
 import java.io._
@@ -18,6 +19,8 @@ Temporary
 
   always gives you a sub directory of base      $sub
   always gives you a different filename         $different
+  using cleans up                               $usingOk
+  using cleans up on error                      $usingFail
 
 """
 
@@ -36,6 +39,16 @@ Temporary
           Temporary.directory(work, prefix.getName) must beOkLike((u: Temporary) =>
             t must_!= u))
     })
+
+  def usingOk =
+    Temporary.using(file => ResultT.ok(file.toFile.exists -> file))
+      .map(f => f._1 -> f._2.toFile.exists) must beOkValue(true -> false)
+
+  def usingFail = {
+    var file: FilePath = null
+    Temporary.using{f => file = f; ResultT.fail("")}.toOption.unsafePerformIO() must beNone
+    !file.toFile.exists
+  }
 
   def after =
     Directories.delete(work).run.unsafePerformIO
