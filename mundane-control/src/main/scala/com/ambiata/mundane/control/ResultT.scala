@@ -46,7 +46,7 @@ case class ResultT[F[+_], +A](run: F[Result[A]]) {
     toOption.map(_.getOrElse(otherwise))
 
   def |||[AA >: A](otherwise: => ResultT[F, AA])(implicit F: Monad[F]): ResultT[F, AA] =
-    ResultT[F, AA](isOk.flatMap(ok => if (ok) this.run else otherwise.run))
+    ResultT[F, AA](run.flatMap(result => if (result.isOk) result.point[F] else otherwise.run))
 
   def zip[B](other: ResultT[F, B])(implicit F: Monad[F]): ResultT[F, (A, B)] =
     flatMap(a => other.map(a -> _))

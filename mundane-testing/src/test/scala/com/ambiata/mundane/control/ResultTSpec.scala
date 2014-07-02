@@ -19,6 +19,7 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
  ===================
 
    ||| ok case                    $okOr
+   ||| ok case with side effects  $okOrIO
    ||| error case                 $errorOr
    getOrElse ok case              $okGetOrElse
    getOrElse error case           $errorGetOrElse
@@ -41,6 +42,13 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
 
   def okOr = prop((a: Int, b: ResultT[Option, Int]) =>
     (ResultT.ok[Option, Int](a) ||| b) == ResultT.ok[Option, Int](a))
+
+  def okOrIO = {
+    import scalaz.effect._
+    var i = 0
+    val result = ResultT.fromIO(IO { i = i + 1; i })
+    (result ||| result).toOption.unsafePerformIO === Some(1)
+  }
 
   def errorOr = prop((a: Fail, b: ResultT[Option, Int]) =>
     (ResultT.these[Option, Int](a) ||| b) == b)
