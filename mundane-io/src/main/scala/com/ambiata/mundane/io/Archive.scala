@@ -41,7 +41,7 @@ object Archive {
     if (!dest.toFile.getParentFile.exists && !dest.toFile.getParentFile.mkdirs)
       Result.fail(s"Could not create gzip extraction directory for ${dest}.")
     else if (dest.toFile.isDirectory)
-      Result.fail("Could not extract to ${dest} as it is a directory.")
+      Result.fail(s"Could not extract to ${dest} as it is a directory.")
     else if ((List("sh", "-c", "gzip -dc -") #< gzip #> dest.toFile ! ProcessLogger(o => (), e => buffer.append(s"${e}\n"))) != 0)
       Result.fail(s"Could not extract gzip, stderr:\n${buffer}")
     else

@@ -25,6 +25,7 @@ object build extends Build {
     , version in ThisBuild := "1.2.1"
     , organization := "com.ambiata"
     , scalaVersion := "2.10.4"
+    , crossScalaVersions := Seq("2.10.4", "2.11.1")
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
@@ -132,8 +133,11 @@ object build extends Build {
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
     maxErrors := 20,
-    // incOptions := incOptions.value.withNameHashing(true),
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint"),
+    scalacOptions <++= scalaVersion.map({
+      case x if x.contains("2.11") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Xlint")
+      case x if x.contains("2.10") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint")
+      case x => sys.error("Unsupported scala version: " + x)
+    }),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
