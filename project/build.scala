@@ -40,7 +40,7 @@ object build extends Build {
   , base = file("mundane-control")
   , settings = standardSettings ++ lib("control") ++ Seq[Settings](
       name := "mundane-control"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing)
   )
   .dependsOn(error)
 
@@ -49,7 +49,7 @@ object build extends Build {
   , base = file("mundane-daemon")
   , settings = standardSettings ++ lib("daemon") ++ Seq[Settings](
       name := "mundane-daemon"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing)
   )
   .dependsOn(control, io)
 
@@ -58,7 +58,7 @@ object build extends Build {
   , base = file("mundane-data")
   , settings = standardSettings ++ lib("data") ++ Seq[Settings](
       name := "mundane-data"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.rng ++ depend.specs2 ++ depend.kiama)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.rng ++ depend.testing ++ depend.kiama)
   )
 
   lazy val error = Project(
@@ -74,7 +74,7 @@ object build extends Build {
   , base = file("mundane-io")
   , settings = standardSettings ++ lib("io") ++ Seq[Settings](
       name := "mundane-io"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing)
   )
   .dependsOn(control, data, testing % "test")
 
@@ -83,7 +83,7 @@ object build extends Build {
   , base = file("mundane-store")
   , settings = standardSettings ++ lib("store") ++ Seq[Settings](
       name := "mundane-store"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.bits ++ depend.stream)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream)
   )
   .dependsOn(control, data, io, testing % "test", io % "test->test")
 
@@ -92,7 +92,7 @@ object build extends Build {
   , base = file("mundane-parse")
   , settings = standardSettings ++ lib("parse") ++ Seq[Settings](
       name := "mundane-parse"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.parboiled ++ depend.joda)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.parboiled ++ depend.joda ++ depend.testing)
   )
   .dependsOn(control)
 
@@ -126,7 +126,7 @@ object build extends Build {
   , base = file("mundane-time")
   , settings = standardSettings ++ lib("time") ++ Seq[Settings](
       name := "mundane-time"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing)
   )
 
   lazy val compilationSettings: Seq[Settings] = Seq(
