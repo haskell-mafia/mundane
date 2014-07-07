@@ -29,6 +29,8 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   move                                            $move
   move and read                                   $moveRead
+  move to existing file                           $moveExists
+  move to existing dir                            $moveExistsDir
   copy                                            $copy
   copy and read                                   $copyRead
   mirror                                          $mirror
@@ -105,6 +107,30 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
       (store.move(m.full.toFilePath, n.full.toFilePath) >>
        store.utf8.read(n.full.toFilePath)) must beOkValue(m.value.toString) })
+
+  private def moveExistsCheck(f: (Entry, Entry) => ResultTIO[Unit]) = {
+    prop((m: Entry, n: Entry, o: Entry) => clean(Paths(m :: n :: Nil)) { _ => (for {
+      _  <- f(m, n)
+      mr <- store.move(m.full.toFilePath, o.full.toFilePath)
+      nr <- store.move(n.full.toFilePath, o.full.toFilePath)
+      me <- store.exists(m.full.toFilePath)
+      ne <- store.exists(n.full.toFilePath)
+      oe <- store.exists(o.full.toFilePath)
+    } yield (mr, nr, me, ne, oe)) must beOkValue((true, false, false, true, true)) })
+  }
+
+  def moveExists =
+    moveExistsCheck((_, _) => ResultT.ok[IO, Unit](()))
+
+  def moveExistsDir = {
+    def mkDir(e: Entry) = ResultT.safe[IO, Unit] {
+      val f = e.full.toFilePath.toFile
+      f.delete()
+      f.mkdirs()
+    }
+    // Convert files to directories but require the same properties hold
+    moveExistsCheck { case (m, n) => mkDir(m) >> mkDir(n) }
+  }
 
   def copy =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>

@@ -19,7 +19,7 @@ trait WriteOnlyStore[F[_]] {
   def delete(path: FilePath): F[Unit]
   def deleteAll(prefix: FilePath): F[Unit]
 
-  def move(in: FilePath, out: FilePath): F[Unit]
+  def move(in: FilePath, out: FilePath): F[Boolean]
   def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
 
   def copy(in: FilePath, out: FilePath): F[Unit]
