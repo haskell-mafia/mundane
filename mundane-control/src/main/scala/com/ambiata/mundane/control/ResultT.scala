@@ -62,6 +62,9 @@ object ResultT extends LowPriorityResultT {
   def ok[F[+_]: Monad, A](value: A): ResultT[F, A] =
     ResultT[F, A](Result.ok(value).point[F])
 
+  def unit[F[+_]: Monad]: ResultT[F, Unit] =
+    ResultT[F, Unit](Result.ok(()).point[F])
+
   def result[F[+_]: Monad, A](result: Result[A]): ResultT[F, A] =
     ResultT[F, A](result.point[F])
 
