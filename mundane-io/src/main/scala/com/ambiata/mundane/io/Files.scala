@@ -37,23 +37,26 @@ object Files {
     _ <- ResultT.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield ()
 
-  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    val destf = dest.toFile
-    if (destf.isDirectory) sys.error(s"Move not supported for directory $dest")
-    else {
+  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
+    if (isDirectory) ResultT.fail(s"Move not supported for directory $src")
+    else ResultT.safe {
+      val destf = dest.toFile
       destf.getParentFile.mkdirs
       src.toFile.renameTo(destf)
     }
   }
 
-  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    if (dest.toFile.isDirectory) sys.error(s"Copy not supported for directory $dest")
-  }.flatMap { _ =>
-    ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(src.toFile)))(writeStream(dest, _))
+  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
+    if (isDirectory) ResultT.fail(s"Copy not supported for directory $src")
+    else ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(src.toFile)))(writeStream(dest, _))
   }
 
   def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
     path.toFile.exists
+  }
+
+  def isDir(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    path.toFile.isDirectory
   }
 
   def isFile(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
