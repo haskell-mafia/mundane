@@ -62,6 +62,9 @@ object ResultT extends LowPriorityResultT {
   def ok[F[+_]: Monad, A](value: A): ResultT[F, A] =
     ResultT[F, A](Result.ok(value).point[F])
 
+  def unit[F[+_]: Monad]: ResultT[F, Unit] =
+    ResultT[F, Unit](Result.ok(()).point[F])
+
   def result[F[+_]: Monad, A](result: Result[A]): ResultT[F, A] =
     ResultT[F, A](result.point[F])
 
@@ -88,6 +91,12 @@ object ResultT extends LowPriorityResultT {
 
   def fromOption[F[+_]: Monad, A](v: Option[A], failure: String): ResultT[F, A] =
     v.cata(ResultT.ok[F, A], ResultT.fail(failure))
+
+  def when[F[+_]: Monad](v: Boolean, thunk: => ResultT[F, Unit]): ResultT[F, Unit] =
+    if (v) thunk else unit
+
+  def unless[F[+_]: Monad](v: Boolean, thunk: => ResultT[F, Unit]): ResultT[F, Unit] =
+    when(!v, thunk)
 
   def using[A: Resource, B <: A, C](a: ResultT[IO, B])(run: B => ResultT[IO, C]): ResultT[IO, C] =
     ResultT(a.run.bracket((aa: Result[B]) => aa match {

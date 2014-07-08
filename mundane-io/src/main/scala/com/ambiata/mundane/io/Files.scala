@@ -3,10 +3,7 @@ package io
 
 import com.ambiata.mundane.control._
 import java.io._
-import java.nio.file.{Files => NFiles}
-import java.nio.file.StandardCopyOption._
-import scalaz._, Scalaz._
-import scalaz.effect._, Effect._
+import scalaz._, effect._, Effect._
 
 object Files {
   def read(path: FilePath, encoding: String = "UTF-8"): ResultT[IO, String] =
@@ -40,30 +37,26 @@ object Files {
     _ <- ResultT.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield ()
 
-  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    val srcf = src.toFile
-    val destf = dest.toFile
-    if (destf.isDirectory)
-      NFiles.move(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
-    else {
+  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
+    if (isDirectory) ResultT.fail(s"Move not supported for directory $src")
+    else ResultT.safe {
+      val destf = dest.toFile
       destf.getParentFile.mkdirs
-      NFiles.move(srcf.toPath, destf.toPath, REPLACE_EXISTING)
+      src.toFile.renameTo(destf)
     }
   }
 
-  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    val srcf = src.toFile
-    val destf = dest.toFile
-    if (destf.isDirectory)
-      NFiles.copy(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
-    else {
-      destf.getParentFile.mkdirs
-      NFiles.copy(srcf.toPath, destf.toPath, REPLACE_EXISTING)
-    }
+  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
+    if (isDirectory) ResultT.fail(s"Copy not supported for directory $src")
+    else ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(src.toFile)))(writeStream(dest, _))
   }
 
   def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
     path.toFile.exists
+  }
+
+  def isDir(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    path.toFile.isDirectory
   }
 
   def isFile(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {

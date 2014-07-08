@@ -27,6 +27,8 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
    disjunctionF conversions       $disjunctionF
    fromOption                     $fromOption
    fromOption error case          $fromOptionF
+   when                           $when
+   unless                         $unless
 
  ResultT Construction
  ====================
@@ -72,6 +74,14 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
 
   def fromOptionF =
     ResultT.fromOption[Id, Int](None, "foo") ==== ResultT.fail("foo")
+
+  def when =
+    (ResultT.when[Id](true, ResultT.fail("foo")), ResultT.when[Id](false, ResultT.fail("foo"))) ====
+      ((ResultT.fail("foo"), ResultT.unit))
+
+  def unless =
+    (ResultT.unless[Id](true, ResultT.fail("foo")), ResultT.unless[Id](false, ResultT.fail("foo"))) ====
+      ((ResultT.unit, ResultT.fail("foo")))
 
   def safe = prop((a: Int) =>
     ResultT.safe[Option, Int](a) == ResultT.ok[Option, Int](a))
