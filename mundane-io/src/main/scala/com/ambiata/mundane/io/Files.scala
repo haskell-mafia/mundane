@@ -3,10 +3,7 @@ package io
 
 import com.ambiata.mundane.control._
 import java.io._
-import java.nio.file.{Files => NFiles}
-import java.nio.file.StandardCopyOption._
-import scalaz._, Scalaz._
-import scalaz.effect._, Effect._
+import scalaz._, effect._, Effect._
 
 object Files {
   def read(path: FilePath, encoding: String = "UTF-8"): ResultT[IO, String] =
@@ -41,25 +38,18 @@ object Files {
   } yield ()
 
   def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    val srcf = src.toFile
     val destf = dest.toFile
-    if (destf.isDirectory)
-      NFiles.move(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
+    if (destf.isDirectory) sys.error(s"Move not supported for directory $dest")
     else {
       destf.getParentFile.mkdirs
-      NFiles.move(srcf.toPath, destf.toPath, REPLACE_EXISTING)
+      src.toFile.renameTo(destf)
     }
   }
 
   def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    val srcf = src.toFile
-    val destf = dest.toFile
-    if (destf.isDirectory)
-      NFiles.copy(srcf.toPath, destf.toPath.resolve(srcf.getName), REPLACE_EXISTING)
-    else {
-      destf.getParentFile.mkdirs
-      NFiles.copy(srcf.toPath, destf.toPath, REPLACE_EXISTING)
-    }
+    if (dest.toFile.isDirectory) sys.error(s"Copy not supported for directory $dest")
+  }.flatMap { _ =>
+    ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(src.toFile)))(writeStream(dest, _))
   }
 
   def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
