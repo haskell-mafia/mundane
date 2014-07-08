@@ -92,6 +92,12 @@ object ResultT extends LowPriorityResultT {
   def fromOption[F[+_]: Monad, A](v: Option[A], failure: String): ResultT[F, A] =
     v.cata(ResultT.ok[F, A], ResultT.fail(failure))
 
+  def when[F[+_]: Monad](v: Boolean, thunk: => ResultT[F, Unit]): ResultT[F, Unit] =
+    if (v) thunk else unit
+
+  def unless[F[+_]: Monad](v: Boolean, thunk: => ResultT[F, Unit]): ResultT[F, Unit] =
+    when(!v, thunk)
+
   def using[A: Resource, B <: A, C](a: ResultT[IO, B])(run: B => ResultT[IO, C]): ResultT[IO, C] =
     ResultT(a.run.bracket((aa: Result[B]) => aa match {
       case Error(e) => IO { () }
