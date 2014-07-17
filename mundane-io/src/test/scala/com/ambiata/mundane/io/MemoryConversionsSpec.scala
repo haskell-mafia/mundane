@@ -15,6 +15,6 @@ class MemoryConversionsSpec extends Specification with MemoryConversions { def i
 
 
   We can sum byte quantities in a list
-  ${ List[BytesQuantity](1.kb, 2.mb, 3.bytes).sum === (1024 + 2*1024*1024 + 3).bytes }
+  ${ List(1.kb, 2.mb, 3.bytes).sum === (1024 + 2*1024*1024 + 3).bytes }
 """
 }

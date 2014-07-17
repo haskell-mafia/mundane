@@ -8,16 +8,16 @@ import MemoryConversions._
  */
 trait MemoryConversions {
   implicit class bytesSyntax(value: Long) {
-    def bytes = Bytes(value)
-    def byte  = Bytes(value)
-    def kb    = Kilobytes(value)
-    def kbs   = Kilobytes(value)
-    def mb    = Megabytes(value)
-    def mbs   = Megabytes(value)
-    def gb    = Gigabytes(value)
-    def gbs   = Gigabytes(value)
-    def tb    = Terabytes(value)
-    def tbs   = Terabytes(value)
+    def bytes: BytesQuantity = Bytes(value)
+    def byte : BytesQuantity = Bytes(value)
+    def kb   : BytesQuantity = Kilobytes(value)
+    def kbs  : BytesQuantity = Kilobytes(value)
+    def mb   : BytesQuantity = Megabytes(value)
+    def mbs  : BytesQuantity = Megabytes(value)
+    def gb   : BytesQuantity = Gigabytes(value)
+    def gbs  : BytesQuantity = Gigabytes(value)
+    def tb   : BytesQuantity = Terabytes(value)
+    def tbs  : BytesQuantity = Terabytes(value)
   }
 }
 
