@@ -2,6 +2,7 @@ package com.ambiata
 package mundane
 package io
 
+import MemoryConversions._
 /**
  * Conversion units for memory quantities
  */
@@ -33,6 +34,21 @@ sealed trait BytesQuantity {
   else if (toMegabytes.value > 0) toMegabytes.value+"Mb"
   else if (toKilobytes.value > 0) toKilobytes.value+"Mb"
   else                            toBytes.value+" bytes"
+}
+
+object BytesQuantity {
+  implicit def Numeric: Numeric[BytesQuantity] = new Numeric[BytesQuantity] {
+    def plus(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value + y.toBytes.value).bytes
+    def toDouble(x: BytesQuantity): Double = x.toBytes.value.toDouble
+    def toFloat(x: BytesQuantity): Float = x.toBytes.value.toFloat
+    def toInt(x: BytesQuantity): Int = x.toBytes.value.toInt
+    def negate(x: BytesQuantity): BytesQuantity = (- x.toBytes.value).bytes
+    def fromInt(x: Int): BytesQuantity = Bytes(x.toLong)
+    def toLong(x: BytesQuantity): Long = x.toBytes.value
+    def times(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value * y.toBytes.value).bytes
+    def minus(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value - y.toBytes.value).bytes
+    def compare(x: BytesQuantity, y: BytesQuantity): Int = x.toBytes.value.compare(y.toBytes.value)
+  }
 }
 
 case class Bytes(value: Long) extends BytesQuantity {

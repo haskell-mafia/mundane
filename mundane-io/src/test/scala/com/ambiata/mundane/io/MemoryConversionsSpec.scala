@@ -12,5 +12,9 @@ class MemoryConversionsSpec extends Specification with MemoryConversions { def i
   ${ 1.mb.toKilobytes === 1024.kbs }
   ${ 1.gb.toMegabytes === 1024.mbs }
   ${ 1.tb.toGigabytes === 1024.gbs }
+
+
+  We can sum byte quantities in a list
+  ${ List[BytesQuantity](1.kb, 2.mb, 3.bytes).sum === (1024 + 2*1024*1024 + 3).bytes }
 """
 }
