@@ -24,7 +24,7 @@ object Files {
 
   def writeLines(path: FilePath, content: Seq[String], encoding: String = "UTF-8"): ResultT[IO, Unit] = for {
     _ <- Directories.mkdirs(path.dirname)
-    _ <- ResultT.using(path.toOutputStream)(Streams.write(_, content.mkString("\n"), encoding))
+    _ <- ResultT.using(path.toOutputStream)(Streams.write(_, if (content.isEmpty) "" else content.mkString("", "\n", "\n"), encoding))
   } yield ()
 
   def writeBytes(path: FilePath, content: Array[Byte]): ResultT[IO, Unit] = for {
