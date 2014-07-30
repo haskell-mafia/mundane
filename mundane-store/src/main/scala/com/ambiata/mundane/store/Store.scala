@@ -1,5 +1,6 @@
 package com.ambiata.mundane.store
 
+import com.ambiata.mundane.control.{ResultT, ResultTIO}
 import com.ambiata.mundane.io._
 import java.io.{InputStream, OutputStream}
 import scala.io.Codec
@@ -17,13 +18,15 @@ trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
 
 trait WriteOnlyStore[F[_]] {
   def delete(path: FilePath): F[Unit]
-  def deleteAll(prefix: FilePath): F[Unit]
+  def delete(prefix: DirPath): F[Unit]
+  def deleteAll: F[Unit] = delete(DirPath.Root)
 
   def move(in: FilePath, out: FilePath): F[Unit]
   def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
 
   def copy(in: FilePath, out: FilePath): F[Unit]
-  def mirror(in: FilePath, out: FilePath): F[Unit]
+  def mirror(out: DirPath): F[Unit] = mirror(DirPath.Root, out)
+  def mirror(in: DirPath, out: DirPath): F[Unit]
 
   val bytes: StoreBytesWrite[F]
   val strings: StoreStringsWrite[F]
@@ -34,15 +37,23 @@ trait WriteOnlyStore[F[_]] {
 }
 
 trait ReadOnlyStore[F[_]] {
-  def list(prefix: FilePath): F[List[FilePath]]
+  def listAll: F[List[FilePath]] = list(DirPath.Root)
+  def list(prefix: DirPath): F[List[FilePath]]
 
-  def filter(prefix: FilePath, predicate: FilePath => Boolean): F[List[FilePath]]
-  def find(prefix: FilePath, predicate: FilePath => Boolean): F[Option[FilePath]]
+  def filterAll(predicate: FilePath => Boolean): F[List[FilePath]] = filter(DirPath.Root, predicate)
+  def filter(prefix: DirPath, predicate: FilePath => Boolean): F[List[FilePath]]
+
+  def findAll(predicate: FilePath => Boolean): F[Option[FilePath]] = find(DirPath.Root, predicate)
+  def find(prefix: DirPath, predicate: FilePath => Boolean): F[Option[FilePath]]
 
   def exists(path: FilePath): F[Boolean]
+  def exists(path: DirPath): F[Boolean]
 
   def copyTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
-  def mirrorTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
+
+  def mirrorTo(store: Store[F]): F[Unit] = mirrorTo(store, DirPath.Root)
+  def mirrorTo(store: Store[F], out: DirPath): F[Unit] = mirrorTo(store, DirPath.Root, out)
+  def mirrorTo(store: Store[F], in: DirPath, out: DirPath): F[Unit]
 
   def checksum(path: FilePath, algorithm: ChecksumAlgorithm): F[Checksum]
 

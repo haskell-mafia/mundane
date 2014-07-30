@@ -3,38 +3,47 @@ package io
 
 import com.ambiata.mundane.control._
 
-import java.io.File
+import java.io.{FileInputStream, InputStream, File}
 
 import scalaz._, Scalaz._
 import scalaz.effect._
 
 object Directories {
-  def mkdirs(path: FilePath): ResultT[IO, Unit] =
-    ResultT.safe[IO, Boolean] { path.toFile.mkdirs } void
+  def mkdirs(dirPath: DirPath): ResultT[IO, Unit] =
+    ResultT.safe[IO, Boolean](dirPath.toFile.mkdirs).void
 
-  def list(path: FilePath): ResultT[IO, List[FilePath]] = ResultT.safe[IO, List[FilePath]] {
-    def loop(file: File): List[File] =
-      if (file.isDirectory)
-        Option(file.listFiles).cata(_.toList, Nil).flatMap(loop)
-      else if (file.exists)
-        List(file)
-      else
-        List()
-    loop(path.toFile).map(f => FilePath(f.getPath))
-  }
-
-  def delete(path: FilePath): ResultT[IO, Unit] = ResultT.safe[IO, Unit] {
-    def loop(file: File): Unit = {
-      if (file.isDirectory)
-        Option(file.listFiles).cata(_.toList, Nil).foreach(loop)
-      file.delete
-      ()
+  def list(dirPath: DirPath): ResultT[IO, List[FilePath]] = ResultT.safe[IO, List[FilePath]] {
+    def loop(dir: DirPath): Vector[FilePath] = {
+      val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
+      files.flatMap { f =>
+        if (f.isDirectory) loop(dir </> FileName.unsafe(f.getName))
+        else               Vector(FilePath.unsafe(f))
+      }
     }
-    loop(path.toFile)
+    loop(dirPath).toList
   }
 
-  def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
-    val file = path.toFile
+
+  def delete(dirPath: DirPath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    def loop(dir: DirPath): Boolean = {
+      val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
+      files.forall { f =>
+        if (f.isDirectory) loop(dir </> FileName.unsafe(f.getName))
+        else               f.delete
+      } && dir.toFile.delete
+    }
+    loop(dirPath)
+  }
+
+  def move(src: DirPath, dest: DirPath): ResultT[IO, Unit] = ResultT.safe {
+    val destf = dest.toFile
+    destf.mkdirs
+    src.toFile.renameTo(destf)
+  }
+
+  def exists(dirPath: DirPath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    val file = dirPath.toFile
     file.exists && file.isDirectory
   }
+
 }

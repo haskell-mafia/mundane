@@ -75,9 +75,12 @@ object build extends Build {
   , base = file("mundane-io")
   , settings = standardSettings ++ lib("io") ++ Seq[Settings](
       name := "mundane-io"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing)
+    ) ++ Seq[Settings](
+      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing ++
+                              depend.reflect(scalaVersion.value)
+    )
   )
-  .dependsOn(control, data, testing % "test")
+  .dependsOn(control, data, reflect, testing % "test")
 
   lazy val store = Project(
     id = "store"
@@ -101,7 +104,8 @@ object build extends Build {
     id = "reflect"
   , base = file("mundane-reflect")
   , settings = standardSettings ++ lib("reflect") ++ Seq[Settings](
-      name := "mundane-reflect"
+        name := "mundane-reflect"
+      , libraryDependencies ++= depend.reflect(scalaVersion.value)
     )
   )
 

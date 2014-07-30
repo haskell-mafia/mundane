@@ -9,30 +9,30 @@ import scalaz._, Scalaz._, scalaz.stream._, scalaz.concurrent._, effect.IO, effe
 import scodec.bits.ByteVector
 
 // FIX pull out "derived" functions so the implementation can be shared with s3/hdfs impls.
-case class PosixStore(root: FilePath) extends Store[ResultTIO] with ReadOnlyStore[ResultTIO] {
+case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore[ResultTIO] {
   def readOnly: ReadOnlyStore[ResultTIO] =
     this
 
-  def normalize(file: FilePath): String =
-    file.absolute.path.replace(root.absolute.path + "/", "")
+  def list(prefix: DirPath): ResultT[IO, List[FilePath]] =
+    Directories.list(root </> prefix).map(_.map(_.relativeTo(root)))
 
-  def list(prefix: FilePath): ResultT[IO, List[FilePath]] =
-    Directories.list(root </> prefix).map(_.map(normalize).sorted.map(_.toFilePath))
-
-  def filter(prefix: FilePath, predicate: FilePath => Boolean): ResultT[IO, List[FilePath]] =
+  def filter(prefix: DirPath, predicate: FilePath => Boolean): ResultT[IO, List[FilePath]] =
     list(prefix).map(_.filter(predicate))
 
-  def find(prefix: FilePath, predicate: FilePath => Boolean): ResultT[IO, Option[FilePath]] =
+  def find(prefix: DirPath, predicate: FilePath => Boolean): ResultT[IO, Option[FilePath]] =
     list(prefix).map(_.find(predicate))
 
   def exists(path: FilePath): ResultT[IO, Boolean] =
     Files.exists(root </> path)
 
+  def exists(path: DirPath): ResultT[IO, Boolean] =
+    Directories.exists(root </> path)
+
   def delete(path: FilePath): ResultT[IO, Unit] =
     Files.delete(root </> path)
 
-  def deleteAll(prefix: FilePath): ResultT[IO, Unit] =
-    Directories.delete(root </> prefix)
+  def delete(prefix: DirPath): ResultT[IO, Unit] =
+    Directories.delete(root </> prefix).void
 
   def move(in: FilePath, out: FilePath): ResultT[IO, Unit] =
     Files.move(root </> in, root </> out)
@@ -40,12 +40,9 @@ case class PosixStore(root: FilePath) extends Store[ResultTIO] with ReadOnlyStor
   def copy(in: FilePath, out: FilePath): ResultT[IO, Unit] =
     Files.copy(root </> in, root </> out)
 
-  def mirror(in: FilePath, out: FilePath): ResultT[IO, Unit] = for {
+  def mirror(in: DirPath, out: DirPath): ResultT[IO, Unit] = for {
     paths <- list(in)
-    _     <- paths.traverseU({ source =>
-      val destination = out </> source.path.replace(in.path + "/", "")
-      copy(source, destination)
-    })
+    _     <- paths.traverseU { source => copy(source, out </> source) }
   } yield ()
 
   def moveTo(store: Store[ResultTIO], src: FilePath, dest: FilePath): ResultT[IO, Unit] =
@@ -56,12 +53,9 @@ case class PosixStore(root: FilePath) extends Store[ResultTIO] with ReadOnlyStor
       store.unsafe.withOutputStream(dest) { out =>
         Streams.pipe(in, out) }}
 
-  def mirrorTo(store: Store[ResultTIO], in: FilePath, out: FilePath): ResultT[IO, Unit] = for {
+  def mirrorTo(store: Store[ResultTIO], in: DirPath, out: DirPath): ResultT[IO, Unit] = for {
     paths <- list(in)
-    _     <- paths.traverseU({ source =>
-      val destination = out </> source.path.replace(in.path + "/", "")
-      copyTo(store, source, destination)
-    })
+    _     <- paths.traverseU { source => copyTo(store, source, out </> source) }
   } yield ()
 
   def checksum(path: FilePath, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =

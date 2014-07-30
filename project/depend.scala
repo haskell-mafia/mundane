@@ -14,9 +14,13 @@ object depend {
                    , "org.specs2"           %% "specs2-scalacheck"
                    , "org.specs2"           %% "specs2-junit").map(_ % "2.3.12")
 
-  val specs2Extra = Seq("org.specs2"           %% "specs2-matcher-extra" % "2.3.12")
+  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.3.12" excludeAll ExclusionRule(organization = "org.scalamacros"))
 
   val testing = specs2.map(_ % "test")
+
+  def reflect(version: String) =
+    Seq("org.scala-lang" % "scala-compiler" % version, "org.scala-lang" % "scala-reflect" % version) ++
+      (if (version.contains("2.10")) Seq("org.scalamacros" %% "quasiquotes" % "2.0.0") else Seq())
 
   def parboiled(sv: String) =
     if (sv.contains("2.11")) Seq(

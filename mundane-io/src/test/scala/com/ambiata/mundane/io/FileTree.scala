@@ -7,30 +7,30 @@ import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 sealed trait FileTree {
-  def files(base: FilePath): List[FilePath] =
+  def files(base: DirPath): List[FilePath] =
     this match {
       case FileTreeLeaf(label) =>
-        List(base </> label)
+        List(base <|> FileName.unsafe(label))
       case FileTreeDirectory(label, children) =>
-        children.flatMap(_.files(base </> label))
+        children.flatMap(_.files(base </> FileName.unsafe(label)))
     }
 
-  def dirs(base: FilePath): List[FilePath] =
+  def dirs(base: DirPath): List[DirPath] =
     this match {
       case FileTreeLeaf(label) =>
         List()
       case FileTreeDirectory(label, children) =>
-        val dir = base </> label
+        val dir = base </> FileName.unsafe(label)
         dir :: children.flatMap(_.dirs(dir))
     }
 
-  def create(base: FilePath): ResultT[IO, Unit] =
+  def create(base: DirPath): ResultT[IO, Unit] =
     this match {
       case FileTreeLeaf(label) =>
-        val path = base </> label
+        val path = base <|> FileName.unsafe(label)
         Files.write(path, s"contents of $label")
       case FileTreeDirectory(label, children) =>
-        val path = base </> label
+        val path = base </> FileName.unsafe(label)
         Directories.mkdirs(path) >>
           children.traverseU(_.create(path)).void
     }
