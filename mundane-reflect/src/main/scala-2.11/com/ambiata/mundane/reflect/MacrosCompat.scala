@@ -6,7 +6,7 @@ package com.ambiata.mundane.reflect
  */
 trait MacrosCompat {
   import language.experimental.macros
-  type Context = scala.reflect.macros.Context
+  type Context = scala.reflect.macros.blackbox.Context
 }
 
 

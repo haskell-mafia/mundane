@@ -20,7 +20,9 @@ object depend {
 
   def reflect(version: String) =
     Seq("org.scala-lang" % "scala-compiler" % version, "org.scala-lang" % "scala-reflect" % version) ++
-      (if (version.contains("2.10")) Seq("org.scalamacros" %% "quasiquotes" % "2.0.0") else Seq())
+      (if (version.contains("2.10")) Seq(
+        compilerPlugin("org.scalamacros" %% "paradise" % "2.0.0" cross CrossVersion.full),
+        "org.scalamacros" %% "quasiquotes" % "2.0.0") else Seq())
 
   def parboiled(sv: String) =
     if (sv.contains("2.11")) Seq(

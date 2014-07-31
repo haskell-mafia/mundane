@@ -26,6 +26,8 @@ object build extends Build {
     , organization := "com.ambiata"
     , scalaVersion := "2.11.2"
     , crossScalaVersions := Seq("2.10.4", scalaVersion.value)
+    // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
+    , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
@@ -132,7 +134,7 @@ object build extends Build {
   , settings = standardSettings ++ lib("time") ++ Seq[Settings](
       name := "mundane-time"
     ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing)
-  )
+  ).dependsOn(data)
 
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
