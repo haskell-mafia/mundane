@@ -31,7 +31,7 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
   def delete(path: FilePath): ResultT[IO, Unit] =
     Files.delete(root </> path)
 
-  def delete(prefix: DirPath): ResultT[IO, Unit] =
+  def deleteAll(prefix: DirPath): ResultT[IO, Unit] =
     Directories.delete(root </> prefix).void
 
   def move(in: FilePath, out: FilePath): ResultT[IO, Unit] =

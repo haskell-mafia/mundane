@@ -43,12 +43,35 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </> "hello" </> "world").rootname must_== DirPath.unsafe("test") }
 
    get the path as a string
+   ${ DirPath.Root.path must_== "" }
+   ${ DirPath("test").path must_== "test" }
    ${ ("test" </> "hello" </> "world").path must_== "test/hello/world" }
+
+   get the path as a string, with a last slash
+   ${ DirPath.Root.dirPath must_== "/" }
+   ${ DirPath("test").dirPath must_== "test/" }
+   ${ ("test" </> "hello" </> "world").dirPath must_== "test/hello/world/" }
 
    get a portion of the path
    ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  === "world" </> "eric" }
    ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("other" </> "hello") === "test" </> "hello" </> "world" </> "eric" }
    ${ ("test" </> "hello" </> "world").fromRoot === "hello" </> "world" }
+
+ FilePaths
+ ========
+
+ A FilePath can be created from
+   a String
+   ${ FilePath.unsafe("hello/world").path === "hello/world"  }
+   a File
+   ${ FilePath.unsafe(new File("hello/world")).path === "hello/world" }
+   a URI
+   ${ FilePath.unsafe(new URI("hello/world")).path === "hello/world"  }
+
+   get the path as a string
+   ${ FilePath("test").path must_== "test" }
+   ${ ("test" </> "hello" <|> "world").path must_== "test/hello/world" }
+
 """
   val x = tag("x")
 }

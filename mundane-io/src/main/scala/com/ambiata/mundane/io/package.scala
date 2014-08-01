@@ -48,7 +48,7 @@ package object io extends MacrosCompat {
 
   def fromString(s: String): Option[FileName] =
     if (s.contains("/")) None
-    else Some(new FileName(s))
+    else Some(FileName.unsafe(s))
 
   def create(c: Context)(s: c.Expr[String]): c.Expr[FileName] = {
     import c.universe._
@@ -62,7 +62,7 @@ package object io extends MacrosCompat {
     import c.universe._
     fromString(s) match {
       case None     => c.abort(c.enclosingPosition, s"$s is not a valid fileName. It must not contain a /")
-      case Some(fn) => c.Expr(q"new FileName(${fn.name})")
+      case Some(fn) => c.Expr(q"FileName.unsafe(${fn.name})")
     }
   }
 }

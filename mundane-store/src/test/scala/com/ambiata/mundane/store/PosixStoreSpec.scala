@@ -94,7 +94,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def deleteAll =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      (store.deleteAll >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
+      (store.deleteAllFromRoot >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
 
   def move =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>

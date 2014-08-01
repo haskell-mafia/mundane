@@ -15,7 +15,7 @@ case class FilePath(dirname: DirPath, basename: FileName) {
   def rootname: DirPath = dirname.rootname
 
   /** @return the path for this file as a / separated string */
-  def path: String = dirname.path+"/"+basename.name
+  def path: String = if (dirname.isRoot) basename.name else dirname.path+"/"+basename.name
 
   /** @return a File for this path */
   def toFile: File = new File(path)
@@ -27,9 +27,18 @@ case class FilePath(dirname: DirPath, basename: FileName) {
   /** @return return the portion of the file path that starts from the rootname */
   def fromRoot: FilePath = relativeTo(rootname)
 
-  def toMultipart = new MultipartFilePath(this)
+  /** @return interpret this FilePath as a DirPath */
+  def toDirPath: DirPath = dirname </> basename
 
-  override def toString = path
+}
+
+object FilePath {
+  def apply(n: FileName): FilePath = FilePath(DirPath.Root, n)
+
+  def unsafe(s: String): FilePath = DirPath.unsafe(s).toFilePath
+  def unsafe(f: File): FilePath   = DirPath.unsafe(f).toFilePath
+  def unsafe(uri: URI): FilePath  = DirPath.unsafe(uri).toFilePath
+
 }
 
 /**
@@ -40,7 +49,7 @@ case class FilePath(dirname: DirPath, basename: FileName) {
  * If the list is empty, this means we are at the root (the equivalent of / on a Unix file system)
  *
  */
-case class DirPath(dirs: List[FileName]) {
+case class DirPath(dirs: Vector[FileName]) {
   /** @return either the parent directory or the root if we already are at the root */
   def dirname: DirPath  = parent.getOrElse(this)
 
@@ -53,12 +62,15 @@ case class DirPath(dirs: List[FileName]) {
   /** @return the parent directory for this directory, none if we are at the root */
   def parent: Option[DirPath] =
     dirs match {
-      case Nil       => None
-      case h :: tail => Some(copy(dirs = dirs.dropRight(1)))
+      case h +: tail => Some(copy(dirs = dirs.dropRight(1)))
+      case _         => None
     }
 
   /** @return the path for this file as a / separated string */
-  def path: String = dirs.map(_.name).toList.mkString("/")
+  def path: String = if (isRoot) "" else dirs.map(_.name).toList.mkString("/")
+
+  /** @return the path for this file as a / separated string, with a final / */
+  def dirPath: String = dirs.map(_.name).toList.mkString("", "/", "/")
 
   /** @return a File for this path */
   def toFile: File = new File(path)
@@ -99,9 +111,7 @@ case class DirPath(dirs: List[FileName]) {
    */
   def relativeTo(other: DirPath): DirPath =
     (dirs, other.dirs) match {
-      case (Nil, _)                      => this
-      case (h :: t, Nil)                 => this
-      case (h :: t, h1 :: t1) if h == h1 => copy(dirs = t).relativeTo(other.copy(dirs = t1))
+      case (h +: t, h1 +: t1) if h == h1 => copy(dirs = t).relativeTo(other.copy(dirs = t1))
       case _                             => this
     }
 
@@ -111,57 +121,15 @@ case class DirPath(dirs: List[FileName]) {
   /** @return interpret this DirPath as a FilePath, which might be /. if this DirPath is Root */
   def toFilePath: FilePath = FilePath(dirname, basename)
 
-  def toMultipart = MultipartFilePath(toFilePath)
-
-  override def toString = path
-}
-
-/**
- * A multipart file is either:
- *
- *  - a single file contained in a parent directory
- *  - a directory containing several files
- *
- *  Internally we use a FilePath to model both situations
- */
-case class MultipartFilePath(filePath: FilePath) {
-  def dirname: DirPath        = filePath.dirname
-  def rootname: DirPath       = filePath.rootname
-
-  def path: String = filePath.path
-  def toFile: File = filePath.toFile
-
-  def relativeTo(other: DirPath): FilePath = filePath.relativeTo(other)
-  def fromRoot: FilePath = filePath.fromRoot
-
-  override def toString = path
-}
-
-object MultipartFilePath {
-  def apply(n: FileName): MultipartFilePath = MultipartFilePath(FilePath(n))
-
-  def unsafe(s: String): MultipartFilePath =
-    unsafe(new File(s))
-
-  def unsafe(f: File): MultipartFilePath =
-    MultipartFilePath(FilePath.unsafe(f))
-
-}
-
-object FilePath {
-  def apply(n: FileName): FilePath = FilePath(DirPath.Root, n)
-
-  def unsafe(s: String): FilePath = unsafe(new File(s))
-  def unsafe(f: File): FilePath   = unsafe(f.toURI)
-  def unsafe(uri: URI): FilePath  = DirPath.unsafe(uri).toFilePath
+  def isRoot = dirs.isEmpty
 
 }
 
 object DirPath {
-  def apply(n: FileName): DirPath = apply(List(n))
+  def apply(n: FileName): DirPath = apply(Vector(n))
 
   def unsafe(s: String): DirPath =
-    DirPath(removeScheme(s).split("/").map(FileName.unsafe).toList)
+    DirPath(removeScheme(s).split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector)
 
   def unsafe(f: File): DirPath =
     unsafe(f.getPath)
@@ -170,13 +138,13 @@ object DirPath {
     unsafe(uri.toString)
 
   private def removeScheme(s: String): String =
-    Seq("hdfs://", "s3://", "file://", "file:").foldLeft(s) { (res, cur) => res.replace(cur, "") }
+    Seq("hdfs:", "s3:", "file:").foldLeft(s) { (res, cur) => res.replace(cur, "") }
 
-  val Root = DirPath(dirs = List())
+  val Root = DirPath(dirs = Vector())
 }
 
 class DirPathSyntax(name: FileName) {
-  def </>(other: DirPath) : DirPath = DirPath(name +: other.dirs)
+  def </>(other: DirPath) : DirPath  = DirPath(name +: other.dirs)
   def </>(other: FilePath): FilePath = FilePath(DirPath(name +: other.dirname.dirs), other.basename)
   def </>(other: FileName): DirPath  = DirPath(name) </> other
   def <|>(other: FileName): FilePath = DirPath(name) <|> other

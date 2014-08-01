@@ -18,8 +18,8 @@ trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
 
 trait WriteOnlyStore[F[_]] {
   def delete(path: FilePath): F[Unit]
-  def delete(prefix: DirPath): F[Unit]
-  def deleteAll: F[Unit] = delete(DirPath.Root)
+  def deleteAll(prefix: DirPath): F[Unit]
+  def deleteAllFromRoot: F[Unit] = deleteAll(DirPath.Root)
 
   def move(in: FilePath, out: FilePath): F[Unit]
   def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
