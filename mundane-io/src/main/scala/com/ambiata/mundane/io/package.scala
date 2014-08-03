@@ -12,7 +12,7 @@ package object io extends MacrosCompat {
   lazy val noLogging = (s: String) => IO(())
   lazy val consoleLogging = (s: String) => IO(println(s))
 
-  type IOAction[+A] = ActionT[IO, Unit, Logger, A]
+  type IOAction[A] = ActionT[IO, Unit, Logger, A]
   object IOActions extends ActionTSupport[IO, Unit, Logger]
 
   type Env = Map[String, String]

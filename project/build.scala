@@ -52,7 +52,7 @@ object build extends Build {
   , base = file("mundane-data")
   , settings = standardSettings ++ lib("data") ++ Seq[Settings](
       name := "mundane-data"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.rng ++ depend.testing ++ depend.kiama)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.rng ++ depend.testing ++ depend.kiama)
   )
 
   lazy val error = Project(

@@ -180,7 +180,7 @@ object ListParser {
    * A parser for a value of type A with a failure message in case of an exception
    */
   def valueOr[A](a: => A, failure: Throwable => String): ListParser[A] =
-    value(Validation.fromTryCatch(a).leftMap(failure))
+    value(Validation.fromTryCatchNonFatal(a).leftMap(failure))
 
   /**
    * A parser consuming n positions in the input

@@ -9,7 +9,7 @@ import java.io._
 import org.specs2._
 import org.scalacheck._, Arbitrary._
 
-import scalaz._
+import scalaz._, effect._
 
 class TemporarySpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -42,7 +42,7 @@ Temporary
 
   def usingFail = {
     var dir: DirPath = null
-    Temporary.using { d => dir = d; ResultT.fail("")}.toOption.unsafePerformIO() must beNone
+    Temporary.using { d => dir = d; ResultT.fail[IO, String]("")}.toOption.unsafePerformIO() must beNone
     !dir.toFile.exists
   }
 }
