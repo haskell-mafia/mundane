@@ -19,7 +19,7 @@ class ActionTSpec extends Specification with ScalaCheck with ThrownExpectations 
 """
 
   type Logger = String => IO[Unit]
-  type ExampleIOAction[+A] = ActionT[IO, Unit, Logger, A]
+  type ExampleIOAction[A] = ActionT[IO, Unit, Logger, A]
   object ExampleIOAction extends ActionTSupport[IO, Unit, Logger]
 
   def logging = {

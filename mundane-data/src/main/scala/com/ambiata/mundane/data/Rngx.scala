@@ -75,13 +75,13 @@ object Rngx {
      * if the size is not specified a random number of values between 0 and values.size will be selected
      */
     def subset(size: Size): Rng[List[A]] = {
-      size.value.map { s =>
+      size.value.cata({ s =>
         if (s <= 0) oneof(Nil)
         else        subset1(size).map(_.list)
-      } getOrElse {
+      }, {
         if (values.list.isEmpty) oneof(Nil)
         else                     subset1(size).map(_.list)
-      }
+      })
     }
 
     /**

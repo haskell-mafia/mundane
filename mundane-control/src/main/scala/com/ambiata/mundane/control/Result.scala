@@ -19,7 +19,7 @@ import scalaz._, Scalaz._, \&/._
  *  - better pattern matching support.
  *  - and again, scala.
  */
-sealed trait Result[+A] {
+sealed trait Result[A] {
   @inline final def fold[X](
     ok: A => X,
     error: These[String, Throwable] => X
@@ -86,7 +86,7 @@ sealed trait Result[+A] {
   def getOrElse[AA >: A](otherwise: => AA): AA =
     toOption.getOrElse(otherwise)
 
-  def |||[AA >: A](otherwise: => Result[AA]): Result[AA] =
+  def |||(otherwise: => Result[A]): Result[A] =
     if (isOk) this else otherwise
 }
 
