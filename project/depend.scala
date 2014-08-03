@@ -9,7 +9,9 @@ object depend {
   val joda   = Seq(  "joda-time"            %  "joda-time"         % "2.2"
                    , "org.joda"             %  "joda-convert"      % "1.1")
   val bits   = Seq(  "org.typelevel"        %% "scodec-bits"       % "1.0.0")
-  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5")
+
+  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5a")
+
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-scalacheck"
                    , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5")
