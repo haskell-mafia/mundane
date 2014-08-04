@@ -1,22 +1,77 @@
 package com.ambiata.mundane.io
 
+import java.io.File
+import java.net.URI
+
 import org.specs2.Specification
 
 class FilePathSpec extends Specification { def is = s2"""
 
- It is possible to get the parent of a FilePath
-   ${ FilePath("test/hello/world").parent must beSome(FilePath("test/hello")) }
+ Paths are of 2 sorts:
 
- It is possible to get the root of a FilePath
-   ${ FilePath("test/hello/world").rootname === FilePath("test") }
+  - file paths
+  - directory paths
 
- It is possible to get the portion of a FilePath from the root
-   ${ FilePath("test/hello/world").fromRoot === FilePath("hello/world") }
-   ${ FilePath("test/hello/world").rootname </> FilePath("test/hello/world").fromRoot === FilePath("test/hello/world") }
+ The essential difference is only director paths can be appended with a path name and become a FilePath.
 
- It is possible to get a the portion of a FilePath that is relative to another one
-   ${ FilePath("test/hello/world/eric").relativeTo(FilePath("test/hello"))  === FilePath("world/eric") }
-   ${ FilePath("test/hello/world/eric").relativeTo(FilePath("other/hello")) === FilePath("test/hello/world/eric") }
+ They also map to the notion of file and directory on a filesystem (but not on the Java notion of File which can represent both)
+
+ DirPaths
+ ========
+
+ A DirPath can be created from
+   a String
+   ${ DirPath.unsafe("hello/world").path === "hello/world"  }
+   a File
+   ${ DirPath.unsafe(new File("hello/world")).path === "hello/world"  }
+   a URI
+   ${ DirPath.unsafe(new URI("hello/world")).path === "hello/world"  }
+
+ The DirPath loses its scheme if created from a string/file/uri
+   ${ DirPath.unsafe(new URI("s3://hello/world")).path === "hello/world"  }
+
+ Basic operations can be executed on a DirPath
+   get the parent
+   ${ DirPath.Root.parent must beNone }
+   ${ DirPath("test").parent must beSome(DirPath.Root) }
+   ${ ("test" </> "hello" </> "world").parent must beSome("test" </> "hello") }
+
+   get the basename
+   ${ ("test" </> "hello" </> "world").basename === FileName.unsafe("world") }
+
+   get the rootname
+   ${ ("test" </> "hello" </> "world").rootname must_== DirPath.unsafe("test") }
+
+   get the path as a string
+   ${ DirPath.Root.path must_== "" }
+   ${ DirPath("test").path must_== "test" }
+   ${ ("test" </> "hello" </> "world").path must_== "test/hello/world" }
+
+   get the path as a string, with a last slash
+   ${ DirPath.Root.dirPath must_== "/" }
+   ${ DirPath("test").dirPath must_== "test/" }
+   ${ ("test" </> "hello" </> "world").dirPath must_== "test/hello/world/" }
+
+   get a portion of the path
+   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  === "world" </> "eric" }
+   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("other" </> "hello") === "test" </> "hello" </> "world" </> "eric" }
+   ${ ("test" </> "hello" </> "world").fromRoot === "hello" </> "world" }
+
+ FilePaths
+ ========
+
+ A FilePath can be created from
+   a String
+   ${ FilePath.unsafe("hello/world").path === "hello/world"  }
+   a File
+   ${ FilePath.unsafe(new File("hello/world")).path === "hello/world" }
+   a URI
+   ${ FilePath.unsafe(new URI("hello/world")).path === "hello/world"  }
+
+   get the path as a string
+   ${ FilePath("test").path must_== "test" }
+   ${ ("test" </> "hello" <|> "world").path must_== "test/hello/world" }
 
 """
+  val x = tag("x")
 }

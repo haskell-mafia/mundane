@@ -17,11 +17,11 @@ case class Archive(archiveFile: FilePath, checksumFile: FilePath, contents: List
 object Archive {
   // FIX This is the original copper publish code, for creating archives, but it has some ill-defined sematics
   //     around printing errors to standard out as well as some very  _optimistic_ quoting. Needs work.
-  def create(archiveName: String, checksumName: String, target: FilePath, contents: List[FilePath]): ResultT[IO, Archive] = {
-    val archive = (target </> archiveName).absolute
-    val checksum = (target </> checksumName).absolute
+  def create(archiveName: FileName, checksumName: FileName, target: DirPath, contents: List[FilePath]): ResultT[IO, Archive] = {
+    val archive = target <|> archiveName
+    val checksum = target <|> checksumName
     val files = contents.map(_.basename).mkString(" ")
-    val command = List("sh", "-c", s"tar czf ${archive} -C ${target.absolute} ${files} > /dev/null")
+    val command = List("sh", "-c", s"tar czf ${archive.toFile.getAbsolutePath} -C ${target.toFile.getAbsolutePath} ${files} > /dev/null")
     ResultT.safe[IO, Int] { Process(command) ! ProcessLogger(o => (), println) }.flatMap({
       case 0 => for {
         md5 <- Checksum.file(archive, MD5)
@@ -33,7 +33,7 @@ object Archive {
   }
 
   def isVaildGzip(path: FilePath): ResultT[IO, Boolean] =  ResultT.safe[IO, Boolean] {
-    !path.isEmpty && (List("sh", "-c", s"gzip -dc ${path} > /dev/null") ! ProcessLogger(o => (), e => ())) == 0
+    List("sh", "-c", s"gzip -dc ${path} > /dev/null") ! ProcessLogger(o => (), e => ()) == 0
   }
 
   def extractGzipStream(gzip: InputStream, dest: FilePath): ResultT[IO, Unit] = ResultT(IO {
@@ -49,7 +49,7 @@ object Archive {
   })
 
   def isValidTarball(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
-    !path.isEmpty && (List("sh", "-c", s"tar xfz ${path} -O > /dev/null") ! ProcessLogger(o => (), e => ())) == 0
+    List("sh", "-c", s"tar xfz ${path} -O > /dev/null") ! ProcessLogger(o => (), e => ()) == 0
   }
 
   // FIX this is not cross platform, arg....

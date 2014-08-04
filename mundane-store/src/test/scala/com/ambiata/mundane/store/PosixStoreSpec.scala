@@ -51,41 +51,41 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   """
 
-  val tmp1 = System.getProperty("java.io.tmpdir", "/tmp") </> s"StoreSpec.${UUID.randomUUID}"
-  val tmp2 = System.getProperty("java.io.tmpdir", "/tmp") </> s"StoreSpec.${UUID.randomUUID}"
+  val tmp1 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
+  val tmp2 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
   val store = PosixStore(tmp1)
   val alternate = PosixStore(tmp2)
 
   def list =
     prop((paths: Paths) => clean(paths) { filepaths =>
-       store.list(FilePath.root) must beOkValue(filepaths) })
+       store.listAll must beOkValue(filepaths) })
 
   def filter =
     prop((paths: Paths) => clean(paths) { filepaths =>
       val first = filepaths.head
       val last = filepaths.last
       val expected = if (first == last) List(first) else List(first, last)
-      store.filter(FilePath.root, x => x == first || x == last) must beOkLike(paths => paths must contain(allOf(expected:_*))) })
+      store.filterAll(x => x == first || x == last) must beOkLike(paths => paths must contain(allOf(expected:_*))) })
 
   def find =
     prop((paths: Paths) => paths.entries.length >= 3 ==> { clean(paths) { filepaths =>
       val third = filepaths.drop(2).head
-      store.find(FilePath.root, _ == third) must beOkValue(Some(third)) } })
+      store.findAll(_ == third) must beOkValue(Some(third)) } })
 
   def findfirst =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      store.find(FilePath.root, x => x == filepaths.head) must beOkValue(Some(filepaths.head)) })
+      store.findAll(x => x == filepaths.head) must beOkValue(Some(filepaths.head)) })
 
   def findlast =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      store.find(FilePath.root, x => x == filepaths.last) must beOkValue(Some(filepaths.last)) })
+      store.findAll(x => x == filepaths.last) must beOkValue(Some(filepaths.last)) })
 
   def exists =
     prop((paths: Paths) => clean(paths) { filepaths =>
       filepaths.traverseU(store.exists) must beOkLike(_.forall(identity)) })
 
   def notExists =
-    prop((paths: Paths) => store.exists(FilePath.root </> "i really don't exist") must beOkValue(false))
+    prop((paths: Paths) => store.exists(DirPath.unsafe("root") </> "i really don't exist") must beOkValue(false))
 
   def delete =
     prop((paths: Paths) => clean(paths) { filepaths =>
@@ -94,7 +94,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def deleteAll =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      (store.deleteAll(FilePath.root) >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
+      (store.deleteAllFromRoot >> filepaths.traverseU(store.exists)) must beOkLike(x => !x.tail.exists(identity)) })
 
   def move =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -118,7 +118,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def mirror =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      store.mirror(FilePath.root, FilePath.root </> "mirror") >> store.list(FilePath.root </> "mirror") must beOkValue(filepaths.map("mirror" </> _)) })
+      store.mirror(DirPath.Root, DirPath.unsafe("mirror")) >> store.list(DirPath.unsafe("mirror")) must beOkValue(filepaths.map("mirror" </> _)) })
 
   def moveTo =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -132,7 +132,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def mirrorTo =
     prop((paths: Paths) => clean(paths) { filepaths =>
-      store.mirrorTo(alternate, FilePath.root, FilePath.root </> "mirror") >> alternate.list(FilePath.root </> "mirror") must beOkValue(filepaths.map("mirror" </> _)) })
+      store.mirrorTo(alternate, DirPath.Root, DirPath.unsafe("mirror")) >> alternate.list(DirPath.unsafe("mirror")) must beOkValue(filepaths.map("mirror" </> _)) })
 
   def checksum =
     prop((m: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -163,11 +163,20 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def create(paths: Paths): ResultT[IO, Unit] =
     paths.entries.traverseU(e =>
-      Files.write(tmp1 </> e.full, e.value.toString)).void
+      Files.write(tmp1 </> FilePath.unsafe(e.full), e.value.toString)).void
 
   def clean[A](paths: Paths)(run: List[FilePath] => A): A = {
     create(paths).run.unsafePerformIO
     try run(files(paths))
     finally (Directories.delete(tmp1) >> Directories.delete(tmp2)).run.unsafePerformIO
   }
+
+  implicit class ToDirPath(s: String) {
+    def toDirPath: DirPath = DirPath.unsafe(s)
+  }
+
+  implicit class ToFilePath(s: String) {
+    def toFilePath: FilePath = FilePath.unsafe(s)
+  }
+
 }

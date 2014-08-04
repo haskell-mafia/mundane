@@ -8,9 +8,9 @@ import org.joda.time.format.DateTimeFormat
 import scalaz._, Scalaz._
 import scalaz.effect._
 
-case class Temporary(file: FilePath) {
-  def clean: ResultT[IO, Unit] =
-    Directories.delete(file)
+case class Temporary(dir: DirPath) {
+  def clean: ResultT[IO, Boolean] =
+    Directories.delete(dir)
 }
 
 object Temporary {
@@ -18,14 +18,17 @@ object Temporary {
     def close(temp: Temporary) = temp.clean.run.void // Squelch errors
   }
 
-  def directory(base: FilePath, prefix: String): ResultT[IO, Temporary] = {
+  def directory(base: DirPath, prefix: String): ResultT[IO, Temporary] = {
     val formatter = DateTimeFormat.forPattern("yyyyMMddHHmmss")
     val now = System.currentTimeMillis
     val seed = scala.util.Random.nextInt
-    val t = base </> s"${prefix}-${formatter.print(now)}-${seed}"
+    val t = base </> FileName.unsafe(s"$prefix-${formatter.print(now)}-$seed")
     Directories.mkdirs(t).as(Temporary(t))
   }
 
-  def using[A](f: FilePath => ResultTIO[A]): ResultTIO[A] =
-    ResultT.using(directory(FilePath(System.getProperty("java.io.tmpdir", "/tmp")), "temporary"))(temp => f(temp.file))
+  def using[A](f: DirPath => ResultTIO[A]): ResultTIO[A] =
+    ResultT.using(createTempDir)(temp => f(temp.dir))
+
+  def createTempDir =
+    directory(DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")), "temporary")
 }

@@ -37,37 +37,34 @@ object Files {
     _ <- ResultT.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield ()
 
-  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
-    if (isDirectory) ResultT.fail(s"Move not supported for directory $src")
-    else ResultT.safe {
-      val destf = dest.toFile
-      destf.getParentFile.mkdirs
-      src.toFile.renameTo(destf)
-    }
+  def move(src: FilePath, dest: FilePath): ResultT[IO, Unit] = ResultT.safe {
+    val destFile = dest.toFile
+    dest.dirname.toFile.mkdirs
+    src.toFile.renameTo(destFile)
   }
 
-  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = isDir(src).flatMap { isDirectory =>
-    if (isDirectory) ResultT.fail(s"Copy not supported for directory $src")
-    else ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(src.toFile)))(writeStream(dest, _))
+  def move(src: FilePath, dest: DirPath): ResultT[IO, Unit] =
+    move(src, dest <|> src.basename)
+
+  def copy(src: FilePath, dest: DirPath): ResultT[IO, Unit] = {
+    val srcFile = src.toFile
+    val destFilePath = dest <|> src.basename
+    dest.toFile.mkdirs
+
+    ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(srcFile)))(writeStream(destFilePath, _))
   }
 
-  def exists(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
-    path.toFile.exists
+  def copy(src: FilePath, dest: FilePath): ResultT[IO, Unit] = {
+    val srcFile = src.toFile
+    ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(srcFile)))(writeStream(dest, _))
   }
 
-  def isDir(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
-    path.toFile.isDirectory
-  }
-
-  def isFile(path: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
-    path.toFile.isFile
+  def exists(filePath: FilePath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+    val file = filePath.toFile
+    file.exists && file.isFile
   }
 
   def delete(path: FilePath): ResultT[IO, Unit] = for {
     e <- exists(path)
-    f <- isFile(path)
-    _ <- if (e && f) ResultT.safe[IO, Boolean] { path.toFile.delete }
-         else if (e) ResultT.fail[IO, Boolean](s"Can't delete <$path>, it is a directory.")
-         else        ResultT.ok[IO, Boolean] { true }
-  } yield ()
+  } yield !e || path.toFile.delete
 }

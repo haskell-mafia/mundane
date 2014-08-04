@@ -28,7 +28,7 @@ Temporary
 
   def sub =
     prop((prefix: File) => Temporary.using { work =>
-        Temporary.directory(work, prefix.getName).map(_.file.dirname -> work)
+        Temporary.directory(work, prefix.getName).map(_.dir.dirname -> work)
     } must beOkLike(dirs => dirs._1 ==== dirs._2))
 
   def different =
@@ -37,12 +37,12 @@ Temporary
     } must beOkLike(dirs => dirs._1 must_!= dirs._2))
 
   def usingOk =
-    Temporary.using(file => ResultT.ok(file.toFile.exists -> file))
+    Temporary.using(dir => ResultT.ok(dir.toFile.exists -> dir))
       .map(f => f._1 -> f._2.toFile.exists) must beOkValue(true -> false)
 
   def usingFail = {
-    var file: FilePath = null
-    Temporary.using{f => file = f; ResultT.fail("")}.toOption.unsafePerformIO() must beNone
-    !file.toFile.exists
+    var dir: DirPath = null
+    Temporary.using { d => dir = d; ResultT.fail("")}.toOption.unsafePerformIO() must beNone
+    !dir.toFile.exists
   }
 }
