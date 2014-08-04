@@ -6,6 +6,8 @@ resolvers += "Era7 maven releases" at "http://releases.era7.com.s3.amazonaws.com
 
 resolvers += Resolver.sonatypeRepo("releases")
 
+resolvers += Resolver.typesafeRepo("releases")
+
 addSbtPlugin("com.ambiata" % "promulgate" % "0.11.0-20140410040932-7b5bc30")
 
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")
