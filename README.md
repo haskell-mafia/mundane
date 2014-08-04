@@ -1,6 +1,8 @@
 mundane
 =======
 
+[![Build Status](https://travis-ci.org/ambiata/mundane.png)](https://travis-ci.org/ambiata/mundane)
+
 ```
 mundane, adjective, lacking interest or excitement; dull.
 ```
