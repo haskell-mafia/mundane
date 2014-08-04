@@ -15,5 +15,3 @@ Specifically mundane includes basic tools to help with:
  - dates & time (via joda)
  - monad transformer stacks to help deal with java style IO apis
  - io libraries
- 
-
