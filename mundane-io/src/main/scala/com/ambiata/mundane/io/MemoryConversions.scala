@@ -37,7 +37,7 @@ sealed trait BytesQuantity {
 }
 
 object BytesQuantity {
-  implicit def Numeric: Numeric[BytesQuantity] = new Numeric[BytesQuantity] {
+  implicit def BytesQuantityNumeric: Numeric[BytesQuantity] = new Numeric[BytesQuantity] {
     def plus(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value + y.toBytes.value).bytes
     def toDouble(x: BytesQuantity): Double = x.toBytes.value.toDouble
     def toFloat(x: BytesQuantity): Float = x.toBytes.value.toFloat
