@@ -3,6 +3,7 @@ package io
 
 import java.io._
 import java.net.URI
+import java.util.UUID
 import scalaz._, Scalaz._
 
 /**
@@ -34,6 +35,7 @@ case class FilePath(dirname: DirPath, basename: FileName) {
 
 object FilePath {
   def apply(n: FileName): FilePath = FilePath(DirPath.Root, n)
+  def apply(uuid: UUID): FilePath = apply(FileName(uuid))
 
   def unsafe(s: String): FilePath = DirPath.unsafe(s).toFilePath
   def unsafe(f: File): FilePath   = DirPath.unsafe(f).toFilePath
@@ -127,6 +129,8 @@ case class DirPath(dirs: Vector[FileName]) {
 
 object DirPath {
   def apply(n: FileName): DirPath = apply(Vector(n))
+
+  def apply(uuid: UUID): DirPath = apply(FileName(uuid))
 
   def unsafe(s: String): DirPath =
     DirPath(removeScheme(s).split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector)
