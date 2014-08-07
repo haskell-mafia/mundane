@@ -30,7 +30,7 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
         input match {
           case Nil => Failure(f)
           case head :: rest =>
-            val caretPosition = input.take(i - 1).map(_.size + 2).sum + input(i - 1).size / 2
+            val caretPosition = if (i == 0) 0 else input.take(i - 1).map(_.size + 2).sum + input(i - 1).size / 2
             val messagePosition = scala.math.max(0, caretPosition - (f.size / 2))
             val finalMessage =
               input.mkString(", ") + "\n" +
@@ -87,6 +87,14 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
 object ListParser {
   type ParseResult[A] = Validation[(Int, String), (Int, List[String], A)]
 
+  /** The parser that always succeeds with the specified value. */
+  def success[A](a: A): ListParser[A] =
+    ListParser((position, state) => (position, state, a).success)
+
+  /** The parser that always fails. */
+  def fail[A](message: String): ListParser[A] =
+    ListParser((position, state) => (position, message).failure)
+
   /**
    * a parser returning the current position (1-based) but does not consume any input
    * If the input has no elements the position is 0
@@ -94,84 +102,35 @@ object ListParser {
   def getPosition: ListParser[Int] =
     ListParser((position, state) => (position, state, position).success)
 
-  /**
-   * A parser for an Int
-   */
-  def int: ListParser[Int] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(s.parseInt.leftMap(_ => s"""not an int: '$s'"""))
-  } yield result
+  /** A convenience function for cunstructoring parsers from scalaz style parseX functions. */
+  def parseWithType[E, A](p: String => Validation[E, A], annotation: String) =
+    string.flatMap(s => value(p(s).leftMap(_ => s"""$annotation: '$s'""")))
 
-  /**
-   * A parser for a Short
-   */
-  def short: ListParser[Short] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(s.parseShort.leftMap(_ => s"""not a short: '$s'"""))
-  } yield result
+  /** A byte, parsed accoding to java.lang.Byte.parseByte */
+  def byte: ListParser[Byte] =
+    parseWithType(_.parseByte, "not a byte")
 
-  /**
-   * A parser for a Byte
-   */
-  def byte: ListParser[Byte] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(s.parseByte.leftMap(_ => s"""not a byte: '$s'"""))
-  } yield result
+  /** A short, parsed accoding to java.lang.Short.parseShort */
+  def short: ListParser[Short] =
+    parseWithType(_.parseShort, "not a short")
 
-  /**
-   * A parser for a local date with a given format
-   */
-  def localDate(format: String): ListParser[LocalDate] = for {
-    s        <- string
-    position <- getPosition
-    result   <- value(DateTimeFormat.forPattern(format).parseLocalDate(s),
-                      { t => s"""not a local date with format $format: '$s'""" })
-  } yield result
+  /** An int, parsed accoding to java.lang.Integer.parseInt */
+  def int: ListParser[Int] =
+    parseWithType(_.parseInt, "not an int")
 
-  /**
-   * A parser for a local date with the yyyy-MM-dd format
-   */
-  def localDate: ListParser[LocalDate] = localDate("yyyy-MM-dd")
+  /** A long, parsed accoding to java.lang.Long.parseLong */
+  def long: ListParser[Long] =
+    parseWithType(_.parseLong, "not a long")
 
-  /**
-   * A parser for a local date with a given format
-   */
-  def localDatetime(format: String): ListParser[LocalDateTime] = for {
-    s        <- string
-    position <- getPosition
-    result   <- value(DateTimeFormat.forPattern(format).parseLocalDateTime(s),
-                      { t => s"""not a local date time with format $format: '$s'""" })
-  } yield result
+  /** A double, parsed accoding to java.lang.Double.parseDouble */
+  def double: ListParser[Double] =
+    parseWithType(_.parseDouble, "not a double")
 
-  /**
-   * A parser for a local date with the dd/MM/yyyy format
-   */
-  def localDateTime: ListParser[LocalDateTime] = localDatetime("yyyy-MM-dd HH:mm:ss")
+  /** A boolean, parsed accoding to java.lang.Boolean.parseBoolean */
+  def boolean: ListParser[Boolean] =
+    parseWithType(_.parseBoolean, "not a boolean")
 
-  /**
-   * A parser for a Double
-   */
-  def double: ListParser[Double] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(s.parseDouble.leftMap(_ => s"""not a double: '$s'"""))
-  } yield result
-
-  /**
-   * A parser for a Boolean
-   */
-  def boolean: ListParser[Boolean] = for {
-    s         <- string
-    position  <- getPosition
-    result    <- value(s.parseBoolean.leftMap(_ => s"""not a boolean: '$s'"""))
-  } yield result
-
-  /**
-   * A parser for a String
-   */
+  /** Exactly one token, can only fail if the input is empty. */
   def string: ListParser[String] =
     ListParser((pos, str) => str match {
       case h :: t => (pos + 1, t, h).success
@@ -179,15 +138,43 @@ object ListParser {
     })
 
   /**
+   * A parser for a local date with a given format, where format means joda time
+   * supported formats: http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html
+   */
+  def localDateFormat(format: String): ListParser[LocalDate] =
+    string.flatMap(s => valueOr(DateTimeFormat.forPattern(format).parseLocalDate(s),
+                                _ => s"""not a local date with format $format: '$s'"""))
+
+  /**
+   * A parser for a local date-time with a given format, where format means joda time
+   * supported formats: http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html
+   */
+  def localDatetimeFormat(format: String): ListParser[LocalDateTime] =
+    string.flatMap(s => valueOr(DateTimeFormat.forPattern(format).parseLocalDateTime(s),
+                                _ => s"""not a local date time with format $format: '$s'"""))
+
+  /**
+   * A parser for a local date with the `yyyy-MM-dd` format.
+   */
+  def localDate: ListParser[LocalDate] =
+    localDateFormat("yyyy-MM-dd")
+
+  /**
+   * A parser for a local date with the `dd-MM-yyyy HH:mm:ss` format
+   */
+  def localDateTime: ListParser[LocalDateTime] =
+    localDatetimeFormat("yyyy-MM-dd HH:mm:ss")
+
+  /**
    * A parser for a value of type A
    */
-  def value[A](f: =>Validation[String, A]): ListParser[A] =
+  def value[A](f: => Validation[String, A]): ListParser[A] =
     ListParser((position, str) => f.bimap((position,_), (position, str, _)))
 
   /**
    * A parser for a value of type A with a failure message in case of an exception
    */
-  def value[A](a: =>A, failure: Throwable => String): ListParser[A] =
+  def valueOr[A](a: => A, failure: Throwable => String): ListParser[A] =
     value(Validation.fromTryCatch(a).leftMap(failure))
 
   /**
