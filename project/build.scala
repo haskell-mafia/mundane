@@ -14,11 +14,11 @@ object build extends Build {
     )
     .dependsOn(cli, control, data, error, io, parse, reflect, store, testing, time)
 
-  lazy val standardSettings = Defaults.defaultSettings ++
-                   projectSettings          ++
-                   compilationSettings      ++
-                   testingSettings          ++
-                   Seq(resolvers ++= depend.resolvers)
+  lazy val standardSettings = Defaults.coreDefaultSettings ++
+                              projectSettings              ++
+                              compilationSettings          ++
+                              testingSettings              ++
+                              Seq(resolvers ++= depend.resolvers)
 
   lazy val projectSettings: Seq[Settings] = Seq(
       name := "mundane"
