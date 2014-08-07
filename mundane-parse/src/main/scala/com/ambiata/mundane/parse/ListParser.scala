@@ -113,6 +113,15 @@ object ListParser {
   } yield result
 
   /**
+   * A parser for a Byte
+   */
+  def byte: ListParser[Byte] = for {
+    s         <- string
+    position  <- getPosition
+    result    <- value(s.parseByte.leftMap(_ => s"""not a byte: '$s'"""))
+  } yield result
+
+  /**
    * A parser for a local date with a given format
    */
   def localDate(format: String): ListParser[LocalDate] = for {

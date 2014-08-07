@@ -15,6 +15,7 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
    extract a nonempty string                                                        $nonemptystring1
    extract an int                                                                   $int1
    extract a short                                                                  $short1
+   extract a byte                                                                   $byte1
    extract a double                                                                 $double1
    extract a LocalDate                                                              $localDate1
    consume elements                                                                 $consume1
@@ -72,6 +73,20 @@ class ListParserSpec extends Specification with ThrownExpectations { def is = s2
       s1 <- short
       s2 <- short
     } yield (s1, s2)).parse(List("2", "a")) must failAt(2, "not a short: 'a'")
+  }
+
+  def byte1 = {
+    byte.run(List("1")).toOption must beSome(1.toByte)
+    byte.run(List("-1")).toOption must beSome(-1.toByte)
+    byte.run(List("1.0")).toOption must beNone
+    byte.run(List("128")).toOption must beNone
+    byte.run(List("-129")).toOption must beNone
+
+    // failure message with position
+    (for {
+      b1 <- byte
+      b2 <- byte
+    } yield (b1, b2)).parse(List("2", "a")) must failAt(2, "not a byte: 'a'")
   }
 
   def double1 = {
