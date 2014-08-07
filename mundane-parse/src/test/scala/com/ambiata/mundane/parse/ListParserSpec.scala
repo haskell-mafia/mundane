@@ -192,7 +192,7 @@ Properties
     ListParser.fail(e).run(s).toOption must beNone)
 
   def symmetric[A: Arbitrary: Show](p: ListParser[A]) =
-    prop((a: A) => p.run(List(a.shows)).toOption must beSome(a))
+    symmetricWith(p)(_.shows)
 
   def symmetricWith[A: Arbitrary](p: ListParser[A])(toString: A => String) =
     prop((a: A) => p.run(List(toString(a))).toOption must beSome(a))
