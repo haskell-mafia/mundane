@@ -33,7 +33,7 @@ object depend {
         "org.parboiled"       %% "parboiled"      % "2.0.0"
       )
 
-  val rng =      Seq("com.nicta"            %% "rng"            % "1.2.1")
+  val rng =      Seq("com.nicta"            %% "rng"            % "1.3.0")
 
   val kiama =    Seq("com.googlecode.kiama" %% "kiama"          % "1.6.0")
 
