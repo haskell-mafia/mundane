@@ -17,6 +17,7 @@ Examples
    extract the position of each element                                              $position1
    extract a string                                                                  $string1
    extract a nonempty string                                                         $nonemptystring1
+   extract a string of a certain length                                              $lengthstring1
    extract an int                                                                    $int1
    extract a short                                                                   $short1
    extract a byte                                                                    $byte1
@@ -62,6 +63,12 @@ Properties
 
   def string1 =
     string.run(List("a")).toOption must beSome("a")
+
+  def lengthstring1 = {
+    string.oflength(4).run(List("abcd")).toOption must beSome("abcd")
+    string.oflength(4).run(List("ab")).toOption must beNone
+    string.oflength(4).run(List("")).toOption must beNone
+  }
 
   def nonemptystring1 = {
     string.nonempty.run(List("a")).toOption must beSome("a")

@@ -61,6 +61,12 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else (position, state, a).success
     ))
 
+  def oflength(len: Int)(implicit ev: A =:= String) =
+    flatMap(a => ListParser((position, state) =>
+      if (ev(a).length != len) (position, s"Expected string at position $position to be of length $len").failure
+      else (position, state, a).success
+    ))
+
   def option: ListParser[Option[A]] =
     ListParser((position, state) => state match {
       case "" :: t => (position + 1, t, None).success
