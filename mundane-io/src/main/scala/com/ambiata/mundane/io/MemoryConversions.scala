@@ -3,6 +3,9 @@ package mundane
 package io
 
 import MemoryConversions._
+
+import scalaz.{Ordering, Order}
+
 /**
  * Conversion units for memory quantities
  */
@@ -48,6 +51,11 @@ object BytesQuantity {
     def times(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value * y.toBytes.value).bytes
     def minus(x: BytesQuantity, y: BytesQuantity): BytesQuantity = (x.toBytes.value - y.toBytes.value).bytes
     def compare(x: BytesQuantity, y: BytesQuantity): Int = x.toBytes.value.compare(y.toBytes.value)
+  }
+  // Prior to Scalaz 7.1.0 this would be inferred from Scala's Ordering, but now we need our own
+  implicit def BytesQuantityOrder: Order[BytesQuantity] = new Order[BytesQuantity] {
+    override def order(x: BytesQuantity, y: BytesQuantity): Ordering =
+      Ordering.fromInt(x.toBytes.value.compare(y.toBytes.value))
   }
 }
 
