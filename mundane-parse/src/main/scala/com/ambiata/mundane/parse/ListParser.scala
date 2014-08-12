@@ -67,6 +67,13 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else (position, state, a).success
     ))
 
+  def oflengthifsome(len: Int)(implicit ev: A =:= Option[String]) =
+    flatMap(a => ListParser((position, state) => ev(a) match {
+      case None    => (position, state, None).success
+      case Some(x) if (x.length == len) => (position, state, Some(x)).success
+      case Some(x) => (position, s"Expected the optional string at position $position to be of length $len if it exists").failure
+    }))
+
   def option: ListParser[Option[A]] =
     ListParser((position, state) => state match {
       case "" :: t => (position + 1, t, None).success

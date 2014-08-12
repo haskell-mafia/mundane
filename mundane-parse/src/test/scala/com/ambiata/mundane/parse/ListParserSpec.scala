@@ -18,6 +18,7 @@ Examples
    extract a string                                                                  $string1
    extract a nonempty string                                                         $nonemptystring1
    extract a string of a certain length                                              $lengthstring1
+   extract an optional string of a certain length                                    $optionlengthstring1
    extract an int                                                                    $int1
    extract a short                                                                   $short1
    extract a byte                                                                    $byte1
@@ -68,6 +69,12 @@ Properties
     string.oflength(4).run(List("abcd")).toOption must beSome("abcd")
     string.oflength(4).run(List("ab")).toOption must beNone
     string.oflength(4).run(List("")).toOption must beNone
+  }
+
+  def optionlengthstring1 = {
+    string.option.oflengthifsome(4).run(List("abcd")) must_== Some("abcd").success
+    string.option.oflengthifsome(4).run(List("ab")).toOption must beNone
+    string.option.oflengthifsome(4).run(List("")) must_== None.success
   }
 
   def nonemptystring1 = {
