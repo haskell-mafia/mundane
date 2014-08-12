@@ -119,7 +119,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def mirror =
     prop((paths: Paths) => clean(paths) { filepaths =>
       store.mirror(DirPath.Root, DirPath.unsafe("mirror")) >> store.list(DirPath.unsafe("mirror")) must
-        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map("mirror" </> _):_*))) })
+        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map(DirPath.Root </> "mirror" </> _):_*))) })
 
   def moveTo =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -134,7 +134,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def mirrorTo =
     prop((paths: Paths) => clean(paths) { filepaths =>
       store.mirrorTo(alternate, DirPath.Root, DirPath.unsafe("mirror")) >> alternate.list(DirPath.unsafe("mirror")) must
-        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map("mirror" </> _):_*))) })
+        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map(DirPath.Root </> "mirror" </> _):_*))) })
 
   def checksum =
     prop((m: Entry) => clean(Paths(m :: Nil)) { _ =>

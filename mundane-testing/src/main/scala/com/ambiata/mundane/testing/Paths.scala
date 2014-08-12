@@ -8,7 +8,7 @@ import scalaz.effect.IO
 
 case class Entry(path: String, value: Int) {
   def full =
-    path + "/" + value.toString
+    "/" + path + "/" + value.toString
 }
 case class Paths(entries: List[Entry])
 

@@ -23,17 +23,32 @@ class FilePathSpec extends Specification { def is = s2"""
    a String
    ${ DirPath.unsafe("hello/world").path === "hello/world"  }
    a File
-   ${ DirPath.unsafe(new File("hello/world")).path === "hello/world"  }
+   ${ DirPath.unsafe(new File("/hello/world")).path === "/hello/world"  }
    a URI
    ${ DirPath.unsafe(new URI("hello/world")).path === "hello/world"  }
 
+ An absolute dir path can be built from
+   a string starting with a /
+   ${ DirPath.unsafe("/hello/world").isAbsolute }
+   the DirPath.Root object
+   ${ (DirPath.Root </> "world").isAbsolute }
+
+ A relative dir path can be built from
+   a string not starting with a
+   ${ DirPath.unsafe("hello/world").isRelative }
+   the DirPath.Empty object
+   ${ (DirPath.Empty </> "world").isRelative }
+   a literal string
+   ${ ("hello" </> "world").isRelative }
+
  The DirPath loses its scheme if created from a string/file/uri
-   ${ DirPath.unsafe(new URI("s3://hello/world")).path === "hello/world"  }
+   ${ DirPath.unsafe(new URI("s3://hello/world")).path === "/hello/world"  }
 
  Basic operations can be executed on a DirPath
    get the parent
    ${ DirPath.Root.parent must beNone }
-   ${ DirPath("test").parent must beSome(DirPath.Root) }
+   ${ DirPath("test").parent must beSome(DirPath.Empty) }
+   ${ (DirPath.Root </> "test").parent must beSome(DirPath.Root) }
    ${ ("test" </> "hello" </> "world").parent must beSome("test" </> "hello") }
 
    get the basename
@@ -43,7 +58,7 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </> "hello" </> "world").rootname must_== DirPath.unsafe("test") }
 
    get the path as a string
-   ${ DirPath.Root.path must_== "" }
+   ${ DirPath.Root.path must_== "/" }
    ${ DirPath("test").path must_== "test" }
    ${ ("test" </> "hello" </> "world").path must_== "test/hello/world" }
 
