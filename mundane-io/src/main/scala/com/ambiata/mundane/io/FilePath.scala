@@ -31,6 +31,20 @@ case class FilePath(dirname: DirPath, basename: FileName) {
   /** @return interpret this FilePath as a DirPath */
   def toDirPath: DirPath = dirname </> basename
 
+  /** @return true if the file path is absolute */
+  def isAbsolute = dirname.isAbsolute
+
+  /** @return an absolute file path */
+  def asAbsolute = setAbsolute(true)
+  /** @return a relative file path */
+  def asRelative = setAbsolute(false)
+
+  /** @return modify the absolute status of this file path */
+  def setAbsolute(absolute: Boolean) = copy(dirname.setAbsolute(absolute))
+
+  /** @return true if this file path is relative */
+  def isRelative = !isAbsolute
+
 }
 
 object FilePath {
@@ -51,7 +65,7 @@ object FilePath {
  * If the list is empty, this means we are at the root (the equivalent of / on a Unix file system)
  *
  */
-case class DirPath(dirs: Vector[FileName]) {
+case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
   /** @return either the parent directory or the root if we already are at the root */
   def dirname: DirPath  = parent.getOrElse(this)
 
@@ -69,7 +83,7 @@ case class DirPath(dirs: Vector[FileName]) {
     }
 
   /** @return the path for this file as a / separated string */
-  def path: String = if (isRoot) "" else dirs.map(_.name).toList.mkString("/")
+  def path: String = (if (isAbsolute) "/" else "") + dirs.map(_.name).toList.mkString("/")
 
   /** @return the path for this file as a / separated string, with a final / */
   def dirPath: String = dirs.map(_.name).toList.mkString("", "/", "/")
@@ -94,7 +108,7 @@ case class DirPath(dirs: Vector[FileName]) {
    * @return another FilePath
    */
   def </>(other: FilePath): FilePath =
-    FilePath(DirPath(dirs ++ other.dirname.dirs), other.basename)
+    FilePath(DirPath(dirs ++ other.dirname.dirs, isAbsolute), other.basename)
 
   /**
    * append a new name to this directory
@@ -123,17 +137,33 @@ case class DirPath(dirs: Vector[FileName]) {
   /** @return interpret this DirPath as a FilePath, which might be /. if this DirPath is Root */
   def toFilePath: FilePath = FilePath(dirname, basename)
 
+  /** @return true if we are at the root of this path */
   def isRoot = dirs.isEmpty
+
+  /** @return an absolute dir path */
+  def asAbsolute = setAbsolute(true)
+
+  /** @return a relative dir path */
+  def asRelative = setAbsolute(false)
+
+  /** @return modify the absolute status of this dir path */
+  def setAbsolute(absolute: Boolean) = copy(isAbsolute = absolute)
+
+  /** @return true if this dir path is relative */
+  def isRelative = !isAbsolute
 
 }
 
 object DirPath {
-  def apply(n: FileName): DirPath = apply(Vector(n))
+  def apply(n: FileName): DirPath = apply(Vector(n), isAbsolute = false)
 
   def apply(uuid: UUID): DirPath = apply(FileName(uuid))
 
-  def unsafe(s: String): DirPath =
-    DirPath(removeScheme(s).split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector)
+  def unsafe(s: String): DirPath = {
+    val withoutScheme = removeScheme(s)
+    val isAbsolute = withoutScheme.startsWith("/")
+    DirPath(withoutScheme.split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector, isAbsolute)
+  }
 
   def unsafe(f: File): DirPath =
     unsafe(f.getPath)
@@ -144,12 +174,13 @@ object DirPath {
   private def removeScheme(s: String): String =
     Seq("hdfs:", "s3:", "file:").foldLeft(s) { (res, cur) => res.replace(cur, "") }
 
-  val Root = DirPath(dirs = Vector())
+  val Root = DirPath(dirs = Vector(), isAbsolute = true)
+  val Empty = DirPath(dirs = Vector(), isAbsolute = false)
 }
 
 class DirPathSyntax(name: FileName) {
-  def </>(other: DirPath) : DirPath  = DirPath(name +: other.dirs)
-  def </>(other: FilePath): FilePath = FilePath(DirPath(name +: other.dirname.dirs), other.basename)
+  def </>(other: DirPath) : DirPath  = DirPath(name +: other.dirs, isAbsolute = false)
+  def </>(other: FilePath): FilePath = FilePath(DirPath(name +: other.dirname.dirs, isAbsolute = false), other.basename)
   def </>(other: FileName): DirPath  = DirPath(name) </> other
   def <|>(other: FileName): FilePath = DirPath(name) <|> other
 }
