@@ -89,6 +89,9 @@ object ResultT extends LowPriorityResultT {
   def fromIO[A](v: IO[A]): ResultT[IO, A] =
     ResultT(v.map(Result.ok))
 
+  def fromDisjunctionString[F[+_]: Monad, A](v: String \/ A): ResultT[F, A] =
+    fromDisjunction(v.leftMap(This.apply))
+
   def fromOption[F[+_]: Monad, A](v: Option[A], failure: String): ResultT[F, A] =
     v.cata(ResultT.ok[F, A], ResultT.fail(failure))
 
