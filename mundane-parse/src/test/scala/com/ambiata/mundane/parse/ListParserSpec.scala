@@ -184,10 +184,9 @@ Properties
       s2 <- string
     } yield (s1, i, s2)
 
-    parser.run(List("aaaaaaaaaaaaaaa", "bbb", "ccccc")).toEither.leftMap(_.replace(" ", "_")) must beLeft(
+    parser.run(List("aaaaaaaaaaaaaaa", "bbb", "ccccc")).toEither must beLeft(
       """|aaaaaaaaaaaaaaa, bbb, ccccc
-         |                  ^
-         |          not an int: 'bbb' (position: 2)""".stripMargin.replace(" ", "_"))
+         |not an int: 'bbb' (position: 2)""".stripMargin)
   }
 
   def option1 =
