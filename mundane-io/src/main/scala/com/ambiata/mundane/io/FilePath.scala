@@ -127,7 +127,7 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
    */
   def relativeTo(other: DirPath): DirPath =
     (dirs, other.dirs) match {
-      case (h +: t, h1 +: t1) if h == h1 => copy(dirs = t).relativeTo(other.copy(dirs = t1))
+      case (h +: t, h1 +: t1) if h == h1 => copy(dirs = t, isAbsolute = false).relativeTo(other.copy(dirs = t1))
       case _                             => this
     }
 
