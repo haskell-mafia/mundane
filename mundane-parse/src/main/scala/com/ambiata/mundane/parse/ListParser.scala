@@ -29,15 +29,7 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       case Failure((i, f)) =>
         input match {
           case Nil => Failure(f)
-          case head :: rest =>
-            val caretPosition = if (i == 0) 0 else input.take(i - 1).map(_.size + 2).sum + input(i - 1).size / 2
-            val messagePosition = scala.math.max(0, caretPosition - (f.size / 2))
-            val finalMessage =
-              input.mkString(", ") + "\n" +
-              (" " * caretPosition) + "^\n" +
-              (" " * messagePosition) + f + s" (position: $i)"
-
-            finalMessage.failure
+          case head :: rest => (input.mkString(", ") + "\n" + f + s" (position: $i)").failure
         }
 
     }
