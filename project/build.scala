@@ -90,7 +90,8 @@ object build extends Build {
   , base = file("mundane-parse")
   , settings = standardSettings ++ lib("parse") ++ Seq[Settings](
       name := "mundane-parse"
-    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.parboiled(sv) ++ depend.joda ++ depend.testing))
+    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.parboiled(sv) ++ depend.joda ++ depend.testing
+      ++ depend.caliper ++ depend.atto ++ depend.ermine))
   )
   .dependsOn(control)
 

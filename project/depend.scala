@@ -18,6 +18,12 @@ object depend {
 
   val testing = specs2.map(_ % "test")
 
+  val atto = Seq("org.tpolecat" %% "atto-core"  % "0.4.0")
+  val ermine = Seq("scala-parsers" %% "scala-parsers"  % "0.2")
+
+  val caliper   = Seq("com.google.caliper"   %  "caliper"         % "0.5-rc1",
+    "com.google.guava"     %  "guava"           % "14.0.1" force())
+
   def reflect(version: String) =
     Seq("org.scala-lang" % "scala-compiler" % version, "org.scala-lang" % "scala-reflect" % version) ++
       (if (version.contains("2.10")) Seq(
@@ -40,5 +46,8 @@ object depend {
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")
     , Resolver.typesafeRepo("releases")
-    , "Scalaz Bintray Repo"   at "http://dl.bintray.com/scalaz/releases")
+    , "Scalaz Bintray Repo"   at "http://dl.bintray.com/scalaz/releases"
+    , "tpolecat" at "http://dl.bintray.com/tpolecat/maven"
+    , "ermine" at "http://dl.bintray.com/ermine/maven"
+  )
 }
