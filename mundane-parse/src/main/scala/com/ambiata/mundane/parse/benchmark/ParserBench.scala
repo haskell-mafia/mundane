@@ -15,18 +15,14 @@ class ParserBench extends SimpleScalaBenchmark {
     repeat(reps)(Ermine.JsonParser.parsing(Json.text2))
 
   def time_atto_json(reps: Int): Unit =
-    for (i <- 0 to reps)
-      Atto.parse(Atto.JsonExample.jexpr, Json.text)
+    repeat(reps)(Atto.parse(Atto.JsonExample.jexpr, Json.text))
 
 //  def time_atto_json2(reps: Int): Unit =
-//    for (i <- 0 to reps)
-//      Atto.parse(Atto.JsonExample.jexpr, Json.text2)
+//    repeat(reps)(Atto.parse(Atto.JsonExample.jexpr, Json.text2))
 
   def time_parboided_json(reps: Int): Unit =
-    for (i <- 0 to reps)
-      new Parboil.JsonParser(Json.text).Json.run().get
+    repeat(reps)(new Parboil.JsonParser(Json.text).Json.run().get)
 
   def time_parboided_json2(reps: Int): Unit =
-    for (i <- 0 to reps)
-      new Parboil.JsonParser(Json.text2).Json.run().get
+    repeat(reps)(new Parboil.JsonParser(Json.text2).Json.run().get)
 }
