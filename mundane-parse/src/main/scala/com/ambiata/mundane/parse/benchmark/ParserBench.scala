@@ -8,6 +8,12 @@ object ParserBenchApp extends App {
 
 class ParserBench extends SimpleScalaBenchmark {
 
+  def time_ermine_json(reps: Int): Unit =
+    repeat(reps)(Ermine.JsonParser.parsing(Json.text))
+
+  def time_ermine_json2(reps: Int): Unit =
+    repeat(reps)(Ermine.JsonParser.parsing(Json.text2))
+
   def time_atto_json(reps: Int): Unit =
     for (i <- 0 to reps)
       Atto.parse(Atto.JsonExample.jexpr, Json.text)
