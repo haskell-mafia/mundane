@@ -58,7 +58,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def list =
     prop((paths: Paths) => clean(paths) { filepaths =>
-       store.listAll must beOkLike((_:List[FilePath]) must contain(exactly(filepaths:_*))) })
+       store.listAll must beOkLike((_:List[FilePath]).toSet must_== filepaths.toSet) })
 
   def filter =
     prop((paths: Paths) => clean(paths) { filepaths =>
@@ -119,7 +119,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def mirror =
     prop((paths: Paths) => clean(paths) { filepaths =>
       store.mirror(DirPath.Root, DirPath.unsafe("mirror")) >> store.list(DirPath.unsafe("mirror")) must
-        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map(DirPath.Root </> "mirror" </> _):_*))) })
+        beOkLike((_:List[FilePath]).toSet must_== filepaths.map(DirPath.Empty </> "mirror" </> _).toSet) })
 
   def moveTo =
     prop((m: Entry, n: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -134,7 +134,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def mirrorTo =
     prop((paths: Paths) => clean(paths) { filepaths =>
       store.mirrorTo(alternate, DirPath.Root, DirPath.unsafe("mirror")) >> alternate.list(DirPath.unsafe("mirror")) must
-        beOkLike((_:List[FilePath]) must contain(exactly(filepaths.map(DirPath.Root </> "mirror" </> _):_*))) })
+        beOkLike((_:List[FilePath]).toSet must_== filepaths.map(DirPath.Empty </> "mirror" </> _).toSet) })
 
   def checksum =
     prop((m: Entry) => clean(Paths(m :: Nil)) { _ =>
@@ -161,7 +161,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
       (store.linesUtf8.write(m.full.toFilePath, s.map(_.toString)) >> store.linesUtf8.read(m.full.toFilePath)) must beOkValue(s.map(_.toString)) })
 
   def files(paths: Paths): List[FilePath] =
-    paths.entries.map(e => e.full.toFilePath).sortBy(_.path)
+    paths.entries.map(e => e.full.toFilePath.asRelative).sortBy(_.path)
 
   def create(paths: Paths): ResultT[IO, Unit] =
     paths.entries.traverseU(e =>

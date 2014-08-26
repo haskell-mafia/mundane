@@ -12,9 +12,9 @@ object depend {
   val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.4.1")
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-scalacheck"
-                   , "org.specs2"           %% "specs2-junit").map(_ % "2.3.12")
+                   , "org.specs2"           %% "specs2-junit").map(_ % "2.4.1-scalaz-7.0.6")
 
-  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.3.12" excludeAll ExclusionRule(organization = "org.scalamacros"))
+  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.4.1-scalaz-7.0.6" excludeAll ExclusionRule(organization = "org.scalamacros"))
 
   val testing = specs2.map(_ % "test")
 
