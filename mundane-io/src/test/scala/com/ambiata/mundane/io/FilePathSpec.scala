@@ -74,6 +74,9 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </> "hello" </> "world" <|> "eric").relativeTo("test" </> "hello")  must beRelative }
    ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("other" </> "hello") === "test" </> "hello" </> "world" </> "eric" }
    ${ ("test" </> "hello" </> "world").fromRoot === "hello" </> "world" }
+   ${ ("test" </> "hello" </> "world").names === List("test", "hello", "world").map(FileName.unsafe) }
+   ${ ("test" </> "hello" </> "world" </> "hi").up(2) === "test" </> "hello" }
+   ${ ("test" </> "hello" </> "world" </> "hi").down(2) === "world" </> "hi" }
 
  FilePaths
  ========

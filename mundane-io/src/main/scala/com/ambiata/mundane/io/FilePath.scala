@@ -45,6 +45,22 @@ case class FilePath(dirname: DirPath, basename: FileName) {
   /** @return true if this file path is relative */
   def isRelative = !isAbsolute
 
+  /** @return all the names of this path */
+  def names: List[FileName] =
+    dirname.names :+ basename
+
+  /** @return all the names of this path */
+  def components: List[String] =
+    names.map(_.toString)
+
+  /** go down n directories */
+  def down(n: Int): FilePath =
+    copy(dirname = dirname.down(n))
+
+  /** go up n directories */
+  def up(n: Int): FilePath =
+    copy(dirname = dirname.up(n))
+
 }
 
 object FilePath {
@@ -151,6 +167,22 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
 
   /** @return true if this dir path is relative */
   def isRelative = !isAbsolute
+
+  /** @return all the names of this path */
+  def names: List[FileName] =
+    dirs.toList
+
+  /** @return all the names of this path */
+  def components: List[String] =
+    names.map(_.name)
+
+  /** go up n directories */
+  def up(n: Int): DirPath =
+    copy(dirs.dropRight(n))
+
+  /** go down n directories */
+  def down(n: Int): DirPath =
+    copy(dirs.drop(n))
 
 }
 
