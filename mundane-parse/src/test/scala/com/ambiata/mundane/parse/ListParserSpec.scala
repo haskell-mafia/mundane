@@ -35,6 +35,9 @@ Examples
    option not set                                                                    $option2
    option invalid                                                                    $option3
    return a message containing the full list and the first failure if parsing fails  $fail1
+   or combinator only executes other parser when there is a failure                  $orCombinator1
+   or combinator never executes other parser when there is no failure                $orCombinator2
+   or combinator fails when both first and second parsers fail                       $orCombinator3
 
 Properties
 ==========
@@ -188,6 +191,15 @@ Properties
       """|aaaaaaaaaaaaaaa, bbb, ccccc
          |not an int: 'bbb' (position: 2)""".stripMargin)
   }
+
+  def orCombinator1 = prop((msg: String, str: String) =>
+    ((fail(msg) ||| string).run(List(str)) ==== str.success))
+
+  def orCombinator2 = prop((msg: String, str: String) =>
+    ((string ||| fail(msg)).run(List(str)) ==== str.success))
+
+  def orCombinator3 = prop((msg1: String, msg2: String, str: String) =>
+    ((fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft))
 
   def option1 =
     ListParser.int.option.run(List("123")) must_== Some(123).success
