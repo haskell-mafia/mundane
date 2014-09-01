@@ -80,7 +80,7 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
 
   def |||(x: ListParser[A]): ListParser[A] =
     ListParser((n, ls) =>
-      x.parse(n, ls) match {
+      parse(n, ls) match {
         case s @ Success(_) => s
         case Failure(_)     => x.parse(n, ls)
       })
