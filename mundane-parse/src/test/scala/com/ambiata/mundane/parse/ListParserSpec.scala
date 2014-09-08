@@ -22,6 +22,7 @@ Examples
    extract an int                                                                    $int1
    extract a short                                                                   $short1
    extract a byte                                                                    $byte1
+   extract a char                                                                    $char1
    extract a double                                                                  $double1
    extract a LocalDate                                                               $localDate1
    consume elements                                                                  $consume1
@@ -38,6 +39,7 @@ Examples
    or combinator only executes other parser when there is a failure                  $orCombinator1
    or combinator never executes other parser when there is no failure                $orCombinator2
    or combinator fails when both first and second parsers fail                       $orCombinator3
+   error if char is invalid                                                          $invalidChar1
 
 Properties
 ==========
@@ -123,6 +125,12 @@ Properties
       b2 <- byte
     } yield (b1, b2)).parse(List("2", "a")) must failAt(2, "not a byte: 'a'")
   }
+
+  def char1 = prop((c: Char) =>
+    ListParser.char.run(List(c.toString)).toOption must beSome(c))
+
+  def invalidChar1 = prop((str: String) => (str.length != 1) ==> {
+    ListParser.char.run(List(str)).toOption must beNone })
 
   def double1 = {
     double.run(List("1.0")).toOption must beSome(1.0)

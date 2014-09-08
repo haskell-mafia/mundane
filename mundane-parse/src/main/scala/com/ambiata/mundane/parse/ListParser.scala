@@ -108,8 +108,12 @@ object ListParser {
     ListParser((position, state) => (position, state, position).success)
 
   /** A convenience function for cunstructoring parsers from scalaz style parseX functions. */
-  def parseWithType[E, A](p: String => Validation[E, A], annotation: String) =
+  def parseWithType[E, A](p: String => Validation[E, A], annotation: String): ListParser[A] =
     string.flatMap(s => value(p(s).leftMap(_ => s"""$annotation: '$s'""")))
+
+  /** A convenience function for custom string parsers */
+  def parseAttempt[A](p: String => Option[A], annotation: String): ListParser[A] =
+    parseWithType(s => p(s).toSuccess(()), annotation)
 
   /** A byte, parsed accoding to java.lang.Byte.parseByte */
   def byte: ListParser[Byte] =
@@ -134,6 +138,10 @@ object ListParser {
   /** A boolean, parsed accoding to java.lang.Boolean.parseBoolean */
   def boolean: ListParser[Boolean] =
     parseWithType(_.parseBoolean, "not a boolean")
+
+  /** A char, the head of a single character string */
+  def char: ListParser[Char] =
+    parseAttempt(s => s.headOption.filter(_ => s.length == 1), "Not a char")
 
   /** Exactly one token, can only fail if the input is empty. */
   def string: ListParser[String] =
