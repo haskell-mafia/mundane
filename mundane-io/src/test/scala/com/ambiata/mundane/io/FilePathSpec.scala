@@ -78,6 +78,9 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </> "hello" </> "world" </> "hi").up(2) === "test" </> "hello" }
    ${ ("test" </> "hello" </> "world" </> "hi").down(2) === "world" </> "hi" }
 
+   filter hidden directories from a list
+   ${ List("hello" </> ".world", "hello" </> "world").filterHidden === List("hello" </> "world") }
+
  FilePaths
  ========
 
@@ -92,6 +95,9 @@ class FilePathSpec extends Specification { def is = s2"""
    get the path as a string
    ${ FilePath("test").path must_== "test" }
    ${ ("test" </> "hello" <|> "world").path must_== "test/hello/world" }
+
+   filter hidden files from a list
+   ${ List("hello" <|> ".world", "hello" <|> "world", "hello" <|> "_SUCCESS").filterHidden === List("hello" <|> "world") }
 
 """
   def beRelative: Matcher[DirPath] = { dirPath: DirPath =>

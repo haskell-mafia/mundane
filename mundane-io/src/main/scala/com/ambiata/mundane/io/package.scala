@@ -43,6 +43,16 @@ package object io extends MacrosCompat {
     def toInputStream: ResultT[IO, InputStream] = ResultT.safe { new FileInputStream(filePath.path) }
   }
 
+  implicit class FilePathListSyntax(l: List[FilePath]) {
+    def filterHidden: List[FilePath] =
+      l.filter(f => !Seq(".", "_").exists(c => f.basename.name.startsWith(c)))
+  }
+
+  implicit class DirPathListSyntax(l: List[DirPath]) {
+    def filterHidden: List[DirPath] =
+      l.filter(f => !f.basename.name.startsWith("."))
+  }
+
   implicit def ToFileName(s: String): FileName =
     macro create
 
