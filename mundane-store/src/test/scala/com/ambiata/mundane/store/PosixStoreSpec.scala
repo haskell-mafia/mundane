@@ -15,7 +15,8 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   Posix Store Usage
   =================
 
-  list path                                       $list
+  list all file paths                             $list
+  list directories                                $listDirs
   filter listed paths                             $filter
   find path in root (thirdish)                    $find
   find path in root (first)                       $findfirst
@@ -59,6 +60,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def list =
     prop((paths: Paths) => clean(paths) { filepaths =>
        store.listAll must beOkLike((_:List[FilePath]).toSet must_== filepaths.toSet) })
+
+  def listDirs =
+    prop((paths: Paths) => clean(paths) { filepaths =>
+      store.listDirs(DirPath.Empty) must beOkLike((_:List[DirPath]).toSet must_== filepaths.map(_.rootname).toSet) })
 
   def filter =
     prop((paths: Paths) => clean(paths) { filepaths =>
