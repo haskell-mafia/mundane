@@ -124,7 +124,8 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
    * @return another FilePath
    */
   def </>(other: FilePath): FilePath =
-    FilePath(DirPath(dirs ++ other.dirname.dirs, isAbsolute), other.basename)
+    if (other == DirPath.Empty.toFilePath) toFilePath
+    else                                   FilePath(DirPath(dirs ++ other.dirname.dirs, isAbsolute), other.basename)
 
   /**
    * append a new name to this directory

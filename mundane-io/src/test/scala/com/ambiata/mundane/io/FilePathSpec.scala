@@ -95,6 +95,7 @@ class FilePathSpec extends Specification { def is = s2"""
    get the path as a string
    ${ FilePath("test").path must_== "test" }
    ${ ("test" </> "hello" <|> "world").path must_== "test/hello/world" }
+   ${ ("test" </> "hello" </> DirPath.Empty.toFilePath).path must_== "test/hello" }
 
    filter hidden files from a list
    ${ List("hello" <|> ".world", "hello" <|> "world", "hello" <|> "_SUCCESS").filterHidden === List("hello" <|> "world") }
