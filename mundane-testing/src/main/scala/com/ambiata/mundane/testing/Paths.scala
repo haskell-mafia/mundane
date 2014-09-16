@@ -5,6 +5,7 @@ import java.io._
 import org.scalacheck._, Arbitrary._
 import scalaz._, Scalaz._
 import scalaz.effect.IO
+import scala.collection.JavaConversions._
 
 case class Entry(path: String, value: Int) {
   def prepend(string: String) = copy(string+"/"+path)
@@ -39,19 +40,19 @@ object Paths {
     n <- Gen.choose(1, 1000000)
   } yield Entry(s"$prefix/$p", n)
 
-  def entries(prefix: String): Gen[List[Entry]] =
-    Gen.frequency(
-      2 -> (for {
-        n        <- Gen.choose(1, 10)
-        children <- Gen.listOfN(n, path)
-        r        <- children.foldRight(Gen.oneOf(List[List[List[Entry]]]()))((el, acc) => for { accx <- acc; x <- entries(el) } yield x :: accx)
-      } yield r.flatten)
-    , 1 -> (for {
-        n        <- Gen.choose(1, 10)
-        children <- Gen.listOfN(n, entry(prefix))
-      } yield children)
-    )
-
+  def entries(prefix: String, n: Int = 10): Gen[List[Entry]] =
+    if (n <= 0) Gen.const(Nil) else
+      Gen.frequency(
+        0 -> (for {
+          n1       <- Gen.choose(1, n)
+          children <- Gen.listOfN(n1, path)
+          r        <- Gen.sequence(children.map(c => entries(c, n1 / 2)))
+        } yield r.toList.flatten)
+        , 1 -> (for {
+          n1        <- Gen.choose(1, n)
+          children <- Gen.listOfN(n1, entry(prefix))
+        } yield children)
+      )
 
   implicit def PathsArbitrary: Arbitrary[Paths] =
     Arbitrary(for { prefix <- path; es <- entries(prefix) } yield Paths(es))
