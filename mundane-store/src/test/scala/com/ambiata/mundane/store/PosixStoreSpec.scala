@@ -15,8 +15,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   Posix Store Usage
   =================
 
-  list all file paths                             $list
-  list all file paths from a sub path             $listSubPath
+  list all files paths                            $list
+  list all files paths from a sub path            $listSubPath
+  list direct files                               $listFiles
+  list direct files from a sub path               $listFilesSubPath
   list directories                                $listDirs
   list directories from a sub path                $listDirsSubPath
   filter listed paths                             $filter
@@ -66,6 +68,14 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def listSubPath =
     prop((paths: Paths) => clean(paths.map(_ prepend "sub")) { filepaths =>
       store.list(DirPath.Empty </> "sub") must beOkLike((_:List[FilePath]).toSet must_== filepaths.map(_.fromRoot).toSet) })
+
+  def listFiles =
+    prop((paths: Paths) => clean(paths) { filepaths =>
+      store.listFiles(DirPath.Empty) must beOkLike((_:List[FilePath]).toSet must_== filepaths.filter(f => f.rootname.basename == f.basename).toSet) })
+
+  def listFilesSubPath =
+    prop((paths: Paths) => clean(paths.map(_ prepend "sub")) { filepaths =>
+      store.listFiles(DirPath.Empty </> "sub") must beOkLike((_:List[FilePath]).toSet must_== filepaths.map(_.fromRoot).filter(f => f.rootname.basename == f.basename).toSet) })
 
   def listDirs =
     prop((paths: Paths) => clean(paths) { filepaths =>
