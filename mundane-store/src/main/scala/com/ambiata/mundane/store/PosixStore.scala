@@ -14,7 +14,7 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
     this
 
   def list(prefix: DirPath): ResultT[IO, List[FilePath]] =
-    Directories.list(root </> prefix).map(_.map(_.relativeTo(root)))
+    Directories.list(root </> prefix).map(_.map(_.relativeTo(root </> prefix)))
 
   def filter(prefix: DirPath, predicate: FilePath => Boolean): ResultT[IO, List[FilePath]] =
     list(prefix).map(_.filter(predicate))

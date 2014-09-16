@@ -7,10 +7,13 @@ import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 case class Entry(path: String, value: Int) {
+  def prepend(string: String) = copy(string+"/"+path)
   def full =
     "/" + path + "/" + value.toString
 }
-case class Paths(entries: List[Entry])
+case class Paths(entries: List[Entry]) {
+  def map(f: Entry => Entry) = copy(entries.map(f))
+}
 
 object Paths {
   /* food adjectives */

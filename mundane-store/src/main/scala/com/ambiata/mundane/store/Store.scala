@@ -40,7 +40,7 @@ trait ReadOnlyStore[F[_]] {
   def listAll: F[List[FilePath]] = list(DirPath.Root)
   def list(prefix: DirPath): F[List[FilePath]]
   def listDirs(path: DirPath)(implicit functor: Functor[F]): F[List[DirPath]] =
-    list(path.asRelative).map(_.groupBy(_.relativeTo(path).rootname.basename).keys.map(path.asRelative </> _).toList)
+    list(path.asRelative).map(_.map(_.rootname.basename).distinct.map(DirPath.Empty </> _).toList)
 
   def filterAll(predicate: FilePath => Boolean): F[List[FilePath]] = filter(DirPath.Root, predicate)
   def filter(prefix: DirPath, predicate: FilePath => Boolean): F[List[FilePath]]
