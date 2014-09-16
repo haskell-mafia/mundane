@@ -37,14 +37,14 @@ trait WriteOnlyStore[F[_]] {
 }
 
 trait ReadOnlyStore[F[_]] {
-  def listAll: F[List[FilePath]] = list(DirPath.Root)
+  def listAll: F[List[FilePath]] = list(DirPath.Empty)
   def list(prefix: DirPath): F[List[FilePath]]
 
   def listDirs(path: DirPath)(implicit functor: Functor[F]): F[List[DirPath]] =
     list(path.asRelative).map(_.map(_.rootname.basename).distinct.map(DirPath.Empty </> _))
 
   def listFiles(path: DirPath)(implicit functor: Functor[F]): F[List[FilePath]] =
-    list(path.asRelative).map(_.filter(f => f.basename == f.rootname.basename))
+    list(path.asRelative).map(_.filter(_.rootname == DirPath.Empty))
 
   def filterAll(predicate: FilePath => Boolean): F[List[FilePath]] = filter(DirPath.Root, predicate)
   def filter(prefix: DirPath, predicate: FilePath => Boolean): F[List[FilePath]]

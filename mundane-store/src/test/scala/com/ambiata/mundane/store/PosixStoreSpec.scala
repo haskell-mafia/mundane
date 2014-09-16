@@ -43,15 +43,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   mirrorTo                                        $mirrorTo
 
   checksum                                        $checksum
-
   read / write bytes                              $bytes
-
   read / write strings                            $strings
-
   read / write utf8 strings                       $utf8Strings
-
   read / write lines                              $lines
-
   read / write utf8 lines                         $utf8Lines
 
   """
