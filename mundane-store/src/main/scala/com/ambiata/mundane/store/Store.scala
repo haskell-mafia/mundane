@@ -8,6 +8,7 @@ import scalaz._, Scalaz._, scalaz.stream._, scalaz.concurrent._
 import scodec.bits.ByteVector
 
 trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
+  val root: DirPath
   val bytes: StoreBytes[F]
   val strings: StoreStrings[F]
   val utf8: StoreUtf8[F]
@@ -19,13 +20,13 @@ trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
 trait WriteOnlyStore[F[_]] {
   def delete(path: FilePath): F[Unit]
   def deleteAll(prefix: DirPath): F[Unit]
-  def deleteAllFromRoot: F[Unit] = deleteAll(DirPath.Root)
+  def deleteAllFromRoot: F[Unit] = deleteAll(DirPath.Empty)
 
   def move(in: FilePath, out: FilePath): F[Unit]
   def moveTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
 
   def copy(in: FilePath, out: FilePath): F[Unit]
-  def mirror(out: DirPath): F[Unit] = mirror(DirPath.Root, out)
+  def mirror(out: DirPath): F[Unit] = mirror(DirPath.Empty, out)
   def mirror(in: DirPath, out: DirPath): F[Unit]
 
   val bytes: StoreBytesWrite[F]
@@ -46,10 +47,10 @@ trait ReadOnlyStore[F[_]] {
   def listFiles(path: DirPath)(implicit functor: Functor[F]): F[List[FilePath]] =
     list(path.asRelative).map(_.filter(_.rootname == DirPath.Empty))
 
-  def filterAll(predicate: FilePath => Boolean): F[List[FilePath]] = filter(DirPath.Root, predicate)
+  def filterAll(predicate: FilePath => Boolean): F[List[FilePath]] = filter(DirPath.Empty, predicate)
   def filter(prefix: DirPath, predicate: FilePath => Boolean): F[List[FilePath]]
 
-  def findAll(predicate: FilePath => Boolean): F[Option[FilePath]] = find(DirPath.Root, predicate)
+  def findAll(predicate: FilePath => Boolean): F[Option[FilePath]] = find(DirPath.Empty, predicate)
   def find(prefix: DirPath, predicate: FilePath => Boolean): F[Option[FilePath]]
 
   def exists(path: FilePath): F[Boolean]
@@ -57,8 +58,8 @@ trait ReadOnlyStore[F[_]] {
 
   def copyTo(store: Store[F], in: FilePath, out: FilePath): F[Unit]
 
-  def mirrorTo(store: Store[F]): F[Unit] = mirrorTo(store, DirPath.Root)
-  def mirrorTo(store: Store[F], out: DirPath): F[Unit] = mirrorTo(store, DirPath.Root, out)
+  def mirrorTo(store: Store[F]): F[Unit] = mirrorTo(store, DirPath.Empty)
+  def mirrorTo(store: Store[F], out: DirPath): F[Unit] = mirrorTo(store, DirPath.Empty, out)
   def mirrorTo(store: Store[F], in: DirPath, out: DirPath): F[Unit]
 
   def checksum(path: FilePath, algorithm: ChecksumAlgorithm): F[Checksum]
