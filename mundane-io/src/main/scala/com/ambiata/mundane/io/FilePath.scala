@@ -115,7 +115,7 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
   def </>(other: DirPath): DirPath =
     (this, other) match {
       case (_, DirPath.Root) => this
-      case (DirPath.Root, _) => other
+      case (DirPath.Root, _) => other.setAbsolute(true)
       case _                 => copy(dirs = dirs ++ other.dirs)
     }
 

@@ -33,6 +33,10 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ DirPath.unsafe("/hello/world").isAbsolute }
    the DirPath.Root object
    ${ (DirPath.Root </> "world").isAbsolute }
+   appending a DirPath to the Root
+   ${ (DirPath.Root </> (DirPath.Empty </> "world")).isAbsolute }
+   // this combination is accepted but should not be valid...
+   ${ (DirPath.Root </> (DirPath.Root </> "world")).isAbsolute }
 
  A relative dir path can be built from
    a string not starting with a
