@@ -41,7 +41,7 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
 
   def mirror(in: Key, out: Key): ResultT[IO, Unit] = for {
     keys <- list(in)
-    _    <- keys.traverseU { source => copy(source, out </> source) }
+    _    <- keys.traverseU { source => copy(source, out / source) }
   } yield ()
 
   def moveTo(store: Store[ResultTIO], src: Key, dest: Key): ResultT[IO, Unit] =
@@ -54,7 +54,7 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
 
   def mirrorTo(store: Store[ResultTIO], in: Key, out: Key): ResultT[IO, Unit] = for {
     paths <- list(in)
-    _     <- paths.traverseU { source => copyTo(store, source, out </> source) }
+    _     <- paths.traverseU { source => copyTo(store, source, out / source) }
   } yield ()
 
   def checksum(key: Key, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =
@@ -140,6 +140,6 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
 
   def filePathToKey(path: FilePath): Key =
     Key(path.names.map { fn =>
-      KeyName(fn.name)
+      KeyName.unsafe(fn.name)
     }.toVector)
 }

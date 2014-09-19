@@ -45,6 +45,8 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   read / write utf8 lines                         $utf8Lines
 
   """
+"test" </> "test2"
+  "test" / "test2"
 
   val tmp1 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
   val tmp2 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
@@ -57,7 +59,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def listSubKey =
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
-      store.list(Key.Root </> KeyName("sub")) must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot).toSet) })
+      store.list(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot).toSet) })
 
   def filter =
     prop((keys: Keys) => clean(keys) { keys =>
@@ -84,7 +86,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
       keys.traverseU(store.exists) must beOkLike(_.forall(identity)) })
 
   def notExists =
-    prop((keys: Keys) => store.exists(Key.fromName("root") </> KeyName("i really don't exist")) must beOkValue(false))
+    prop((keys: Keys) => store.exists("root" / "i really don't exist") must beOkValue(false))
 
   def delete =
     prop((keys: Keys) => clean(keys) { keys =>
@@ -117,7 +119,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def mirror =
     prop((keys: Keys) => clean(keys) { keys =>
-      store.mirror(Key.Root, Key.fromName("mirror")) >> store.list(Key.fromName("mirror")) must
+      store.mirror(Key.Root, Key("mirror")) >> store.list(Key("mirror")) must
         beOkLike((_:List[Key]).toSet must_== keys.toSet) })
 
   def moveTo =
@@ -132,7 +134,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   def mirrorTo =
     prop((keys: Keys) => clean(keys) { keys =>
-      store.mirrorTo(alternate, Key.Root, Key.fromName("mirror")) >> alternate.list(Key.fromName("mirror")) must
+      store.mirrorTo(alternate, Key.Root, Key("mirror")) >> alternate.list(Key("mirror")) must
         beOkLike((_:List[Key]).toSet must_== keys.toSet) })
 
   def checksum =
@@ -170,7 +172,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   }
 
   implicit class ToKey(s: String) {
-    def toKey: Key = Key(s.split("/").map(KeyName.apply).toVector)
+    def toKey: Key = Key.unsafe(s)
   }
 
 }

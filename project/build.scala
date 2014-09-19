@@ -80,7 +80,7 @@ object build extends Build {
   , base = file("mundane-store")
   , settings = standardSettings ++ lib("store") ++ Seq[Settings](
       name := "mundane-store"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream ++ depend.reflect(scalaVersion.value))
   )
   .dependsOn(control, data, io, testing % "test", io % "test->test")
 
