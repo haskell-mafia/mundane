@@ -22,9 +22,8 @@ package object store extends MacrosCompat {
 
   }
 
-  implicit class NameToKeyNameSyntax(name: KeyName) {
-    def /(other: KeyName): Key  = name / other
-  }
+  implicit def keyNameSyntax(keyName: KeyName) =
+    new KeyNameSyntax(keyName)
 
   implicit def ToKeyName(s: String): KeyName =
     macro createKeyName

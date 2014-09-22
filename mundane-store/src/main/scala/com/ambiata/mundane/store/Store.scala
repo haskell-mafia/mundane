@@ -16,7 +16,7 @@ trait Store[F[_]] extends WriteOnlyStore[F] with ReadOnlyStore[F] {
 }
 
 trait WriteOnlyStore[F[_]] {
-  def delete(path: Key): F[Unit]
+  def delete(key: Key): F[Unit]
   def deleteAll(prefix: Key): F[Unit]
   def deleteAllFromRoot: F[Unit] = deleteAll(Key.Root)
 
@@ -45,7 +45,7 @@ trait ReadOnlyStore[F[_]] {
   def findAll(predicate: Key => Boolean): F[Option[Key]] = find(Key.Root, predicate)
   def find(prefix: Key, predicate: Key => Boolean): F[Option[Key]]
 
-  def exists(path: Key): F[Boolean]
+  def exists(key: Key): F[Boolean]
 
   def copyTo(store: Store[F], in: Key, out: Key): F[Unit]
 
@@ -53,7 +53,7 @@ trait ReadOnlyStore[F[_]] {
   def mirrorTo(store: Store[F], out: Key): F[Unit] = mirrorTo(store, Key.Root, out)
   def mirrorTo(store: Store[F], in: Key, out: Key): F[Unit]
 
-  def checksum(path: Key, algorithm: ChecksumAlgorithm): F[Checksum]
+  def checksum(key: Key, algorithm: ChecksumAlgorithm): F[Checksum]
 
   val bytes: StoreBytesRead[F]
   val strings: StoreStringsRead[F]
@@ -66,67 +66,67 @@ trait ReadOnlyStore[F[_]] {
 trait StoreBytes[F[_]] extends StoreBytesRead[F] with StoreBytesWrite[F]
 
 trait StoreBytesRead[F[_]] {
-  def read(path: Key): F[ByteVector]
-  def source(path: Key): Process[Task, ByteVector]
+  def read(key: Key): F[ByteVector]
+  def source(key: Key): Process[Task, ByteVector]
 }
 
 trait StoreBytesWrite[F[_]] {
-  def write(path: Key, data: ByteVector): F[Unit]
-  def sink(path: Key): Sink[Task, ByteVector]
+  def write(key: Key, data: ByteVector): F[Unit]
+  def sink(key: Key): Sink[Task, ByteVector]
 }
 
 trait StoreStrings[F[_]] extends StoreStringsRead[F] with StoreStringsWrite[F]
 
 trait StoreStringsRead[F[_]] {
-  def read(path: Key, codec: Codec): F[String]
+  def read(key: Key, codec: Codec): F[String]
 }
 
 trait StoreStringsWrite[F[_]] {
-  def write(path: Key, data: String, codec: Codec): F[Unit]
+  def write(key: Key, data: String, codec: Codec): F[Unit]
 }
 
 trait StoreUtf8[F[_]] extends StoreUtf8Read[F] with StoreUtf8Write[F]
 
 trait StoreUtf8Read[F[_]] {
-  def read(path: Key): F[String]
-  def source(path: Key): Process[Task, String]
+  def read(key: Key): F[String]
+  def source(key: Key): Process[Task, String]
 }
 
 trait StoreUtf8Write[F[_]] {
-  def write(path: Key, data: String): F[Unit]
-  def sink(path: Key): Sink[Task, String]
+  def write(key: Key, data: String): F[Unit]
+  def sink(key: Key): Sink[Task, String]
 }
 
 trait StoreLines[F[_]] extends StoreLinesRead[F] with StoreLinesWrite[F]
 
 trait StoreLinesRead[F[_]] {
-  def read(path: Key, codec: Codec): F[List[String]]
-  def source(path: Key, codec: Codec): Process[Task, String]
+  def read(key: Key, codec: Codec): F[List[String]]
+  def source(key: Key, codec: Codec): Process[Task, String]
 }
 
 trait StoreLinesWrite[F[_]] {
-  def write(path: Key, data: List[String], codec: Codec): F[Unit]
-  def sink(path: Key, codec: Codec): Sink[Task, String]
+  def write(key: Key, data: List[String], codec: Codec): F[Unit]
+  def sink(key: Key, codec: Codec): Sink[Task, String]
 }
 
 trait StoreLinesUtf8[F[_]] extends StoreLinesUtf8Read[F] with StoreLinesUtf8Write[F]
 
 trait StoreLinesUtf8Read[F[_]]  {
-  def read(path: Key): F[List[String]]
-  def source(path: Key): Process[Task, String]
+  def read(key: Key): F[List[String]]
+  def source(key: Key): Process[Task, String]
 }
 
 trait StoreLinesUtf8Write[F[_]]  {
-  def write(path: Key, data: List[String]): F[Unit]
-  def sink(path: Key): Sink[Task, String]
+  def write(key: Key, data: List[String]): F[Unit]
+  def sink(key: Key): Sink[Task, String]
 }
 
 trait StoreUnsafe[F[_]] extends StoreUnsafeRead[F] with StoreUnsafeWrite[F]
 
 trait StoreUnsafeRead[F[_]] {
-  def withInputStream(path: Key)(f: InputStream => F[Unit]): F[Unit]
+  def withInputStream(key: Key)(f: InputStream => F[Unit]): F[Unit]
 }
 
 trait StoreUnsafeWrite[F[_]] {
-  def withOutputStream(path: Key)(f: OutputStream => F[Unit]): F[Unit]
+  def withOutputStream(key: Key)(f: OutputStream => F[Unit]): F[Unit]
 }

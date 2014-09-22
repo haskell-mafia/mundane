@@ -139,7 +139,5 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
     toDirPath(key).toFilePath
 
   def filePathToKey(path: FilePath): Key =
-    Key(path.names.map { fn =>
-      KeyName.unsafe(fn.name)
-    }.toVector)
+    Key(path.names.map(fn => KeyName.unsafe(fn.name)).toVector)
 }
