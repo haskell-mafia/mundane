@@ -7,7 +7,9 @@ import Key._
 class KeySpec extends Specification { def is = s2"""
 
  A key is a list of key names
-   its name is the concatenation of all the keynames $name
+   its name is the concatenation of all the keynames     $name
+   we can create a key that start after the first name   $fromRoot
+   we can create a key that contains only the first name $head
 
  Keys can be appended                $appended
  A Key can be appended to a key name $appendedToKeyName
@@ -17,6 +19,16 @@ class KeySpec extends Specification { def is = s2"""
   def name = {
     val key: Key = "a" / "b" / "c"
     key must haveName("a/b/c")
+  }
+
+  def fromRoot = {
+    val key: Key = "a" / "b" / "c"
+    key.fromRoot must haveName("b/c")
+  }
+
+  def head = {
+    val key: Key = "a" / "b" / "c"
+    key.head must haveName("a")
   }
 
   def appended = {

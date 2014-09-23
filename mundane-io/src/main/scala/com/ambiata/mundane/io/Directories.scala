@@ -3,8 +3,6 @@ package io
 
 import com.ambiata.mundane.control._
 
-import java.io.{FileInputStream, InputStream, File}
-
 import scalaz._, Scalaz._
 import scalaz.effect._
 
@@ -23,6 +21,8 @@ object Directories {
     loop(dirPath).toList
   }
 
+  def listFileNames(dirPath: DirPath): ResultT[IO, List[FileName]] =
+    ResultT.safe[IO, List[FileName]](Option(dirPath.toFile.listFiles).cata(_.toList, List()).map(file => FileName.unsafe(file.getName)))
 
   def delete(dirPath: DirPath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
     def loop(dir: DirPath): Boolean = {

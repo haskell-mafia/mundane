@@ -17,6 +17,9 @@ case class Key(components: Vector[KeyName]) {
   def fromRoot: Key =
     copy(components = components.tail)
 
+  def head: Key =
+    copy(components = components.take(1))
+
   def name: String =
     if (components.isEmpty) "/"
     else                    components.map(_.name).mkString("/")

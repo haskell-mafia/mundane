@@ -15,7 +15,8 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   =================
 
   list all keys                                   $list
-  list all files keys from a sub key              $listSubKey
+  list all keys from a key prefix                 $listFromPrefix
+  list all direct prefixes from a key prefix      $listHeadPrefixes
   filter listed keys                              $filter
   find path in root (thirdish)                    $find
   find path in root (first)                       $findfirst
@@ -45,8 +46,6 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   read / write utf8 lines                         $utf8Lines
 
   """
-"test" </> "test2"
-  "test" / "test2"
 
   val tmp1 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
   val tmp2 = DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> FileName.unsafe(s"StoreSpec.${UUID.randomUUID}")
@@ -57,9 +56,13 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
     prop((keys: Keys) => clean(keys) { keys =>
        store.listAll must beOkLike((_:List[Key]).toSet must_== keys.toSet) })
 
-  def listSubKey =
+  def listFromPrefix =
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
       store.list(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot).toSet) })
+
+  def listHeadPrefixes =
+    prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
+      store.listHeads(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot.head).toSet) })
 
   def filter =
     prop((keys: Keys) => clean(keys) { keys =>
