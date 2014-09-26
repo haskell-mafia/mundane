@@ -16,6 +16,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
 
   list all keys                                   $list
   list all keys from a key prefix                 $listFromPrefix
+  list all keys from a key prefix when empty      $listFromPrefixEmpty
   list all direct prefixes from a key prefix      $listHeadPrefixes
   filter listed keys                              $filter
   find path in root (thirdish)                    $find
@@ -23,6 +24,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   find path in root (last)                        $findlast
 
   exists                                          $exists
+  existsPrefix                                    $existsPrefix
   not exists                                      $notExists
 
   delete                                          $delete
@@ -60,6 +62,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
       store.list(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot).toSet) })
 
+  def listFromPrefixEmpty =
+    prop((keys: Keys) =>
+      store.list(Key.Root / "sub") must beOkLike((_:List[Key]) must beEmpty))
+
   def listHeadPrefixes =
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
       store.listHeads(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot.head).toSet) })
@@ -87,6 +93,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def exists =
     prop((keys: Keys) => clean(keys) { keys =>
       keys.traverseU(store.exists) must beOkLike(_.forall(identity)) })
+
+  def existsPrefix =
+    prop((keys: Keys) => clean(keys) { keys =>
+      keys.traverseU(store.existsPrefix) must beOkLike(_.forall(identity)) })
 
   def notExists =
     prop((keys: Keys) => store.exists("root" / "i really don't exist") must beOkValue(false))

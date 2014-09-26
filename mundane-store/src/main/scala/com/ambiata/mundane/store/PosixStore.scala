@@ -32,6 +32,9 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
   def exists(key: Key): ResultT[IO, Boolean] =
     Files.exists(root </> toFilePath(key))
 
+  def existsPrefix(key: Key): ResultT[IO, Boolean] =
+    exists(key).flatMap(e => if (e) ResultT.ok[IO, Boolean](e) else Directories.exists(root </> toDirPath(key)))
+
   def delete(prefix: Key): ResultT[IO, Unit] =
     Files.delete(root </> toFilePath(prefix))
 

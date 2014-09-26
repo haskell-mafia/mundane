@@ -21,8 +21,7 @@ case class Key(components: Vector[KeyName]) {
     copy(components = components.take(1))
 
   def name: String =
-    if (components.isEmpty) "/"
-    else                    components.map(_.name).mkString("/")
+    components.map(_.name).mkString("/")
 }
 
 object Key {

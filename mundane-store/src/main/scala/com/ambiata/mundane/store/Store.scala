@@ -47,6 +47,7 @@ trait ReadOnlyStore[F[_]] {
   def find(prefix: Key, predicate: Key => Boolean): F[Option[Key]]
 
   def exists(key: Key): F[Boolean]
+  def existsPrefix(prefix: Key): F[Boolean]
 
   def copyTo(store: Store[F], in: Key, out: Key): F[Unit]
 
