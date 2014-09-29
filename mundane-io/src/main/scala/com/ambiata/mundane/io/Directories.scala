@@ -21,9 +21,6 @@ object Directories {
     loop(dirPath).toList
   }
 
-  def listLastDirs(dirPath: DirPath): ResultT[IO, List[DirPath]] =
-    list(dirPath).map(_.map(_.dirname))
-
   def listFirstFileNames(dirPath: DirPath): ResultT[IO, List[FileName]] =
     ResultT.safe[IO, List[FileName]](Option(dirPath.toFile.listFiles).cata(_.toList, List()).map(file => FileName.unsafe(file.getName)))
 

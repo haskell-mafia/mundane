@@ -39,7 +39,6 @@ trait ReadOnlyStore[F[_]] {
   def listAll: F[List[Key]] = list(Key.Root)
   def list(prefix: Key): F[List[Key]]
   def listHeads(prefix: Key): F[List[Key]]
-  def listDropRightOne(prefix: Key): F[List[Key]]
 
   def filterAll(predicate: Key => Boolean): F[List[Key]] = filter(Key.Root, predicate)
   def filter(prefix: Key, predicate: Key => Boolean): F[List[Key]]

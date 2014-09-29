@@ -23,11 +23,6 @@ case class PosixStore(root: DirPath) extends Store[ResultTIO] with ReadOnlyStore
     Directories.listFirstFileNames(dirPrefix).map(_.map(name => Key.unsafe(name.name)))
   }
 
-  def listDropRightOne(prefix: Key): ResultT[IO, List[Key]] = {
-    val dirPrefix = root </> toDirPath(prefix)
-    Directories.listLastDirs(dirPrefix).map(_.map(_.relativeTo(dirPrefix))).map(_.map(dirPathToKey))
-  }
-
   def filter(prefix: Key, predicate: Key => Boolean): ResultT[IO, List[Key]] =
     list(prefix).map(_.filter(predicate))
 

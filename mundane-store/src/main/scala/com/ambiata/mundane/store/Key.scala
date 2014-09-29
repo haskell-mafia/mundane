@@ -31,6 +31,9 @@ case class Key(components: Vector[KeyName]) {
 
   def name: String =
     components.map(_.name).mkString("/")
+
+  def isRoot: Boolean =
+    components.isEmpty
 }
 
 object Key {
