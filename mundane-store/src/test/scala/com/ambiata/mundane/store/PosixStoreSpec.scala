@@ -18,6 +18,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   list all keys from a key prefix                 $listFromPrefix
   list all keys from a key prefix when empty      $listFromPrefixEmpty
   list all direct prefixes from a key prefix      $listHeadPrefixes
+  list last prefixes from a key prefix            $listDropRightOne
   filter listed keys                              $filter
   find path in root (thirdish)                    $find
   find path in root (first)                       $findfirst
@@ -69,6 +70,10 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
   def listHeadPrefixes =
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
       store.listHeads(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot.head).toSet) })
+
+  def listDropRightOne =
+    prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
+      store.listDropRightOne(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot.dropRight(1)).toSet) })
 
   def filter =
     prop((keys: Keys) => clean(keys) { keys =>

@@ -18,7 +18,16 @@ case class Key(components: Vector[KeyName]) {
     copy(components = components.tail)
 
   def head: Key =
-    copy(components = components.take(1))
+    take(1)
+
+  def drop(n: Int): Key =
+    copy(components = components.drop(n))
+
+  def take(n: Int): Key =
+    copy(components = components.take(n))
+
+  def dropRight(n: Int): Key =
+    copy(components = components.dropRight(1))
 
   def name: String =
     components.map(_.name).mkString("/")
