@@ -21,4 +21,20 @@ object ResultTIOMatcher extends ThrownExpectations {
       result(r.isSuccess, r.message, r.message, attempt)
     }
   }
+
+  def beFail[A]: Matcher[ResultT[IO, A]] =
+    beFailLike(_ => Success())
+
+  def beFailWith[A](expected: String): Matcher[ResultT[IO, A]] =
+    beFailLike((actual: String) => new BeEqualTo(expected).apply(createExpectable(actual)).toResult)
+
+  def beFailLike[A](check: String => SpecsResult): Matcher[ResultT[IO, A]] = new Matcher[ResultT[IO, A]] {
+    def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
+      val r: SpecsResult = attempt.value.run.unsafePerformIO match {
+        case Ok(value)    => Failure(s"Failure: Result ok with value <$value>")
+        case Error(error) => if (error.isThis) check(error.a.get) else Success()
+      }
+      result(r.isSuccess, r.message, r.message, attempt)
+    }
+  }
 }
