@@ -3,7 +3,7 @@ package testing
 
 import com.ambiata.mundane.control._
 import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => SpecsError, _}
-import scalaz.effect.IO
+import scalaz.{Success => _, Failure => _, _}, effect.IO, \&/._
 
 object ResultTIOMatcher extends ThrownExpectations {
   def beOk[A]: Matcher[ResultT[IO, A]] =
@@ -25,14 +25,17 @@ object ResultTIOMatcher extends ThrownExpectations {
   def beFail[A]: Matcher[ResultT[IO, A]] =
     beFailLike(_ => Success())
 
-  def beFailWith[A](expected: String): Matcher[ResultT[IO, A]] =
-    beFailLike((actual: String) => new BeEqualTo(expected).apply(createExpectable(actual)).toResult)
+  def beFailWithMessage[A](expected: String): Matcher[ResultT[IO, A]] =
+    beFailWith(This(expected))
 
-  def beFailLike[A](check: String => SpecsResult): Matcher[ResultT[IO, A]] = new Matcher[ResultT[IO, A]] {
+  def beFailWith[A](these: String \&/ Throwable): Matcher[ResultT[IO, A]] =
+    beFailLike((actual: String \&/ Throwable) => new BeEqualTo(these).apply(createExpectable(actual)).toResult)
+
+  def beFailLike[A](check: String \&/ Throwable => SpecsResult): Matcher[ResultT[IO, A]] = new Matcher[ResultT[IO, A]] {
     def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
       val r: SpecsResult = attempt.value.run.unsafePerformIO match {
         case Ok(value)    => Failure(s"Failure: Result ok with value <$value>")
-        case Error(error) => if (error.isThis) check(error.a.get) else Success()
+        case Error(error) => check(error)
       }
       result(r.isSuccess, r.message, r.message, attempt)
     }
