@@ -1,12 +1,20 @@
 package com.ambiata.mundane.io
 
+import java.net.URI
+
 import scalaz._, Scalaz._
 
 sealed trait Location {
   def path: DirPath
 }
-case class HdfsLocation (path: DirPath) extends Location
-case class S3Location   (path: DirPath) extends Location
+
+case class HdfsLocation(path: DirPath) extends Location
+
+case class S3Location(path: DirPath) extends Location {
+  def bucket: String = path.rootname.basename.name
+  def key: String = path.fromRoot.path
+}
+
 case class LocalLocation(path: DirPath) extends Location
 
 object Location {
@@ -15,8 +23,8 @@ object Location {
     val dirPath = DirPath.unsafe(s)
 
     uri.getScheme match {
-      case "hdfs" => HdfsLocation(dirPath).right
-      case "s3"   => S3Location(dirPath).right
+      case "hdfs" => HdfsLocation (dirPath).right
+      case "s3"   => S3Location   (dirPath).right
       case "file" => LocalLocation(dirPath).right
       case null   => LocalLocation(dirPath).right
       case _      => s"Unknown or invalid repository scheme [${uri.getScheme}]".left
@@ -24,5 +32,6 @@ object Location {
   } catch {
     case e: java.net.URISyntaxException => e.getMessage.left
   }
+
 }
 

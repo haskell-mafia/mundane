@@ -15,15 +15,15 @@ class PathsSpec extends Specification with ScalaCheck { def is = s2"""
 
 """
 
-  def chars = prop((paths: Paths) =>
-    paths.entries.forall(_.path.matches("""[a-zA-Z/-]+""")))
+  def chars = prop((paths: Keys) =>
+    paths.keys.forall(_.path.matches("""[a-zA-Z/-]+""")))
 
-  def noEmpties = prop((paths: Paths) =>
-    !paths.entries.exists(_.path.matches(""".*//.*""")))
+  def noEmpties = prop((paths: Keys) =>
+    !paths.keys.exists(_.path.matches(""".*//.*""")))
 
-  def nonEmpty = prop((paths: Paths) =>
-    !paths.entries.isEmpty)
+  def nonEmpty = prop((paths: Keys) =>
+    !paths.keys.isEmpty)
 
-  def notTooMany = prop((paths: Paths) =>
-    paths.entries.size < 1000)
+  def notTooMany = prop((paths: Keys) =>
+    paths.keys.size < 1000)
 }
