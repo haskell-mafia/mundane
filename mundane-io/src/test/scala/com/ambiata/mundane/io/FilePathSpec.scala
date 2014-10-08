@@ -27,6 +27,10 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ DirPath.unsafe(new File("/hello/world")).path === "/hello/world"  }
    a URI
    ${ DirPath.unsafe(new URI("hello/world")).path === "hello/world"  }
+   ${ DirPath.unsafe(new URI("hdfs://100.100.1:9000/hello/world")).path === "/hello/world"  }
+   ${ DirPath.unsafe(new URI("hdfs:/hello/world")).path === "/hello/world"  }
+   ${ DirPath.unsafe(new URI("file:/hello/world")).path === "/hello/world"  }
+   ${ DirPath.unsafe(new URI("s3://hello/world")).path === "/world"  }
 
  An absolute dir path can be built from
    a string starting with a /
@@ -45,9 +49,6 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ (DirPath.Empty </> "world").isRelative }
    a literal string
    ${ ("hello" </> "world").isRelative }
-
- The DirPath loses its scheme if created from a string/file/uri
-   ${ DirPath.unsafe(new URI("s3://hello/world")).path === "/hello/world"  }
 
  Basic operations can be executed on a DirPath
    get the parent

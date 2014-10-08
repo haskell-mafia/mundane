@@ -192,20 +192,21 @@ object DirPath {
 
   def apply(uuid: UUID): DirPath = apply(FileName(uuid))
 
-  def unsafe(s: String): DirPath = {
-    val withoutScheme = removeScheme(s)
-    val isAbsolute = withoutScheme.startsWith("/")
-    DirPath(withoutScheme.split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector, isAbsolute)
-  }
+  def unsafe(s: String): DirPath =
+    unsafe(new URI(s))
 
   def unsafe(f: File): DirPath =
-    unsafe(f.getPath)
+    unsafe(new URI(f.getPath))
 
-  def unsafe(uri: URI): DirPath =
-    unsafe(uri.toString)
-
-  private def removeScheme(s: String): String =
-    Seq("hdfs:", "s3:", "file:").foldLeft(s) { (res, cur) => res.replace(cur, "") }
+  def unsafe(uri: URI): DirPath = {
+    val path = uri.getScheme match {
+      case "hdfs" => uri.getPath
+      case "s3"   => uri.getPath
+      case "file" => uri.toURL.getFile
+      case _      => uri.getPath
+    }
+    DirPath(path.split("/").filter(_.nonEmpty).map(FileName.unsafe).toVector, isAbsolute = path.startsWith("/"))
+  }
 
   val Root = DirPath(dirs = Vector(), isAbsolute = true)
   val Empty = DirPath(dirs = Vector(), isAbsolute = false)
