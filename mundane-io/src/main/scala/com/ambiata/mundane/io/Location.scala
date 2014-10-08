@@ -1,37 +1,49 @@
 package com.ambiata.mundane.io
 
-import java.net.URI
-
 import scalaz._, Scalaz._
 
-sealed trait Location {
-  def path: DirPath
+sealed trait Location
+
+case class HdfsLocation(path: String) extends Location {
+  def dirPath  = DirPath.unsafe(path)
+  def filePath = FilePath.unsafe(path)
 }
 
-case class HdfsLocation(path: DirPath) extends Location
-
-case class S3Location(path: DirPath) extends Location {
-  def bucket: String = path.rootname.basename.name
-  def key: String = path.fromRoot.path
+object HdfsLocation {
+  def create(dir: DirPath): HdfsLocation =
+    HdfsLocation(dir.path)
 }
 
-case class LocalLocation(path: DirPath) extends Location
+case class S3Location(bucket: String, key: String) extends Location
+
+case class LocalLocation(path: String) extends Location {
+  def dirPath  = DirPath.unsafe(path)
+  def filePath = FilePath.unsafe(path)
+}
+
+object LocalLocation {
+  def create(dir: DirPath): LocalLocation =
+    LocalLocation(dir.path)
+}
 
 object Location {
   def fromUri(s: String): String \/ Location = try {
     val uri = new java.net.URI(s)
-    val dirPath = DirPath.unsafe(s)
-
     uri.getScheme match {
-      case "hdfs" => HdfsLocation (dirPath).right
-      case "s3"   => S3Location   (dirPath).right
-      case "file" => LocalLocation(dirPath).right
-      case null   => LocalLocation(dirPath).right
-      case _      => s"Unknown or invalid repository scheme [${uri.getScheme}]".left
+      case "hdfs" =>
+        HdfsLocation(uri.getPath).right
+      case "s3" =>
+        S3Location(uri.getHost, uri.getPath.drop(1)).right
+      case "file" =>
+        LocalLocation(uri.toURL.getFile).right
+      case null =>
+        LocalLocation(uri.getPath).right
+      case _ =>
+        s"Unknown or invalid repository scheme [${uri.getScheme}]".left
     }
   } catch {
-    case e: java.net.URISyntaxException => e.getMessage.left
+    case e: java.net.URISyntaxException =>
+      e.getMessage.left
   }
-
 }
 

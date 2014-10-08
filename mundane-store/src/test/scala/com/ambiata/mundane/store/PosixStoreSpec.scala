@@ -63,8 +63,12 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
       store.list(Key.Root / "sub") must beOkLike((_:List[Key]).toSet must_== keys.map(_.fromRoot).toSet) })
 
   def listFromPrefixEmpty =
-    prop((keys: Keys) =>
-      store.list(Key.Root / "sub") must beOkLike((_:List[Key]) must beEmpty))
+    prop { keys: Keys =>
+      val action =
+        Directories.mkdirs(store.root </> "sub") >>
+        store.list(Key.Root / "sub")
+      action must beOkLike((_:List[Key]) must beEmpty)
+    }
 
   def listHeadPrefixes =
     prop((keys: Keys) => clean(keys.map(_ prepend "sub")) { keys =>
@@ -99,7 +103,7 @@ class PosixStoreSpec extends Specification with ScalaCheck { def is = isolated ^
       keys.traverseU(store.existsPrefix) must beOkLike(_.forall(identity)) })
 
   def notExists =
-    prop((keys: Keys) => store.exists("root" / "i really don't exist") must beOkValue(false))
+    prop((keys: Keys) => store.exists("root" / "missing") must beOkValue(false))
 
   def delete =
     prop((keys: Keys) => clean(keys) { keys =>
