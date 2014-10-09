@@ -1,7 +1,5 @@
 package com.ambiata.mundane.reflect
 
-import scala.reflect.macros.whitebox
-
 /**
  * Macro to display case classes instances with their field names
  *
@@ -42,7 +40,7 @@ object ToString extends MacrosCompat {
     // print one field as <name of the field>+"="+fieldName
     def printField(field: Symbol) = {
       val fieldName = field.name.decodedName.toString
-      q"""$fieldName+$equal+${Select(c.prefix.tree, TermName(fieldName))} """
+      q"""$fieldName+$equal+${Select(c.prefix.tree, createTermName(c)(fieldName))} """
     }
 
     // fold over the fields to create an expression like

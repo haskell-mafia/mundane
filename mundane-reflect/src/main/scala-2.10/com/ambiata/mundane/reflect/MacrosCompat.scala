@@ -7,6 +7,9 @@ package com.ambiata.mundane.reflect
 trait MacrosCompat {
   import language.experimental.macros
   type Context = scala.reflect.macros.Context
+
+  def createTermName(c: Context)(name: String) =
+    c.universe.newTermName(name)
 }
 
 
