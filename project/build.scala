@@ -98,7 +98,7 @@ object build extends Build {
   , base = file("mundane-reflect")
   , settings = standardSettings ++ lib("reflect") ++ Seq[Settings](
         name := "mundane-reflect"
-      , libraryDependencies ++= depend.reflect(scalaVersion.value) ++ depend.specs2
+      , libraryDependencies ++= depend.reflect(scalaVersion.value) ++ depend.testing
     )
   )
 
