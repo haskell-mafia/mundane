@@ -17,10 +17,10 @@ object ToString extends MacrosCompat {
     macro toStringWithNamesMacro
 
   def toStringWithNamesMacro(c: Context): c.Expr[String] = {
-    import c.universe.{getClass =>_,_}
+    import c.universe.{getClass => _, _}
 
     // class for which we want to display toString
-    val klass = c.internal.enclosingOwner.owner
+    val klass = c.macroApplication.symbol.owner
     val className = simpleName(klass.name.decodedName.toString)
 
     // we keep the getter fields created by the user
