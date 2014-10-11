@@ -7,17 +7,20 @@ package com.ambiata.mundane.reflect
  *
  * case class MyCaseClass(field1: Int, field2: Int,...) {
  *   override def toString: String =
- *     macro ToString.toStringWithNames
+ *     ToString.toStringWithNames
  *
  * }
  */
 object ToString extends MacrosCompat {
 
-  def toStringWithNames(c: Context): c.Expr[String] = {
+  def toStringWithNames: String =
+    macro toStringWithNamesMacro
+
+  def toStringWithNamesMacro(c: Context): c.Expr[String] = {
     import c.universe.{getClass =>_,_}
 
     // class for which we want to display toString
-    val klass = c.macroApplication.symbol.owner
+    val klass = c.internal.enclosingOwner.owner
     val className = simpleName(klass.name.decodedName.toString)
 
     // we keep the getter fields created by the user
@@ -31,26 +34,21 @@ object ToString extends MacrosCompat {
       filter(_.owner != typeOf[Equals].typeSymbol)
 
     /** some useful literals */
-    val equal = q"""" = """"
-    val emptyString: String = ""
-    val empty = q"""$emptyString"""
-    val tab = q""" "  " """
-    val newline = q""" "\n" """
 
     // print one field as <name of the field>+"="+fieldName
     def printField(field: Symbol) = {
-      val fieldName = field.name.decodedName.toString
-      q"""$fieldName+$equal+${Select(c.prefix.tree, createTermName(c)(fieldName))} """
+      val fieldName = field.name
+      q"""${fieldName.decodedName.toString}+${" = "}+this.$field"""
     }
 
     // fold over the fields to create an expression like
     // "" +
     // <name of the field1>+"="+fieldName1 +
     // <name of the field1>+"="+fieldName2 + ...
-    val parameters = fields.foldLeft(q"$empty") { (res, field) => q"$tab + ${printField(field)} + $newline + $res" }
+    val parameters = fields.foldLeft(q"${""}") { (res, field) => q"${"  "} + ${printField(field)} + ${"\n"} + $res" }
 
     // print the class and all the parameters with their values
-    c.Expr(q"""$className + "(\n" + $parameters + ")" """)
+    c.Expr(q"""this.productPrefix + "(\n" + $parameters + ")" """)
   }
 
   def simpleName(name: String): String =

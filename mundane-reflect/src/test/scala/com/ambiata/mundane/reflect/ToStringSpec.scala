@@ -13,10 +13,20 @@ class ToStringSpec extends Specification { def is = s2"""
        |)""".stripMargin
   }
 
-"""
+ An Option of a Point must be properly rendered too ${
+    Option(Point(1, 2)).toString ===
+      """|Some(Point(
+         |  x = 1
+         |  y = 2
+         |))""".stripMargin
 
-  case class Point(x: Int, y: Int) {
-    override def toString: String =
-      macro ToString.toStringWithNames
   }
+
+"""
 }
+
+case class Point(x: Int, y: Int) {
+  override def toString: String =
+    ToString.toStringWithNames
+}
+
