@@ -24,7 +24,7 @@ object Directories {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.flatMap { f =>
         if (f.isDirectory) loop(dir </> FileName.unsafe(f.getName))
-        else               Vector(FilePath.unsafe(f))
+        else               Vector(dir </> FileName.unsafe(f.getName))
       }
     }
     loop(dirPath).toList

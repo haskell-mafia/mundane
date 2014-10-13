@@ -43,16 +43,24 @@ object Files {
     src.toFile.renameTo(destFile)
   }
 
-  def move(src: FilePath, dest: DirPath): RIO[Unit] =
-    move(src, dest <|> src.basename)
+  def moveTo(src: FilePath, dest: DirPath): ResultT[IO, Unit] =
+    src.basename match {
+      case None =>
+        ResultT.fail("Source is a top level directory, can't move.")
+      case Some(filename) =>
+        move(src, dest </> filename)
+    }
 
-  def copy(src: FilePath, dest: DirPath): RIO[Unit] = {
-    val srcFile = src.toFile
-    val destFilePath = dest <|> src.basename
-    dest.toFile.mkdirs
-
-    RIO.using(RIO.safe[InputStream](new FileInputStream(srcFile)))(writeStream(destFilePath, _))
-  }
+  def copyTo(src: FilePath, dest: DirPath): ResultT[IO, Unit] =
+    src.basename match {
+      case None =>
+        ResultT.fail("Source is a top level directory, can't copy.")
+      case Some(filename) =>
+        val srcFile = src.toFile
+        val destFilePath = dest </> filename
+        dest.toFile.mkdirs
+        ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(srcFile)))(writeStream(destFilePath, _))
+    }
 
   def copy(src: FilePath, dest: FilePath): RIO[Unit] = {
     val srcFile = src.toFile

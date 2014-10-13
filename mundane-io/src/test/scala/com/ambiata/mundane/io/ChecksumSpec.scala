@@ -43,11 +43,9 @@ Checksum Properties
     r <- Checksum.file(p, MD5)
   } yield r ==== Checksum.string(s, MD5))
 
-
   def bytes = prop((b: Array[Byte], local: LocalTemporary) => for {
     p <- local.file
     _ <- Files.writeBytes(p, b)
     r <- Checksum.file(p, MD5)
   } yield r ==== Checksum.bytes(b, MD5))
-
 }
