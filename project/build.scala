@@ -10,9 +10,9 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
-    , aggregate = Seq(cli, control, data, error, io, parse, reflect, store, testing, testingExtra, time)
+    , aggregate = Seq(cli, control, data, error, io, parse, reflect, testing, testingExtra, time)
     )
-    .dependsOn(cli, control, data, error, io, parse, reflect, store, testing, time)
+    .dependsOn(cli, control, data, error, io, parse, reflect, testing, time)
 
   lazy val standardSettings = Defaults.coreDefaultSettings ++
                               projectSettings              ++
@@ -74,15 +74,6 @@ object build extends Build {
     )
   )
   .dependsOn(control, data, reflect, testing % "test")
-
-  lazy val store = Project(
-    id = "store"
-  , base = file("mundane-store")
-  , settings = standardSettings ++ lib("store") ++ Seq[Settings](
-      name := "mundane-store"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream ++ depend.reflect(scalaVersion.value))
-  )
-  .dependsOn(control, data, io, testing % "test", io % "test->test")
 
   lazy val parse = Project(
     id = "parse"
