@@ -21,7 +21,7 @@ LineCount
   matches wc -l                      $wc
 
 """
-  def withTestFile[A](data: List[Int])(run: File => IO[A]): ResultTIO[A] = Temporary.using { tmp =>
+  def withTestFile[A](data: List[Int])(run: File => IO[A]): ResultTIO[A] = TemporaryDirPath.withDirPath { tmp =>
     val file = (tmp </> FileName.unsafe(scala.util.Random.nextInt.toString)).toFile
     Streams.write(new FileOutputStream(file), Lists.prepareForFile(data.map(_.toString))) >> ResultT.fromIO(run(file))
   }
