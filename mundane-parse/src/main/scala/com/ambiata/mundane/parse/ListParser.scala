@@ -150,6 +150,10 @@ object ListParser {
       case Nil    => (pos, s"not enough input, expected more than $pos fields.").failure
     })
 
+  /** Possibly one token, or [[None]] if exhausted */
+  def stringOpt: ListParser[Option[String]] =
+    string.map(_.some) ||| none.pure[ListParser]
+
   /**
    * A parser for a local date with a given format, where format means joda time
    * supported formats: http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html

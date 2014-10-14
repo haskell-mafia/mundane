@@ -16,6 +16,8 @@ Examples
  Parsing a list will:
    extract the position of each element                                              $position1
    extract a string                                                                  $string1
+   extract a string option                                                           $stringOpt1
+   extract a string option from an empty list                                        $stringOpt2
    extract a nonempty string                                                         $nonemptystring1
    extract a string of a certain length                                              $lengthstring1
    extract an optional string of a certain length                                    $optionlengthstring1
@@ -69,6 +71,12 @@ Properties
 
   def string1 =
     string.run(List("a")).toOption must beSome("a")
+
+  def stringOpt1 =
+    stringOpt.run(List("a")).toOption must beSome(Some("a"))
+
+  def stringOpt2 =
+    stringOpt.run(Nil).toOption must beSome(None)
 
   def lengthstring1 = {
     string.oflength(4).run(List("abcd")).toOption must beSome("abcd")
