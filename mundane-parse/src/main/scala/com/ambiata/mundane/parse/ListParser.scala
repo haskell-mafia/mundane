@@ -59,11 +59,24 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       else (position, state, a).success
     ))
 
+  def oflength(from: Int, to: Int)(implicit ev: A =:= String) =
+    flatMap(a => ListParser((position, state) =>
+      if (ev(a).length < from || ev(a).length > to) (position, s"Expected string at position $position to be of length between $from and $to").failure
+      else (position, state, a).success
+    ))
+
   def oflengthifsome(len: Int)(implicit ev: A =:= Option[String]) =
     flatMap(a => ListParser((position, state) => ev(a) match {
       case None    => (position, state, None).success
       case Some(x) if (x.length == len) => (position, state, Some(x)).success
       case Some(x) => (position, s"Expected the optional string at position $position to be of length $len if it exists").failure
+    }))
+
+  def oflengthifsome(from: Int, to: Int)(implicit ev: A =:= Option[String]) =
+    flatMap(a => ListParser((position, state) => ev(a) match {
+      case None    => (position, state, None).success
+      case Some(x) if (x.length >= from && x.length <= to) => (position, state, Some(x)).success
+      case Some(x) => (position, s"Expected the optional string at position $position to be of length between $from and $to if it exists").failure
     }))
 
   def option: ListParser[Option[A]] =
@@ -84,6 +97,14 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
         case s @ Success(_) => s
         case Failure(_)     => x.parse(n, ls)
       })
+
+  def * : ListParser[List[A]] =
+    this.+ ||| success(Nil)
+
+  def + : ListParser[List[A]] = for {
+    x <- this
+    xs <- this *
+  } yield x :: xs
 }
 
 /**
@@ -153,6 +174,12 @@ object ListParser {
   /** Possibly one token, or [[None]] if exhausted */
   def stringOpt: ListParser[Option[String]] =
     string.map(_.some) ||| none.pure[ListParser]
+
+  def debug(tag: String): ListParser[Unit] =
+    ListParser((position, state) => {
+      println(s"[$tag] ${position}, ${state}")
+      (position, state, ()).success
+    } )
 
   /**
    * A parser for a local date with a given format, where format means joda time

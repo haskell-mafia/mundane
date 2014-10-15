@@ -37,6 +37,8 @@ Examples
    option set                                                                        $option1
    option not set                                                                    $option2
    option invalid                                                                    $option3
+   parsing lists                                                                     $intlist1
+   parsing lists                                                                     $intlist2
    return a message containing the full list and the first failure if parsing fails  $fail1
    or combinator only executes other parser when there is a failure                  $orCombinator1
    or combinator never executes other parser when there is no failure                $orCombinator2
@@ -80,14 +82,31 @@ Properties
 
   def lengthstring1 = {
     string.oflength(4).run(List("abcd")).toOption must beSome("abcd")
+    string.oflength(4, 6).run(List("abc")).toOption must beNone
+    string.oflength(4, 6).run(List("abcdefg")).toOption must beNone
+    string.oflength(4, 6).run(List("abcd")).toOption must beSome("abcd")
+    string.oflength(4, 6).run(List("abcde")).toOption must beSome("abcde")
+    string.oflength(4, 6).run(List("abcdef")).toOption must beSome("abcdef")
     string.oflength(4).run(List("ab")).toOption must beNone
     string.oflength(4).run(List("")).toOption must beNone
   }
 
   def optionlengthstring1 = {
     string.option.oflengthifsome(4).run(List("abcd")) must_== Some("abcd").success
+    string.option.oflengthifsome(3, 5).run(List("abcd")) must_== Some("abcd").success
+    string.option.oflengthifsome(3, 5).run(List("ab")).toOption must beNone
     string.option.oflengthifsome(4).run(List("ab")).toOption must beNone
     string.option.oflengthifsome(4).run(List("")) must_== None.success
+  }
+
+  def intlist1 = {
+    (int +).run(List("1", "2", "3")) must_== List(1, 2, 3).success
+    (int +).run(List()).toOption must beNone
+  }
+
+  def intlist2 = {
+    (int *).run(List("1", "2", "3")) must_== List(1, 2, 3).success
+    (int *).run(List()) must_== List[Int]().success
   }
 
   def nonemptystring1 = {
