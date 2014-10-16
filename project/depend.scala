@@ -6,7 +6,7 @@ object depend {
                    , "org.scalaz"           %% "scalaz-concurrent" % "7.0.6"
                    , "org.scalaz"           %% "scalaz-effect"     % "7.0.6")
   val scopt  = Seq(  "com.github.scopt"     %% "scopt"             % "3.2.0")
-  val joda   = Seq(  "joda-time"            %  "joda-time"         % "2.1"
+  val joda   = Seq(  "joda-time"            %  "joda-time"         % "2.2"
                    , "org.joda"             %  "joda-convert"      % "1.1")
   val bits   = Seq(  "org.typelevel"        %% "scodec-bits"       % "1.0.0")
   val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5")
