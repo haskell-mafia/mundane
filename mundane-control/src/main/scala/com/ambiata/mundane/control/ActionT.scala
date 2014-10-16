@@ -109,6 +109,25 @@ object ActionT extends ActionTLowPriority {
   def fromResultT[F[+_]: Monad, W: Monoid, R, A](v: ResultT[F, A]): ActionT[F, W, R, A] =
     resultT(_ => v)
 
+  def using[A: Resource, B <: A, W: Monoid, R, C](a: ActionT[IO, W, R, B])(run: B => ActionT[IO, W, R, C]): ActionT[IO, W, R, C] =
+    ActionT(res => {
+      type WriterTIOW[+X] = WriterT[IO, W, X]
+      val R = implicitly[Resource[A]]
+      ResultT[WriterTIOW, C](WriterT(for {
+        wrb <- a.run(res)
+        (w, rb) = wrb
+        r <- rb match {
+          case Ok(b) => for {
+            z <- run(b).run(res) onException R.close(b)
+            _ <- R.close(b)
+          } yield z
+          case Error(e) =>
+            (w, Error(e)).pure[IO]
+        }
+        (ww, rc) = r
+      } yield (w |+| ww, rc)))
+    })
+
   implicit def ActionTMonad[F[+_]: Monad, W: Monoid, R]: Monad[({ type l[a] = ActionT[F, W, R, a] })#l] =
     new Monad[({ type l[a] = ActionT[F, W, R, a] })#l] {
       def bind[A, B](a: ActionT[F, W, R, A])(f: A => ActionT[F, W, R, B]) = a.flatMap(f)
