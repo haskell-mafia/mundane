@@ -6,7 +6,7 @@ import com.ambiata.mundane.testing.ResultTIOMatcher._
 
 import org.specs2.Specification
 
-import scalaz.{Store => _, _}, Scalaz._
+import scalaz.{Store => _, _}, Scalaz._, effect.IO
 
 class TemporaryFilePathSpec extends Specification { def is = s2"""
 
@@ -31,7 +31,7 @@ class TemporaryFilePathSpec extends Specification { def is = s2"""
 
   def handlesFail = {
     val file: FilePath = uniqueFilePath
-    TemporaryFilePath.runWithFilePath(file)( _ => ResultT.fail("")).toOption.unsafePerformIO() must beNone
+    TemporaryFilePath.runWithFilePath(file)( _ => ResultT.fail[IO, Int]("")).toOption.unsafePerformIO() must beNone
     !file.toFile.exists()
   }
 }

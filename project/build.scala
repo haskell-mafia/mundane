@@ -28,6 +28,7 @@ object build extends Build {
     , crossScalaVersions := Seq("2.10.4", scalaVersion.value)
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
+    , updateOptions := updateOptions.value.withConsolidatedResolution(true)
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
@@ -52,7 +53,7 @@ object build extends Build {
   , base = file("mundane-data")
   , settings = standardSettings ++ lib("data") ++ Seq[Settings](
       name := "mundane-data"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.rng ++ depend.testing ++ depend.kiama)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.rng ++ depend.testing ++ depend.kiama)
   )
 
   lazy val error = Project(

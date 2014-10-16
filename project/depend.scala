@@ -2,19 +2,21 @@ import sbt._
 import Keys._
 
 object depend {
-  val scalaz = Seq(  "org.scalaz"           %% "scalaz-core"       % "7.0.6"
-                   , "org.scalaz"           %% "scalaz-concurrent" % "7.0.6"
-                   , "org.scalaz"           %% "scalaz-effect"     % "7.0.6")
+  val scalaz = Seq(  "org.scalaz"           %% "scalaz-core"       % "7.1.0"
+                   , "org.scalaz"           %% "scalaz-concurrent" % "7.1.0"
+                   , "org.scalaz"           %% "scalaz-effect"     % "7.1.0")
   val scopt  = Seq(  "com.github.scopt"     %% "scopt"             % "3.2.0")
   val joda   = Seq(  "joda-time"            %  "joda-time"         % "2.2"
                    , "org.joda"             %  "joda-convert"      % "1.1")
   val bits   = Seq(  "org.typelevel"        %% "scodec-bits"       % "1.0.0")
-  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5")
+
+  val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5a")
+
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-scalacheck"
-                   , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5-scalaz-7.0.6")
+                   , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5")
 
-  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.4.5-scalaz-7.0.6" excludeAll ExclusionRule(organization = "org.scalamacros"))
+  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.4.5" excludeAll ExclusionRule(organization = "org.scalamacros"))
 
   val testing = specs2.map(_ % "test")
 
@@ -33,7 +35,7 @@ object depend {
         "org.parboiled"       %% "parboiled"      % "2.0.0"
       )
 
-  val rng =      Seq("com.nicta"            %% "rng"            % "1.2.1")
+  val rng =      Seq("com.nicta"            %% "rng"            % "1.3.0")
 
   val kiama =    Seq("com.googlecode.kiama" %% "kiama"          % "1.6.0")
 

@@ -6,7 +6,7 @@ import com.ambiata.mundane.testing.ResultTIOMatcher._
 
 import org.specs2.Specification
 
-import scalaz.{Store => _, _}, Scalaz._
+import scalaz.{Store => _, _}, Scalaz._, effect.IO
 
 class TemporaryDirPathSpec extends Specification { def is = s2"""
 
@@ -44,7 +44,7 @@ class TemporaryDirPathSpec extends Specification { def is = s2"""
 
   def handlesFail = {
     val dir: DirPath = uniqueDirPath
-    TemporaryDirPath.runWithDirPath(dir)(_ => ResultT.fail("")).toOption.unsafePerformIO() must beNone
+    TemporaryDirPath.runWithDirPath(dir)(_ => ResultT.fail[IO, Int]("")).toOption.unsafePerformIO() must beNone
     !dir.toFile.exists()
   }
 }
