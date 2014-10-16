@@ -111,7 +111,7 @@ object ActionT extends ActionTLowPriority {
 
   def using[A: Resource, B <: A, W: Monoid, R, C](a: ActionT[IO, W, R, B])(run: B => ActionT[IO, W, R, C]): ActionT[IO, W, R, C] =
     ActionT(res => {
-      type WriterTIOW[+X] = WriterT[IO, W, X]
+      type WriterTIOW[X] = WriterT[IO, W, X]
       val R = implicitly[Resource[A]]
       ResultT[WriterTIOW, C](WriterT(for {
         wrb <- a.run(res)
@@ -122,7 +122,7 @@ object ActionT extends ActionTLowPriority {
             _ <- R.close(b)
           } yield z
           case Error(e) =>
-            (w, Error(e)).pure[IO]
+            (w, Error[C](e)).pure[IO]
         }
         (ww, rc) = r
       } yield (w |+| ww, rc)))
