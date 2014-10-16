@@ -19,5 +19,5 @@ object TemporaryFilePath {
     runWithFilePath(uniqueFilePath)(f)
 
   def runWithFilePath[A](file: FilePath)(f: FilePath => ResultTIO[A]): ResultTIO[A] =
-    ResultT.using(TemporaryFilePath(file).pure[ResultTIO])(tmp => f(tmp.file))
+    ResultT.using[TemporaryFilePath, TemporaryFilePath, A](TemporaryFilePath(file).pure[ResultTIO])(tmp => f(tmp.file))
 }
