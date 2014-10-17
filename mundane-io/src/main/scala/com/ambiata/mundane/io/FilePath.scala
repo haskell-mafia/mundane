@@ -21,7 +21,7 @@ object FilePath {
     }
 
   def fromList(dir: P, parts: List[FileName]): P =
-    parts.foldLeft(dir)((acc, el) => acc </> el)
+    parts.foldLeft(dir)((acc, el) => acc </ el)
 
   def fromURI(s: URI): Option[FilePath] =
     fromString(s.getPath)

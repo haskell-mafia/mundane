@@ -10,9 +10,9 @@ sealed trait FileTree {
   def files(base: DirPath): List[FilePath] =
     this match {
       case FileTreeLeaf(label) =>
-        List(base </> FileName.unsafe(label))
+        List(base </ FileName.unsafe(label))
       case FileTreeDirectory(label, children) =>
-        children.flatMap(_.files(base </> FileName.unsafe(label)))
+        children.flatMap(_.files(base </ FileName.unsafe(label)))
     }
 
   def dirs(base: DirPath): List[DirPath] =
@@ -20,17 +20,17 @@ sealed trait FileTree {
       case FileTreeLeaf(label) =>
         List()
       case FileTreeDirectory(label, children) =>
-        val dir = base </> FileName.unsafe(label)
+        val dir = base </ FileName.unsafe(label)
         dir :: children.flatMap(_.dirs(dir))
     }
 
   def create(base: DirPath): RIO[Unit] =
     this match {
       case FileTreeLeaf(label) =>
-        val path = base </> FileName.unsafe(label)
+        val path = base </ FileName.unsafe(label)
         Files.write(path, s"contents of $label")
       case FileTreeDirectory(label, children) =>
-        val path = base </> FileName.unsafe(label)
+        val path = base </ FileName.unsafe(label)
         Directories.mkdirs(path) >>
           children.traverseU(_.create(path)).void
     }

@@ -28,10 +28,10 @@ package object io extends MacrosCompat {
   }
 
   implicit class FilePathStringSyntax(l: String) {
-    def </>(n: FileName): FilePath =
-      DirPath.Relative </> FileName.unsafe(l) </> n
-    def </>(n: String): FilePath =
-      DirPath.Relative </> FileName.unsafe(l) </> FileName.unsafe(n)
+    def </(n: FileName): FilePath =
+      DirPath.Relative </ FileName.unsafe(l) </ n
+    def </(n: String): FilePath =
+      DirPath.Relative </ FileName.unsafe(l) </ FileName.unsafe(n)
   }
 
   implicit def ToFileName(s: String): FileName =

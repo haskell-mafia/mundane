@@ -23,8 +23,8 @@ object Directories {
     def loop(dir: DirPath): Vector[FilePath] = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.flatMap { f =>
-        if (f.isDirectory) loop(dir </> FileName.unsafe(f.getName))
-        else               Vector(dir </> FileName.unsafe(f.getName))
+        if (f.isDirectory) loop(dir </ FileName.unsafe(f.getName))
+        else               Vector(dir </ FileName.unsafe(f.getName))
       }
     }
     loop(dirPath).toList
@@ -37,7 +37,7 @@ object Directories {
     def loop(dir: DirPath): Boolean = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.forall { f =>
-        if (f.isDirectory) loop(dir </> FileName.unsafe(f.getName))
+        if (f.isDirectory) loop(dir </ FileName.unsafe(f.getName))
         else               f.delete
       } && dir.toFile.delete
     }

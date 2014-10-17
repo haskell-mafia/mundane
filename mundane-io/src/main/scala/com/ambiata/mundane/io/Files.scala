@@ -48,7 +48,7 @@ object Files {
       case None =>
         ResultT.fail("Source is a top level directory, can't move.")
       case Some(filename) =>
-        move(src, dest </> filename)
+        move(src, dest </ filename)
     }
 
   def copyTo(src: FilePath, dest: DirPath): ResultT[IO, Unit] =
@@ -57,7 +57,7 @@ object Files {
         ResultT.fail("Source is a top level directory, can't copy.")
       case Some(filename) =>
         val srcFile = src.toFile
-        val destFilePath = dest </> filename
+        val destFilePath = dest </ filename
         dest.toFile.mkdirs
         ResultT.using(ResultT.safe[IO, InputStream](new FileInputStream(srcFile)))(writeStream(destFilePath, _))
     }
