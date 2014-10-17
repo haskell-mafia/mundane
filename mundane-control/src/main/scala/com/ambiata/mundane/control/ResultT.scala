@@ -56,6 +56,9 @@ object ResultT extends LowPriorityResultT {
   def safe[F[_]: Monad, A](thunk: => A): ResultT[F, A] =
     ResultT[F, A](Result.safe(thunk).point[F])
 
+  def io[A](thunk: => A): ResultT[IO, A] =
+    fromIO { IO { thunk } }
+
   def option[F[_]: Monad, A](thunk: => A): ResultT[F, Option[A]] =
     ResultT[F, Option[A]](Result.option(thunk).point[F])
 
@@ -73,6 +76,9 @@ object ResultT extends LowPriorityResultT {
 
   def fail[F[_]: Monad, A](message: String): ResultT[F, A] =
     these[F, A](This(message))
+
+  def failIO[A](message: String): ResultT[IO, A] =
+    fail[IO, A](message)
 
   def error[F[_]: Monad, A](message: String, t: Throwable): ResultT[F, A] =
     these[F, A](Both(message, t))
