@@ -41,6 +41,9 @@ sealed trait Path {
   def isRelativeRoot =
     fold(false, true, (_, _) => false)
 
+  /** Return a new path with the top filename component stripped off.
+      Behaves as per posix dirname(3). Calling this on Root or Relative
+      is just identity. */
   def dirname: Path =
     fold(Root, Relative, (d, n) => d)
 
@@ -49,6 +52,9 @@ sealed trait Path {
 
   def basename: Option[FileName] =
     fold(None, None, (d, n) => Some(n))
+
+  def startsWith(p: Path): Boolean =
+    path.startsWith(p.path)
 
   /** @return the path for this file as a / separated string */
   def path: String =

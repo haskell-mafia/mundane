@@ -44,11 +44,11 @@ Folds
   'isRelativeRoot' should return true if and only if this 'Path' is the top
   level 'Relative' base case:
 
-    ${ Root.isRoot ==== false }
+    ${ Root.isRelativeRoot ==== false }
 
-    ${ Relative.isRoot ==== true }
+    ${ Relative.isRelativeRoot ==== true }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).isRoot ==== false ) }
+    ${ prop((base: Path, name: FileName) => Component(base, name).isRelativeRoot ==== false ) }
 
   'dirname' should return 'Root' or 'Relative' for the respective base cases (effectively
   a no-op), or return the base of 'Component' stripping the file name. Posix specifications
@@ -68,6 +68,22 @@ Folds
 
     ${ (Relative </> "home").dirname === Relative }
 
+  Note also that the result of dirname will always be a prefix of the starting value:
+
+    ${ prop((p: Path) => p.startsWith(p.dirname)) }
+
+
+  Calling 'parent' where a parent exists, returns 'Some' new path with the top filename
+  component stripped off, otherwise it returns 'None'. This behaviour is identical to
+  'dirname' except for the base 'Root', 'Relative' cases.
+
+    ${ Root.parent ==== None }
+
+    ${ Relative.parent ==== None }
+
+    ${ prop((base: Path, name: FileName) => Component(base, name).parent ==== Some(base) ) }
+
+    ${ prop((base: Path) => base.parent.isDefined ==> { base.parent ==== Some(base.dirname) })  }
 
 """
 }
