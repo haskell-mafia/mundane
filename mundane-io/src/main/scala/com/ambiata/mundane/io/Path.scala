@@ -3,7 +3,19 @@ package com.ambiata.mundane.io
 import java.io.File
 import scalaz._, Scalaz._
 
+/**
+ * A path data type, represents an "Absolute" or "Relative" path onto
+ * some posix-like file system.
+ *
+ * The data-type is defined inductively, with a base case indicating
+ * whether the path is relative to the root of the file system, or
+ * some relative point, and a recursive case for each filename component.
+ *
+ * Clients are free to choose the intention of "Relative", i.e. on a
+ * posix file system it may be the `$CWD` or similar.
+ */
 sealed trait Path {
+  /** Fold over components of this path. Equivalent to pattern match. */
   def fold[X](
     root: => X
   , relative: => X
@@ -17,9 +29,15 @@ sealed trait Path {
       component(d, n)
   }
 
+  /** Is this the Root base case. Note, this is true iff this is actually the
+      Root data type, and should not be used to detemine if this is an absolute
+      path. */
   def isRoot =
     fold(true, false, (_, _) => false)
 
+  /** Is this the Relative base case. Note, this is true iff this is actually
+      the Relative data type and should not be used to detemine if this is a
+      relative path. */
   def isRelativeRoot =
     fold(false, true, (_, _) => false)
 
@@ -107,7 +125,7 @@ object Path {
         fromList(Relative, parts.filter(_.nonEmpty).map(FileName.unsafe))
     }
 
- def fromList(dir: Path, parts: List[FileName]): Path =
+  def fromList(dir: Path, parts: List[FileName]): Path =
     parts.foldLeft(dir)((acc, el) => acc </> el)
 
   def fromFile(f: File): Path =
@@ -115,8 +133,11 @@ object Path {
       case None =>
         Component(if (f.isAbsolute) Root else Relative, FileName.unsafe(f.getName))
       case Some(p) =>
-        fromFile(f) </> f.getName
+        fromFile(f) </> FileName.unsafe(f.getName)
     }
+
+  def Parent =
+    FileName.unsafe("..")
 }
 
 case object Root extends Path
