@@ -7,6 +7,7 @@ import scalaz.effect.IO
 import control.{ResultT, ActionTSupport, ActionT}
 
 package object io extends MacrosCompat {
+  type P = Path
   type FilePath = P
   type DirPath = P
 

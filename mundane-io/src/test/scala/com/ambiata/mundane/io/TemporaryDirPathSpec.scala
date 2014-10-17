@@ -19,26 +19,20 @@ class TemporaryDirPathSpec extends Specification { def is = s2"""
 
 """
 
-  def exists = {
-    (for {
-      e <- TemporaryDirPath.withDirPath(path => for {
-        _ <- println(s"paht yo : ${path.path}").pure[ResultTIO]
-        exists <- Directories.exists(path)
-      } yield exists)
-    } yield e) must beOkValue(true)
-  }
+  def exists =
+    TemporaryDirPath.withDirPath(Directories.exists) must beOkValue(true)
 
   def clean = {
     val dir: DirPath = uniqueDirPath
     (for {
       x <- TemporaryDirPath.runWithDirPath(dir)(path => for {
-        _ <- Files.write(path </> FilePath("foo"), "")
-        _ <- Files.write(path </> DirPath("bar") </> FilePath("foo"), "")
-        f <- Files.exists(path </> FilePath("foo"))
-        b <- Files.exists(path </> DirPath("bar") </> FilePath("foo"))
+        _ <- Files.write(path </> FilePath.unsafe("foo"), "")
+        _ <- Files.write(path </> DirPath.unsafe("bar") </> FilePath.unsafe("foo"), "")
+        f <- Files.exists(path </> FilePath.unsafe("foo"))
+        b <- Files.exists(path </> DirPath.unsafe("bar") </> FilePath.unsafe("foo"))
       } yield f -> b)
-      df <- Files.exists(dir </> FilePath("foo"))
-      db <- Files.exists(dir </> DirPath("bar") </> FilePath("foo"))
+      df <- Files.exists(dir </> FilePath.unsafe("foo"))
+      db <- Files.exists(dir </> DirPath.unsafe("bar") </> FilePath.unsafe("foo"))
     } yield (x, df -> db)) must beOkValue(((true, true), (false, false)))
   }
 
