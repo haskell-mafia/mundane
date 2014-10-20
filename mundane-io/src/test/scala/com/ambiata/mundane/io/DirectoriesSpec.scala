@@ -22,26 +22,26 @@ Directories
 
   def list =
     prop((tree: FileTree) => TemporaryDirPath.withDirPath { tmp =>
-      val base = tmp </> "base"
+      val base = tmp </ "base"
       val action = tree.create(base) >> Directories.list(base)
       action.map(sort) map(list => list == sort(tree.files(base)))
     } must beOkValue(true))
 
   def delete =
     prop((tree: FileTree) => TemporaryDirPath.withDirPath { tmp =>
-      val base = tmp </> "base"
+      val base = tmp </ "base"
       tree.create(base) >> Directories.delete(base) >> Directories.exists(base)
     } must beOkValue(false))
 
   def exists =
     TemporaryDirPath.withDirPath { tmp =>
-      val base = tmp </> "base"
+      val base = tmp </ "base"
       Directories.mkdirs(base) >> Directories.exists(base)
     } must beOkValue(true)
 
   def notExists =
     TemporaryDirPath.withDirPath { tmp =>
-      val base = tmp </> "base"
+      val base = tmp </ "base"
       Directories.exists(base)
     } must beOkValue(false)
 

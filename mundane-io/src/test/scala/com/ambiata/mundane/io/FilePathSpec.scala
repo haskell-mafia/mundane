@@ -44,48 +44,43 @@ class FilePathSpec extends Specification { def is = s2"""
    a string starting with a /
    ${ DirPath.fromString("/hello/world").exists(_.isAbsolute) }
    the DirPath.Root object
-   ${ (DirPath.Root </> "world").isAbsolute }
+   ${ (DirPath.Root </ "world").isAbsolute }
    appending a DirPath to the Root
-   ${ (DirPath.Root </> (DirPath.Relative </> "world")).isAbsolute }
+   ${ (DirPath.Root </> (DirPath.Relative </ "world")).isAbsolute }
    // this combination is accepted but should not be valid...
-   ${ (DirPath.Root </> (DirPath.Root </> "world")).isAbsolute }
+   ${ (DirPath.Root </> (DirPath.Root </ "world")).isAbsolute }
 
  A relative dir path can be built from
    a string not starting with a
    ${ DirPath.fromString("hello/world").exists(_.isRelative) }
    the DirPath.Relative object
-   ${ (DirPath.Relative </> "world").isRelative }
+   ${ (DirPath.Relative </ "world").isRelative }
    a literal string
-   ${ ("hello" </> "world").isRelative }
+   ${ ("hello" </ "world").isRelative }
 
  Basic operations can be executed on a DirPath
    get the parent
    ${ DirPath.Root.parent must beNone }
    ${ DirPath.unsafe("test").parent must beSome(DirPath.Relative) }
-   ${ (DirPath.Root </> "test").parent must beSome(DirPath.Root) }
-   ${ ("test" </> "hello" </> "world").parent must beSome("test" </> "hello") }
+   ${ (DirPath.Root </ "test").parent must beSome(DirPath.Root) }
+   ${ ("test" </ "hello" </ "world").parent must beSome("test" </ "hello") }
 
    get the basename
-   ${ ("test" </> "hello" </> "world").basename === Some(FileName.unsafe("world")) }
+   ${ ("test" </ "hello" </ "world").basename === Some(FileName.unsafe("world")) }
 
    get the path as a string
    ${ DirPath.Root.path must_== "/" }
    ${ DirPath.unsafe("test").path must_== "test" }
-   ${ ("test" </> "hello" </> "world").path must_== "test/hello/world" }
-
-   get the path as a string, with a last slash
-   ${ DirPath.Root.dirPath must_== "/" }
-   ${ DirPath.unsafe("test").dirPath must_== "test/" }
-   ${ ("test" </> "hello" </> "world").dirPath must_== "test/hello/world/" }
+   ${ ("test" </ "hello" </ "world").path must_== "test/hello/world" }
 
    get a portion of the path
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  === Some("world" </> "eric") }
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  must beSome(beRelative) }
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("other" </> "hello") must beNone }
-   ${ ("test" </> "hello" </> "world").names === List("test", "hello", "world").map(FileName.unsafe) }
+   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("test" </ "hello")  === Some("world" </ "eric") }
+   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("test" </ "hello")  must beSome(beRelative) }
+   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("other" </ "hello") must beNone }
+   ${ ("test" </ "hello" </ "world").names === List("test", "hello", "world").map(FileName.unsafe) }
 
    filter hidden directories from a list
-   ${ List("hello" </> ".world", "hello" </> "world").filterHidden === List("hello" </> "world") }
+   ${ List("hello" </ ".world", "hello" </ "world").filterHidden === List("hello" </ "world") }
 
  FilePaths
  ========
@@ -100,11 +95,11 @@ class FilePathSpec extends Specification { def is = s2"""
 
    get the path as a string
    ${ FilePath.unsafe("test").path must_== "test" }
-   ${ (DirPath.Relative </> "test" </> "hello" </> "world").path must_== "test/hello/world" }
-   ${ (DirPath.Relative </> "test" </> "hello" </> DirPath.Relative).path must_== "test/hello" }
+   ${ (DirPath.Relative </ "test" </ "hello" </ "world").path must_== "test/hello/world" }
+   ${ (DirPath.Relative </ "test" </ "hello" </> DirPath.Relative).path must_== "test/hello" }
 
    filter hidden files from a list
-   ${ List("hello" </> ".world", "hello" </> "world", "hello" </> "_SUCCESS").filterHidden === List("hello" </> "world") }
+   ${ List("hello" </ ".world", "hello" </ "world", "hello" </ "_SUCCESS").filterHidden === List("hello" </ "world") }
 
 """
   def beRelative: Matcher[DirPath] = { dirPath: DirPath =>

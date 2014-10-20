@@ -38,12 +38,12 @@ Checksum Properties
       Checksum.string(s, alg).algorithm must_== alg)
 
   def text = prop((s: String) => TemporaryDirPath.withDirPath { work =>
-    val path = work </> "text"
+    val path = work </ "text"
     Files.write(path, s) >> Checksum.file(path, MD5)
   } must beOkValue(Checksum.string(s, MD5)))
 
   def bytes = prop((b: Array[Byte]) => TemporaryDirPath.withDirPath { work =>
-    val path = work </> "bytes"
+    val path = work </ "bytes"
     Files.writeBytes(path, b) >> Checksum.file(path, MD5)
   } must beOkValue(Checksum.bytes(b, MD5)))
 }

@@ -18,8 +18,8 @@ object Archive {
   // FIX This is the original copper publish code, for creating archives, but it has some ill-defined sematics
   //     around printing errors to standard out as well as some very  _optimistic_ quoting. Needs work.
   def create(archiveName: FileName, checksumName: FileName, target: DirPath, contents: List[FilePath]): ResultT[IO, Archive] = {
-    val archive = target </> archiveName
-    val checksum = target </> checksumName
+    val archive = target </ archiveName
+    val checksum = target </ checksumName
     val files = contents.map(_.basename).mkString(" ")
     val command = List("sh", "-c", s"tar czf ${archive.toFile.getAbsolutePath} -C ${target.toFile.getAbsolutePath} ${files} > /dev/null")
     ResultT.safe[IO, Int] { Process(command) ! ProcessLogger(o => (), println) }.flatMap({
