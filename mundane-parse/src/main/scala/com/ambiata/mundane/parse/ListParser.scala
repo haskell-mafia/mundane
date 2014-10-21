@@ -96,10 +96,10 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       case xs => parse(position, xs).map(_.map(Option.apply[A]))
     })
 
-  def commaDelimited(delimiter: Char = ','): ListParser[Seq[A]] =
+  def commaDelimited: ListParser[List[A]] =
     delimited(',')
 
-  def delimited(delimiter: Char): ListParser[Seq[A]] =
+  def delimited(delimiter: Char): ListParser[List[A]] =
     ListParser.delimitedValues(this, delimiter)
 
   def bracketed(opening: Char, closing: Char): ListParser[A] =
@@ -271,7 +271,7 @@ object ListParser {
   /**
    * A parser for a list delimited values of the same type
    */
-  def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[Seq[A]] =
+  def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[List[A]] =
     ListParser((position, state) => state match {
       case h :: t =>
         val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter).filter(_.nonEmpty))
@@ -283,8 +283,8 @@ object ListParser {
   /**
    * A parser that repeats the application of another parser until all the input is consumed
    */
-  def repeat[A](p: ListParser[A]): ListParser[Seq[A]] =
-    emptySeq ||| p.flatMap(a => repeat(p).map(seq => a +: seq))
+  def repeat[A](p: ListParser[A]): ListParser[List[A]] =
+    emptyList ||| p.flatMap(a => repeat(p).map(seq => a +: seq))
 
   /**
    * A parser for a value that is surrounded by 2 other characters
@@ -325,14 +325,14 @@ object ListParser {
   /**
    * A parser that succeeds on an empty list and returns an empty sequence
    */
-  def emptySeq[A]: ListParser[Seq[A]] =
+  def emptyList[A]: ListParser[List[A]] =
     empty(Nil)
 
   /**
    * A parser that returns 0.0 on an empty list or parses a Double
    */
   def doubleOrZero: ListParser[Double] =
-    empty(0.0) ||| double.named("double")
+    empty(0.0) ||| double
 
   /**
    * A parser that returns 0 on an empty list or parses an Int

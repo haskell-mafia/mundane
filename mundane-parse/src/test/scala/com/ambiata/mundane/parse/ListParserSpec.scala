@@ -66,6 +66,30 @@ Properties
   fail always fails                               ${alwaysFails}
 
 
+Convenience methods
+===================
+
+  ${ emptyString.run(Nil) ==== ListParser.empty("").run(Nil) }
+  ${ emptyList.run(Nil)   ==== ListParser.empty(Nil).run(Nil) }
+
+  ${ prop((list: List[Double]) =>
+      doubleOrZero.run(list.map(_.toString)) ==== (ListParser.empty(0.0) ||| double).run(list.map(_.toString))) }
+
+  ${ prop((list: List[Int]) =>
+      intOrZero.run(list.map(_.toString)) ==== (ListParser.empty(0) ||| int).run(list.map(_.toString))) }
+
+  ${ prop((list: List[Int]) =>
+      int.commaDelimited.run(List(list.mkString(","))) ==== int.delimited(',').run(List(list.mkString(",")))) }
+
+  ${ prop((list: List[Int]) =>
+      int.delimited(',').run(List(list.mkString(","))) ==== ListParser.delimitedValues(int, ',').run(List(list.mkString(",")))) }
+
+  ${ prop((list: List[Int]) =>
+      int.bracketed('(', ')').run("("+:list.map(_.toString):+")") ==== ListParser.bracketed(int, '(', ')').run("("+:list.map(_.toString):+")")) }
+
+  ${ prop((list: List[String]) =>
+      string.whenEmpty("A").run(list) ==== (ListParser.empty("A") ||| string).run(list)) }
+
 """
 
   def position1 = {
