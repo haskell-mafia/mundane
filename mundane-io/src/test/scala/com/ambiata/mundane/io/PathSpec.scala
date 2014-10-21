@@ -75,6 +75,7 @@ Folds
     ${ prop((p: Path) => p.startsWith(p.dirname)) }
 
 
+
   Calling 'parent' where a parent exists, returns 'Some' new path with the top filename
   component stripped off, otherwise it returns 'None'. This behaviour is identical to
   'dirname' except for the base 'Root', 'Relative' cases.
@@ -110,6 +111,26 @@ Folds
     ${ prop((p: Path) => p.startsWith(p.dirname.dirname) ==== true) }
 
     ${ prop((p: Path) => p.startsWith(p.dirname.dirname.dirname) ==== true) }
+
+  absolute paths always 'startsWith' Root:
+
+    ${ prop((p: Path) => p.isAbsolute ==> p.startsWith(Root)) }
+
+  absolute paths never 'startsWith' Relative:
+
+    ${ prop((p: Path) => p.isAbsolute ==> !p.startsWith(Relative)) }
+
+  relative paths always 'startsWith' Relative:
+
+    ${ prop((p: Path) => p.isRelative ==> p.startsWith(Relative)) }
+
+  relative paths never 'startsWith' Root:
+
+    ${ prop((p: Path) => p.isRelative ==> !p.startsWith(Root)) }
+
+  'isPrefixOf' is 'startsWith' with the arguments flipped:
+
+    ${ prop((p: Path, q: Path) => p.startsWith(q) ==== q.isPrefixOf(p)) }
 
 
   Rendering an absolute path should always start with a '/':
@@ -189,5 +210,90 @@ Folds
 
     ${ prop((p: Path, q: Path) => (p </> q) ==== p.join(q) ) }
 
+
+  The result of '</' always includes specified FileName as final component / basename.
+
+     ${ prop((p: Path, q: FileName) => (p </ q).names.last ==== q) }
+
+     ${ prop((p: Path, q: FileName) => (p </ q).basename ==== Some(q) ) }
+
+  Invoking '</' followed by dirname is a no-op on some base path.
+
+     ${ prop((p: Path, q: FileName) => (p </ q).dirname ==== p ) }
+
+  'extend' is an alias for '</':
+
+    ${ prop((p: Path, q: FileName) => (p </ q) ==== p.extend(q) ) }
+
+
+  Converting to a 'java.io.File' and back should be a no-op.
+
+    ${ prop((p: Path) => Path.fromFile(p.toFile) ==== p) }
+
+
+  Any path with the 'Root' base case is absolute:
+
+    ${ Root.isAbsolute }
+
+    ${ prop((p: Path) => (Root </> p).isAbsolute ) }
+
+
+  Any path with the 'Relative' base case is absolute:
+
+    ${ Relative.isRelative }
+
+    ${ prop((ns: List[FileName]) => Path.fromList(Relative, ns).isRelative ) }
+
+
+  'isAbsolute' and 'isRelative' are inverses.
+
+    ${ prop((p: Path) => p.isRelative ^ p.isAbsolute ) }
+
+
+  'names' contains all filename components (in order):
+
+    ${ prop((ns: List[FileName]) => Path.fromList(Relative, ns).names ==== ns ) }
+
+    ${ prop((p: Path, ns: List[FileName]) => (p </> Path.fromList(Relative, ns)).names ==== (p.names ++ ns) ) }
+
+
+  'components' is just a stringly typed 'names':
+
+    ${ prop((p: Path) => p.names.map(_.name) ==== p.components ) }
+
+
+  'rebaseTo' will return 'Some' iff other is a prefix of path.
+
+    ${ prop((p: Path, q: Path) => p.rebaseTo(q).isDefined ==== q.isPrefixOf(p)) }
+
+  'rebaseTo' in the 'Some' case will be the components of 'q' stripped from the components of 'p':
+
+    ${ prop((p: Path, n: Int) => {
+         val q = times(p, n, 4) { _.dirname }
+         p.rebaseTo(q).map(_.names) ==== Some(p.names.drop(q.names.length)) } ) }
+
+    ${ prop((p: Path, q: Path) => !q.isPrefixOf(p) ==> { p.rebaseTo(q) ==== None } ) }
+
+    ${ prop((p: Path) => p.rebaseTo(p) ==== Some(Relative)) }
+
+    ${ Relative.rebaseTo(Relative) ==== Some(Relative) }
+
+    ${ Root.rebaseTo(Root) ==== Some(Relative) }
+
+    ${ Root.rebaseTo(Relative) ==== None }
+
+    ${ Relative.rebaseTo(Root) ==== None }
+
+
 """
+
+
+  /** apply the transformation f, 'n' times (normalized to 'max' times). */
+ def times[A](seed: A, n: Int, max: Int)(f: A => A): A =
+    (1 to normalize(n, max)).toList.foldLeft(seed)((x, _) => f(x))
+
+  /** normalize 'n' to between 1 and 'max'. */
+  def normalize(n: Int, max: Int): Int =
+    (math.abs(n) % 4) + 1
+
 }

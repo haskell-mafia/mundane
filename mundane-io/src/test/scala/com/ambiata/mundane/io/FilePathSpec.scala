@@ -74,9 +74,9 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </ "hello" </ "world").path must_== "test/hello/world" }
 
    get a portion of the path
-   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("test" </ "hello")  === Some("world" </ "eric") }
-   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("test" </ "hello")  must beSome(beRelative) }
-   ${ ("test" </ "hello" </ "world" </ "eric").relativeTo("other" </ "hello") must beNone }
+   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("test" </ "hello")  === Some("world" </ "eric") }
+   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("test" </ "hello")  must beSome(beRelative) }
+   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("other" </ "hello") must beNone }
    ${ ("test" </ "hello" </ "world").names === List("test", "hello", "world").map(FileName.unsafe) }
 
    filter hidden directories from a list

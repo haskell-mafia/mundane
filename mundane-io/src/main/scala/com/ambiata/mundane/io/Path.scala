@@ -60,7 +60,16 @@ sealed trait Path {
 
   /** Is the provided Path 'p' a prefix of 'this' Path? */
   def startsWith(p: Path): Boolean =
-    path.startsWith(p.path)
+    if (p.isRoot)
+      isAbsolute
+    else if (p.isRelativeRoot)
+      isRelative
+    else
+      path.startsWith(p.path)
+
+  /** Is this path is a prefix of specified Path 'p'. This is 'startsWith' with the arguments flipped. */
+  def isPrefixOf(p: Path): Boolean =
+    p.startsWith(this)
 
   /** The rendered string represententation using '/' as a path separator.
       This string will start with a leading separator iff the path 'isAbsolute'. */
@@ -132,6 +141,11 @@ sealed trait Path {
   def join(path: Path): Path =
     </>(path)
 
+  /** Append the specified 'FileName' to this 'Path'. The following invariants
+      always hold:
+        - extending this path with a filename and the calling dirname is a no-op
+        - extending this path with a filename and the calling basename always
+          gives the filename  */
   def </(other: FileName): Path =
     fold(
       Component(Root, other)
@@ -139,33 +153,54 @@ sealed trait Path {
     , (_, _) => Component(this, other)
     )
 
-  /** @return a File for this path */
+  /** Named alias for '</' operator. See extended description on '</'. */
+  def extend(other: FileName): Path =
+    </(other)
+
+  /** Construct a 'java.io.File' corresponding to this path. */
   def toFile: File =
     new File(path)
 
-  /** @return the portion of a file path that is relative to another */
-  def relativeTo(other: Path): Option[Path] =
-    fold(
-      None
-    , None
-    , (d, p) => if (d == other) (Relative </ p).some
-                else            d.relativeTo(other).map(_ </ p))
-
-  /** @return true if the file path is absolute */
+  /** Is this file path absolute? i.e. is the base case the 'Root' element.
+      This is the inverse of isRelative. */
   def isAbsolute: Boolean =
     fold(true, false, (d, _) => d.isAbsolute)
 
-  /** @return true if this file path is relative */
+  /** Is this file path relative i.e. is the base case the 'Relative' element.
+      This is the inverse of isAbsolute. */
   def isRelative: Boolean =
     !isAbsolute
 
-  /** @return all the names of this path */
+  /** Return all the 'FileName' components of this 'Path'.
+
+      WARNING: this is a lossy operation, it should not be used
+      in isolation. Any use of this without _isAbsolute_ or
+      _isRelative_ is almost certainly a bug. */
   def names: List[FileName] =
     fold(Vector(), Vector(), (d, n) => d.names :+ n).toList
 
-  /** @return all the names of this path */
+  /** Return all the 'String' names of this 'Path'. This is a
+      weaker typed 'name'.
+
+      WARNING: this is a lossy operation, it should not be used
+      in isolation. Any use of this without _isAbsolute_ or
+      _isRelative_ is almost certainly a bug. */
   def components: List[String] =
     names.map(_.name)
+
+  /** Rebase this path to another path, effectively stripping the
+      'other' prefix from 'this' path. This will return 'Some'
+      path only if other is a prefix of this path, otherwise it
+      will return 'None'. No normalization is done on paths. */
+  def rebaseTo(other: Path): Option[Path] =
+    if (this == other)
+      Some(Relative)
+    else
+      fold(
+        None
+      , None
+      , (d, p) => if (d == other) (Relative </ p).some
+                  else            d.rebaseTo(other).map(_ </ p))
 }
 
 object Path {
@@ -185,9 +220,10 @@ object Path {
   def fromFile(f: File): Path =
     Option(f.getParentFile) match {
       case None =>
-        Component(if (f.isAbsolute) Root else Relative, FileName.unsafe(f.getName))
+        val base = if (f.isAbsolute) Root else Relative
+        if (f.getName == "") base else Component(base, FileName.unsafe(f.getName))
       case Some(p) =>
-        fromFile(f) </ FileName.unsafe(f.getName)
+        fromFile(p) </ FileName.unsafe(f.getName)
     }
 
   def Parent =
