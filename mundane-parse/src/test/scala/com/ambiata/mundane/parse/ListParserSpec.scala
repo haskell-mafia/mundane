@@ -19,6 +19,7 @@ Examples
    extract a string option                                                           $stringOpt1
    extract a string option from an empty list                                        $stringOpt2
    extract a nonempty string                                                         $nonemptystring1
+   extract a value iff a string is empty                                             $emptyValue
    extract a string of a certain length                                              $lengthstring1
    extract an optional string of a certain length                                    $optionlengthstring1
    extract an int                                                                    $int1
@@ -119,6 +120,9 @@ Properties
     string.nonempty.run(List("a")).toOption must beSome("a")
     string.nonempty.run(List("")).toOption must beNone
   }
+
+  def emptyValue =
+     ListParser.empty(1).run(Nil).toEither must beRight(1)
 
   def int1 = {
     int.run(List("1")).toOption must beSome(1)

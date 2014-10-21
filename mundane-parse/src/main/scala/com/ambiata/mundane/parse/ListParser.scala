@@ -55,6 +55,9 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
         case success               => success
       })
 
+  def whenEmpty(a: A): ListParser[A] =
+    ListParser.empty(a) ||| this
+
   def nonempty(implicit ev: A =:= String) =
     flatMap(a => ListParser((position, state) =>
       if (ev(a).isEmpty) (position, s"Expected string at position $position to be non empty").failure
@@ -256,8 +259,10 @@ object ListParser {
   def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char): ListParser[(A, B)] =
     ListParser((position, state) => state match {
       case h :: t   =>
-        pa.parse(Delimited.parseRow(h, delimiter)).flatMap {
-          case (_, as, a) => pb.parse(as).map { case (_, _, b) => (position + h.size, t, (a, b)) }
+        Delimited.parseRow(h, delimiter) match {
+          case a :: b :: Nil =>
+            pa.parse(List(a)).flatMap { case (_, _, ra) => pb.parse(List(b)).map { case (_, _, rb) => (position + 1, t, (ra, rb)) } }
+          case other => (position, s"$other is not a pair delimited by $delimiter").failure
         }
 
       case Nil    => (position, s"Expected string at position $position to be non empty").failure
@@ -269,7 +274,7 @@ object ListParser {
   def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[Seq[A]] =
     ListParser((position, state) => state match {
       case h :: t =>
-        val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter))
+        val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter).filter(_.nonEmpty))
         parsed.map { case (_, _, as) => (position + h.size, t, as) }
 
       case Nil => (position, Nil, Nil).success
@@ -280,15 +285,6 @@ object ListParser {
    */
   def repeat[A](p: ListParser[A]): ListParser[Seq[A]] =
     emptySeq ||| p.flatMap(a => repeat(p).map(seq => a +: seq))
-
-  /**
-   * A parser that succeeds on an empty list and returns an empty sequence
-   */
-  def emptySeq[A]: ListParser[Seq[A]] =
-    ListParser((position, state) =>
-      if (state.isEmpty) (position, state, Nil).success[(Int, String)]
-      else               (position, s"$state is not an empty list").failure[(Int, List[String], Seq[A])]
-    )
 
   /**
    * A parser for a value that is surrounded by 2 other characters
@@ -311,6 +307,40 @@ object ListParser {
    */
   def jsonKeyValueMap[K, V](key: ListParser[K], value: ListParser[V]): ListParser[Map[K, V]] =
     keyValueMap(key, value, ',', ':')
+
+  /**
+   * A parser that succeeds on an empty list and returns a value instead
+   */
+  def empty[A](a: A): ListParser[A] =
+    ListParser((position, state) =>
+      if (state.isEmpty) (position, Nil, a).success
+      else (position, s"$state is not empty").failure)
+
+  /**
+   * A parser that succeeds on an empty list and returns an empty string
+   */
+  def emptyString: ListParser[String] =
+    empty("")
+
+  /**
+   * A parser that succeeds on an empty list and returns an empty sequence
+   */
+  def emptySeq[A]: ListParser[Seq[A]] =
+    empty(Nil)
+
+  /**
+   * A parser that returns 0.0 on an empty list or parses a Double
+   */
+  def doubleOrZero: ListParser[Double] =
+    empty(0.0) ||| double.named("double")
+
+  /**
+   * A parser that returns 0 on an empty list or parses an Int
+   */
+  def intOrZero: ListParser[Int] =
+    empty(0) ||| int
+
+
 
   implicit def ListParserMonad: Monad[ListParser] = new Monad[ListParser] {
     def bind[A, B](r: ListParser[A])(f: A => ListParser[B]) = r flatMap f
