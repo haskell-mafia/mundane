@@ -19,6 +19,7 @@ Examples
    extract a string option                                                           $stringOpt1
    extract a string option from an empty list                                        $stringOpt2
    extract a nonempty string                                                         $nonemptystring1
+   extract a value iff a string is empty                                             $emptyValue
    extract a string of a certain length                                              $lengthstring1
    extract an optional string of a certain length                                    $optionlengthstring1
    extract an int                                                                    $int1
@@ -44,6 +45,12 @@ Examples
    or combinator never executes other parser when there is no failure                $orCombinator2
    or combinator fails when both first and second parsers fail                       $orCombinator3
    error if char is invalid                                                          $invalidChar1
+   extract a pair of values                                                          $pair
+   extract delimited strings                                                         $delimitedStrings
+   extract delimited values                                                          $delimitedValues
+   extract key/value maps                                                            $keyValueMaps
+   extract bracketed values                                                          $bracketedValues
+   optionally provide a name in case of a failure                                    $named
 
 Properties
 ==========
@@ -58,6 +65,30 @@ Properties
   success always succeeds                         ${alwaysSucceeds}
   fail always fails                               ${alwaysFails}
 
+
+Convenience methods
+===================
+
+  ${ emptyString.run(Nil) ==== ListParser.empty("").run(Nil) }
+  ${ emptyList.run(Nil)   ==== ListParser.empty(Nil).run(Nil) }
+
+  ${ prop((list: List[Double]) =>
+      doubleOrZero.run(list.map(_.toString)) ==== (ListParser.empty(0.0) ||| double).run(list.map(_.toString))) }
+
+  ${ prop((list: List[Int]) =>
+      intOrZero.run(list.map(_.toString)) ==== (ListParser.empty(0) ||| int).run(list.map(_.toString))) }
+
+  ${ prop((list: List[Int]) =>
+      int.commaDelimited.run(List(list.mkString(","))) ==== int.delimited(',').run(List(list.mkString(",")))) }
+
+  ${ prop((list: List[Int]) =>
+      int.delimited(',').run(List(list.mkString(","))) ==== ListParser.delimitedValues(int, ',').run(List(list.mkString(",")))) }
+
+  ${ prop((list: List[Int]) =>
+      int.bracketed('(', ')').run("("+:list.map(_.toString):+")") ==== ListParser.bracketed(int, '(', ')').run("("+:list.map(_.toString):+")")) }
+
+  ${ prop((list: List[String]) =>
+      string.whenEmpty("A").run(list) ==== (ListParser.empty("A") ||| string).run(list)) }
 
 """
 
@@ -113,6 +144,9 @@ Properties
     string.nonempty.run(List("a")).toOption must beSome("a")
     string.nonempty.run(List("")).toOption must beNone
   }
+
+  def emptyValue =
+     ListParser.empty(1).run(Nil).toEither must beRight(1)
 
   def int1 = {
     int.run(List("1")).toOption must beSome(1)
@@ -227,14 +261,48 @@ Properties
          |not an int: 'bbb' (position: 2)""".stripMargin)
   }
 
+  def pair = prop((i: Int, d: Double, c: Char) =>
+    ListParser.pair(int, double, delimiter = c).run(List(s"$i$c$d")).toEither must beRight((i, d)))
+
+  def delimitedStrings = prop { (strings: List[SimpleString], delimiter: Delimiter) =>
+    val parser = simpleString.delimited(delimiter = delimiter.d)
+    val input  = if (strings.isEmpty) Nil else List(strings.map(_.s).mkString(delimiter.s))
+    parser.run(input).toEither must beRight(strings)
+  }
+
+  def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
+    val parser = int.delimited(delimiter = delimiter.d)
+    val input  = if (ints.isEmpty) Nil else List(ints.mkString(delimiter.s))
+    parser.run(input).toEither must beRight(ints)
+  }
+
+  def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
+    val parser = ListParser.keyValueMap(simpleString, int, entriesDelimiter = entryDelimiter.d, keyValueDelimiter = keyValueDelimiter.d)
+    val zipped = strings.toList.zip(ints.toList)
+    val input  = if (zipped.isEmpty) Nil else  List(zipped.map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
+
+    parser.run(input).toEither must beRight(zipped.toMap[SimpleString, Int])
+  }
+
+  def bracketedValues = prop { (string: SimpleString, brackets: Brackets) =>
+    val parser = simpleString.bracketed(opening = brackets.opening, closing = brackets.closing)
+    val input  = List(string.s)
+    parser.run(input).toEither must beRight(string)
+  }
+
+  def named = prop { str: String =>
+    val parser = fail("this is a failed parser").named("field number 1")
+    parser.run(List(str)).toEither must beLeft(contain("field number 1"))
+  }
+
   def orCombinator1 = prop((msg: String, str: String) =>
-    ((fail(msg) ||| string).run(List(str)) ==== str.success))
+    (fail(msg) ||| string).run(List(str)) ==== str.success)
 
   def orCombinator2 = prop((msg: String, str: String) =>
-    ((string ||| fail(msg)).run(List(str)) ==== str.success))
+    (string ||| fail(msg)).run(List(str)) ==== str.success)
 
   def orCombinator3 = prop((msg1: String, msg2: String, str: String) =>
-    ((fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft))
+    (fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft)
 
   def option1 =
     ListParser.int.option.run(List("123")) must_== Some(123).success
@@ -266,5 +334,37 @@ Properties
     }
   }
 
+  case class Delimiter(d: Char) { def s = d.toString }
+
+  implicit def ArbitraryDelimiter: Arbitrary[Delimiter] = Arbitrary {
+    Gen.oneOf(',', '|', '~').map(Delimiter)
+  }
+
+  /** Delimiter distinct from the delimiter above */
+  case class Delimiter2(d: Char) { def s = d.toString }
+
+  implicit def ArbitraryDelimiter2: Arbitrary[Delimiter2] = Arbitrary {
+    Gen.oneOf(':', '=').map(Delimiter2)
+  }
+
+  case class Brackets(opening: Char, closing: Char)
+
+  implicit def ArbitraryBracket: Arbitrary[Brackets] = Arbitrary {
+    for {
+      opening <- Gen.oneOf('(', '[', '{')
+      closing =  Map('(' -> ')', '[' -> ']', '{' -> '}')(opening)
+    } yield Brackets(opening, closing)
+
+  }
+
+  case class SimpleString(s: String)
+  implicit def ArbitrarySimpleString: Arbitrary[SimpleString] = Arbitrary {
+    for {
+      n  <- Gen.choose(1, 10)
+      ss <- Gen.listOfN(n, Gen.oneOf('a', 'z'))
+    } yield SimpleString(ss.mkString)
+  }
+
+  def simpleString: ListParser[SimpleString] = string.map(SimpleString)
 
 }
