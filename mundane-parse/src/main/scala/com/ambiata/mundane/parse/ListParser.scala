@@ -48,6 +48,13 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
         case Failure(error)                    => Failure(error)
       })
 
+  def named(n: String): ListParser[A] =
+    ListParser((position, state) =>
+      parse(position, state) match {
+        case Failure((p, message)) => Failure((p, message+s" (for $n)"))
+        case success               => success
+      })
+
   def nonempty(implicit ev: A =:= String) =
     flatMap(a => ListParser((position, state) =>
       if (ev(a).isEmpty) (position, s"Expected string at position $position to be non empty").failure
@@ -261,11 +268,11 @@ object ListParser {
    */
   def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[Seq[A]] =
     ListParser((position, state) => state match {
-      case h :: t   =>
+      case h :: t =>
         val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter))
         parsed.map { case (_, _, as) => (position + h.size, t, as) }
 
-      case Nil    => (position, Nil, Nil).success
+      case Nil => (position, Nil, Nil).success
     })
 
   /**

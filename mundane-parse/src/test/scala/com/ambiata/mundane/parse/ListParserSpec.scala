@@ -49,6 +49,7 @@ Examples
    extract delimited values                                                          $delimitedValues
    extract key/value maps                                                            $keyValueMaps
    extract bracketed values                                                          $bracketedValues
+   optionally provide a name in case of a failure                                    $named
 
 Properties
 ==========
@@ -235,29 +236,35 @@ Properties
   def pair = prop((i: Int, d: Double, c: Char) =>
     ListParser.pair(int, double, delimiter = c).run(List(s"$i$c$d")).toEither must beRight((i, d)))
 
-  def delimitedStrings = prop { (strings: NonEmptyList[SimpleString], delimiter: Delimiter) =>
+  def delimitedStrings = prop { (strings: List[SimpleString], delimiter: Delimiter) =>
     val parser = simpleString.delimited(delimiter = delimiter.d)
-    val input  = List(strings.map(_.s).toList.mkString(delimiter.s))
-    parser.run(input).toEither must beRight(strings.toList)
+    val input  = if (strings.isEmpty) Nil else List(strings.map(_.s).mkString(delimiter.s))
+    parser.run(input).toEither must beRight(strings)
   }
 
-  def delimitedValues = prop { (ints: NonEmptyList[Int], delimiter: Delimiter) =>
+  def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
     val parser = int.delimited(delimiter = delimiter.d)
-    val input  = List(ints.toList.mkString(delimiter.s))
-    parser.run(input).toEither must beRight(ints.toList)
+    val input  = if (ints.isEmpty) Nil else List(ints.mkString(delimiter.s))
+    parser.run(input).toEither must beRight(ints)
   }
 
-  def keyValueMaps = prop { (strings: NonEmptyList[SimpleString], ints: NonEmptyList[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
+  def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
     val parser = ListParser.keyValueMap(simpleString, int, entriesDelimiter = entryDelimiter.d, keyValueDelimiter = keyValueDelimiter.d)
-    val input  = List(strings.toList.zip(ints.toList).map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
+    val zipped = strings.toList.zip(ints.toList)
+    val input  = if (zipped.isEmpty) Nil else  List(zipped.map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
 
-    parser.run(input).toEither must beRight(strings.toList.zip(ints.toList).toMap[SimpleString, Int])
+    parser.run(input).toEither must beRight(zipped.toMap[SimpleString, Int])
   }
 
   def bracketedValues = prop { (string: SimpleString, brackets: Brackets) =>
     val parser = simpleString.bracketed(opening = brackets.opening, closing = brackets.closing)
     val input  = List(string.s)
     parser.run(input).toEither must beRight(string)
+  }
+
+  def named = prop { str: String =>
+    val parser = fail("this is a failed parser").named("field number 1")
+    parser.run(List(str)).toEither must beLeft(contain("field number 1"))
   }
 
   def orCombinator1 = prop((msg: String, str: String) =>
@@ -331,13 +338,5 @@ Properties
   }
 
   def simpleString: ListParser[SimpleString] = string.map(SimpleString)
-
-  implicit def ArbitraryNonEmptyList[A](implicit arbitrary : Arbitrary[A]): Arbitrary[NonEmptyList[A]] = Arbitrary {
-    for {
-      a  <- arbitrary.arbitrary
-      as <- Gen.listOf(arbitrary.arbitrary)
-    } yield NonEmptyList.nel(a, as)
-  }
-
 
 }
