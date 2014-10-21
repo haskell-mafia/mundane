@@ -44,6 +44,10 @@ Examples
    or combinator never executes other parser when there is no failure                $orCombinator2
    or combinator fails when both first and second parsers fail                       $orCombinator3
    error if char is invalid                                                          $invalidChar1
+   extract a pair of values                                                          $pair
+   extract delimited strings                                                         $delimitedStrings
+   extract delimited values                                                          $delimitedValues
+   extract key/value maps                                                            $keyValueMaps
 
 Properties
 ==========
@@ -227,14 +231,25 @@ Properties
          |not an int: 'bbb' (position: 2)""".stripMargin)
   }
 
+  def pair =
+    ListParser.pair(int, double, delimiter = ',').run(List("1,2.0")).toEither must beRight((1, 2.0))
+
+  def delimitedStrings =
+    string.delimited(delimiter = ',').run(List("a,b")).toEither must beRight(Seq("a", "b"))
+
+  def delimitedValues = int.delimited(delimiter = ',').run(List("1,2")).toEither must beRight(Seq(1, 2))
+
+  def keyValueMaps = ListParser.keyValueMap(string, int, entriesDelimiter = ',', keyValueDelimiter = '=').
+    run(List("a=1,b=2")).toEither must beRight(Map("a" -> 1, "b" -> 2))
+
   def orCombinator1 = prop((msg: String, str: String) =>
-    ((fail(msg) ||| string).run(List(str)) ==== str.success))
+    (fail(msg) ||| string).run(List(str)) ==== str.success)
 
   def orCombinator2 = prop((msg: String, str: String) =>
-    ((string ||| fail(msg)).run(List(str)) ==== str.success))
+    (string ||| fail(msg)).run(List(str)) ==== str.success)
 
   def orCombinator3 = prop((msg1: String, msg2: String, str: String) =>
-    ((fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft))
+    (fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft)
 
   def option1 =
     ListParser.int.option.run(List("123")) must_== Some(123).success

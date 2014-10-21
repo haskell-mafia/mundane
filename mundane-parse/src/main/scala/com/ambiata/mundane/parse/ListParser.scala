@@ -7,6 +7,7 @@ import scalaz.Failure
 import scala.Some
 import scalaz.Success
 import ListParser._
+import scalaz.Validation.FlatMap._
 
 /**
  * Parser for a list of strings, returning a Failure[String] if the parse failed, or an object A
@@ -85,11 +86,8 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       case xs => parse(position, xs).map(_.map(Option.apply[A]))
     })
 
-  def delimited(implicit ev: A =:= String, delimiter: Char=','): ListParser[Seq[String]] =
-    flatMap(a => ListParser((position, state) =>
-      if (ev(a).isEmpty) (position, state, Seq()).success
-      else               (position, state, Delimited.parseRow(a, delimiter)).success
-    ))
+  def delimited(delimiter: Char = ','): ListParser[Seq[A]] =
+    ListParser.delimitedValues(this, delimiter)
 
   def |||(x: ListParser[A]): ListParser[A] =
     ListParser((n, ls) =>
@@ -238,6 +236,39 @@ object ListParser {
    */
   def consumeRest: ListParser[Unit] =
     ListParser((pos, str) => (str.length, Nil, ()).success)
+
+  /**
+   * A parser for a pair of 2 delimited values
+   */
+  def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char = ':'): ListParser[(A, B)] =
+    ListParser((position, state) => state match {
+      case h :: t   =>
+        pa.parse(Delimited.parseRow(h, delimiter)).flatMap {
+          case (_, as, a) => pb.parse(as).map { case (_, _, b) => (position + h.size, t, (a, b)) }
+        }
+
+      case Nil    => (position, s"Expected string at position $position to be non empty").failure
+    })
+
+  /**
+   * A parser for a list delimited values of the same type
+   */
+  def delimitedValues[A](p: ListParser[A], delimiter: Char = ','): ListParser[Seq[A]] =
+    ListParser((position, state) => state match {
+      case h :: t   =>
+        p.parse(Delimited.parseRow(h, delimiter)).flatMap {
+          case (_, Nil,  a) => (position + h.size, t, Seq(a)).success
+          case (_, rest, a) => delimitedValues(p, delimiter).parse(rest).map { case (_, _, as) => (position + h.size, t, a +: as) }
+        }
+
+      case Nil    => (position, s"Expected string at position $position to be non empty").failure
+    })
+
+  /**
+   * A parser for key value maps
+   */
+  def keyValueMap[K, V](key: ListParser[K], value: ListParser[V], entriesDelimiter: Char = ',', keyValueDelimiter: Char = ':'): ListParser[Map[K, V]] =
+    delimitedValues(pair[K, V](key, value, keyValueDelimiter), entriesDelimiter).map(_.toMap)
 
   implicit def ListParserMonad: Monad[ListParser] = new Monad[ListParser] {
     def bind[A, B](r: ListParser[A])(f: A => ListParser[B]) = r flatMap f
