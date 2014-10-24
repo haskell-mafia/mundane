@@ -50,7 +50,7 @@ package object io extends MacrosCompat {
 
   implicit class DirPathListSyntax(l: List[DirPath]) {
     def filterHidden: List[DirPath] =
-      l.filter(f => !f.basename.name.startsWith("."))
+      l.filter(f => !Seq(".", "_").exists(c => f.basename.name.startsWith(c)))
   }
 
   implicit def ToFileName(s: String): FileName =
