@@ -2,10 +2,20 @@ package com.ambiata.mundane
 package io
 
 import com.ambiata.mundane.control._
+import MemoryConversions._
 
 import scalaz._, Scalaz._
 import scalaz.effect._
 
+/**
+ * Functions acting on directories (local filesystem):
+ *
+ *  - mkdirs: create directories
+ *  - list: list files in a directory
+ *  - delete: delete a directory
+ *  - size: size of a directory
+ *  - ...
+ */
 object Directories {
   def mkdirs(dirPath: DirPath): ResultT[IO, Unit] =
     ResultT.safe[IO, Boolean](dirPath.toFile.mkdirs).void
@@ -46,4 +56,6 @@ object Directories {
     file.exists && file.isDirectory
   }
 
+  def size(dirPath: DirPath): ResultTIO[BytesQuantity] =
+    list(dirPath).map(_.foldMap(_.toFile.length).bytes)
 }

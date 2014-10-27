@@ -1,14 +1,15 @@
 package com.ambiata.mundane
 package io
 
-import com.ambiata.mundane.control.ResultT
 import com.ambiata.mundane.testing.ResultTIOMatcher._
 
 import org.specs2._
 import org.scalacheck._
+import org.specs2.matcher.ResultMatchers
 import scalaz._, Scalaz._
+import MemoryConversions._
 
-class DirectoriesSpec extends Specification with ScalaCheck { def is = s2"""
+class DirectoriesSpec extends Specification with ScalaCheck with ResultMatchers { def is = s2"""
 
 Directories
 -----------
@@ -17,6 +18,7 @@ Directories
   should recursively delete all files       $delete
   should determine if directory exists      $exists
   should determine if directory not exists  $notExists
+  should determine the size of a directory  $size
 
 """
 
@@ -48,4 +50,14 @@ Directories
   def sort(files: List[FilePath]): List[FilePath] =
     files.sortBy(_.path)
 
+  def size =
+    prop((tree: FileTree) => TemporaryDirPath.withDirPath { tmp =>
+      val base = tmp </> "base"
+      for {
+        _             <- tree.create(base)
+        files         <- Directories.list(base)
+        fileSizes     = files.map(_.toFile.length).suml
+        directorySize <- Directories.size(base)
+      } yield fileSizes.bytes must_== directorySize
+    } must beOkLike(_  must beSuccessful))
 }
