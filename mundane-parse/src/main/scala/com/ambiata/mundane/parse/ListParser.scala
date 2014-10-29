@@ -290,11 +290,15 @@ object ListParser {
    * A parser for a value that is surrounded by 2 other characters
    */
   def bracketed[A](parser: ListParser[A], opening: Char, closing: Char): ListParser[A] =
-    for {
-      _ <- value(opening.success)
-      a <- parser
-      _ <- value(closing.success)
-    } yield a
+    ListParser { (position, state) =>
+      state match {
+        case s :: rest if s.startsWith(opening.toString) && s.endsWith(closing.toString) =>
+          parser.parse(position, s.drop(1).dropRight(1) :: rest)
+
+        case other =>
+          (position, s"The current string to parse is not bracketed by $opening, $closing: $state (at position: $position)").failure
+      }
+    }
 
   /**
    * A parser for key value maps

@@ -286,7 +286,7 @@ Convenience methods
 
   def bracketedValues = prop { (string: SimpleString, brackets: Brackets) =>
     val parser = simpleString.bracketed(opening = brackets.opening, closing = brackets.closing)
-    val input  = List(string.s)
+    val input  = List(brackets.opening + string.s + brackets.closing)
     parser.run(input).toEither must beRight(string)
   }
 
