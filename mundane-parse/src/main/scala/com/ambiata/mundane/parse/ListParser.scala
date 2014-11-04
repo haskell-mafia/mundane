@@ -275,7 +275,7 @@ object ListParser {
     ListParser((position, state) => state match {
       case h :: t =>
         val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter).filter(_.nonEmpty))
-        parsed.map { case (_, _, as) => (position + h.size, t, as) }
+        parsed.map { case (_, _, as) => (position + 1, t, as) }
 
       case Nil => (position, Nil, Nil).success
     })

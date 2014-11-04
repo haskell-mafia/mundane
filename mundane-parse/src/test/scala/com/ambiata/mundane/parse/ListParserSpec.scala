@@ -273,7 +273,7 @@ Convenience methods
   def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
     val parser = int.delimited(delimiter = delimiter.d)
     val input  = if (ints.isEmpty) Nil else List(ints.mkString(delimiter.s))
-    parser.run(input).toEither must beRight(ints)
+    parser.parse(input).toEither must beRight((input.size, Nil, ints))
   }
 
   def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
