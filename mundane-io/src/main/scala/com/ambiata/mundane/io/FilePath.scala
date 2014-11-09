@@ -143,10 +143,10 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
    * @return the portion of a dir path that is relative to another
    */
   def relativeTo(other: DirPath): DirPath =
-    (dirs, other.dirs) match {
-      case (h +: t, h1 +: t1) if h == h1 => copy(dirs = t, isAbsolute = false).relativeTo(other.copy(dirs = t1))
-      case _                             => this
-    }
+    if (dirs.take(other.dirs.size) == other.dirs)
+      copy(dirs = dirs.drop(other.dirs.size), isAbsolute = false)
+    else
+      this
 
   /** @return the DirPath starting from the rootname */
   def fromRoot: DirPath = relativeTo(rootname)
