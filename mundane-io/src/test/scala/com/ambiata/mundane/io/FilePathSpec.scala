@@ -75,9 +75,15 @@ class FilePathSpec extends Specification with ScalaCheck { def is = s2"""
    ${ ("test" </> "hello" </> "world").dirPath must_== "test/hello/world/" }
 
    get a portion of the path
-   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).relativeTo(dir1) === dir2.asRelative) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).asAbsolute.relativeTo(dir1.asAbsolute) === dir2.asRelative) }
    ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> "this" </> dir2).relativeTo(dir1 </> "that") === (dir1 </> "this" </> dir2)) }
-   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).relativeTo(dir1) must beRelative) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).asRelative.relativeTo(dir1) === (dir1 </> dir2).asRelative) }
+
+   ${ prop((dir1: DirPath, dir2: DirPath) =>
+        dir1.asAbsolute.commonPrefix(dir2.asAbsolute) </> dir1.asAbsolute.removeCommonPrefix(dir2.asAbsolute) ===
+        dir1.asAbsolute) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => dir1.removeCommonPrefix(dir2).isRelative === dir1.isRelative) }
+
    ${ ("test" </> "hello" </> "world").fromRoot === "hello" </> "world" }
    ${ ("test" </> "hello" </> "world").names === List("test", "hello", "world").map(FileName.unsafe) }
    ${ ("test" </> "hello" </> "world" </> "hi").up(2) === "test" </> "hello" }

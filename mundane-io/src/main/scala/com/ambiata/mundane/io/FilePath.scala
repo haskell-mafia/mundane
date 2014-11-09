@@ -143,13 +143,33 @@ case class DirPath(dirs: Vector[FileName], isAbsolute: Boolean) {
    * @return the portion of a dir path that is relative to another
    */
   def relativeTo(other: DirPath): DirPath =
-    if (dirs.take(other.dirs.size) == other.dirs)
+    if (isAbsolute && other.isAbsolute && dirs.take(other.dirs.size) == other.dirs)
       copy(dirs = dirs.drop(other.dirs.size), isAbsolute = false)
     else
       this
 
+  /**
+   * @return remove the maximum prefix of this dir which is also a prefix in "other"
+   *         but only if both paths are absolute or both paths are relative
+   */
+  def removeCommonPrefix(other: DirPath): DirPath =
+    if (isAbsolute == other.isAbsolute || isRelative == other.isRelative) {
+      val common = this.commonPrefix(other).dirs
+      copy(dirs = dirs.drop(common.size))
+    } else this
+
+  /**
+   * @return the maximum prefix of this dir which is also a prefix in "other"
+   *         but only if both paths are absolute or both paths are relative
+   */
+  def commonPrefix(other: DirPath): DirPath =
+    if (isAbsolute == other.isAbsolute || isRelative == other.isRelative) {
+      val common = (dirs zip other.dirs).takeWhile { case (name1, name2) => name1 == name2 }.map(_._1)
+      copy(dirs = common)
+    } else this
+
   /** @return the DirPath starting from the rootname */
-  def fromRoot: DirPath = relativeTo(rootname)
+  def fromRoot: DirPath = removeCommonPrefix(rootname)
 
   /** @return interpret this DirPath as a FilePath, which might be /. if this DirPath is Root */
   def toFilePath: FilePath = FilePath(dirname, basename)
