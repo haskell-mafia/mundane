@@ -48,6 +48,15 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
         case Failure(error)                    => Failure(error)
       })
 
+  def satisfies(f: A => Boolean): ListParser[A] =
+    ListParser((n, ls) =>
+      parse(n, ls) match {
+        case s@ Success((nuposition, nustate, a)) => if (f(a)) {
+            s
+          } else Failure((n + 1, "Value doesn't satisfy supposition"))
+        case f @ Failure(_) => f
+      })
+
   def named(n: String): ListParser[A] =
     ListParser((position, state) =>
       parse(position, state) match {

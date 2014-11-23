@@ -35,6 +35,8 @@ Examples
    extract multiple values                                                           $multi1
    error if not parsed all elements                                                  $leftover1
    preprocess the input string                                                       $preprocess1
+   satisfies works for true values                                                   $satisfies1
+   satisfies fails for false values                                                  $satisfies2
    option set                                                                        $option1
    option not set                                                                    $option2
    option invalid                                                                    $option3
@@ -303,6 +305,12 @@ Convenience methods
 
   def orCombinator3 = prop((msg1: String, msg2: String, str: String) =>
     (fail(msg1) ||| fail(msg2)).run(List(str)).toEither must beLeft)
+
+  def satisfies1 =
+    ListParser.int.satisfies(_ > 4).run(List("5")) must_== 5.success
+
+  def satisfies2 =
+    ListParser.int.satisfies(_ > 4).run(List("2")).toOption must_== None
 
   def option1 =
     ListParser.int.option.run(List("123")) must_== Some(123).success
