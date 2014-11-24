@@ -80,6 +80,12 @@ object ResultT extends LowPriorityResultT {
   def failIO[A](message: String): ResultT[IO, A] =
     fail[IO, A](message)
 
+  /**
+   * For User Messages
+   **/
+  def putStrLn(x: String): ResultT[IO, Unit] =
+    fromIO(IO.putStrLn(x))
+
   def error[F[_]: Monad, A](message: String, t: Throwable): ResultT[F, A] =
     these[F, A](Both(message, t))
 
