@@ -187,6 +187,12 @@ object ListParser {
   def char: ListParser[Char] =
     parseAttempt(s => s.headOption.filter(_ => s.length == 1), "Not a char")
 
+  /** A char which can only be one of the given characters  */
+  def charFlag(valid: List[Char]): ListParser[Char] = for {
+    c <- char
+    f <- if(valid.contains(c)) success(c) else fail(s"Unknown flag '${c}', expected one of '${valid.mkString(",")}'")
+  } yield f
+
   /** Exactly one token, can only fail if the input is empty. */
   def string: ListParser[String] =
     ListParser((pos, str) => str match {
