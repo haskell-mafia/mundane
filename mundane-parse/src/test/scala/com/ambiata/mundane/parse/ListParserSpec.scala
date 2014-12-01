@@ -26,6 +26,7 @@ Examples
    extract a short                                                                   $short1
    extract a byte                                                                    $byte1
    extract a char                                                                    $char1
+   extract a char flag                                                               $charFlag1
    extract a double                                                                  $double1
    extract a LocalDate                                                               $localDate1
    consume elements                                                                  $consume1
@@ -47,6 +48,8 @@ Examples
    or combinator never executes other parser when there is no failure                $orCombinator2
    or combinator fails when both first and second parsers fail                       $orCombinator3
    error if char is invalid                                                          $invalidChar1
+   error if char flag does not match the given list                                  $invalidCharFlag1
+   error if char flag is not a char                                                  $invalidCharFlag2
    extract a pair of values                                                          $pair
    extract delimited strings                                                         $delimitedStrings
    extract delimited values                                                          $delimitedValues
@@ -194,6 +197,15 @@ Convenience methods
 
   def invalidChar1 = prop((str: String) => (str.length != 1) ==> {
     ListParser.char.run(List(str)).toOption must beNone })
+
+  def charFlag1 = prop((c: Char, others: List[Char]) =>
+    ListParser.charFlag(c +: others).run(List(c.toString)).toOption must beSome(c))
+
+  def invalidCharFlag1 = prop((c: Char, others: List[Char]) =>
+    ListParser.charFlag(others.filter(_ != c)).run(List(c.toString)).toOption must beNone)
+
+  def invalidCharFlag2 = prop((str: String, others: List[Char]) => (str.length != 1) ==> {
+    ListParser.charFlag(others).run(List(str)).toOption must beNone })
 
   def double1 = {
     double.run(List("1.0")).toOption must beSome(1.0)
