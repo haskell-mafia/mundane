@@ -104,6 +104,9 @@ object ResultT extends LowPriorityResultT {
   def fromDisjunctionString[F[_]: Monad, A](v: String \/ A): ResultT[F, A] =
     fromDisjunction(v.leftMap(This.apply))
 
+  def fromDisjunctionThrowable[F[_]: Monad, A](v: Throwable \/ A): ResultT[F, A] =
+    fromDisjunction(v.leftMap(That.apply))
+
   def fromOption[F[_]: Monad, A](v: Option[A], failure: String): ResultT[F, A] =
     v.cata(ResultT.ok[F, A], ResultT.fail(failure))
 

@@ -18,18 +18,19 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
  ResultT Combinators
  ===================
 
-   ||| ok case                    $okOr
-   ||| ok case with side effects  $okOrIO
-   ||| error case                 $errorOr
-   getOrElse ok case              $okGetOrElse
-   getOrElse error case           $errorGetOrElse
-   disjunction conversions        $disjunction
-   disjunction string conversions $disjunctionString
-   disjunctionF conversions       $disjunctionF
-   fromOption                     $fromOption
-   fromOption error case          $fromOptionF
-   when                           $when
-   unless                         $unless
+   ||| ok case                       $okOr
+   ||| ok case with side effects     $okOrIO
+   ||| error case                    $errorOr
+   getOrElse ok case                 $okGetOrElse
+   getOrElse error case              $errorGetOrElse
+   disjunction conversions           $disjunction
+   disjunction string conversions    $disjunctionString
+   disjunction throwable conversions $disjunctionThrowable
+   disjunctionF conversions          $disjunctionF
+   fromOption                        $fromOption
+   fromOption error case             $fromOptionF
+   when                              $when
+   unless                            $unless
 
  ResultT Construction
  ====================
@@ -72,6 +73,9 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
 
   def disjunctionString = prop((a: String \/ Int) =>
     ResultT.fromDisjunctionString[Id, Int](a).toDisjunction ==== a.leftMap(This.apply))
+
+  def disjunctionThrowable = prop((a: Throwable \/ Int) =>
+    ResultT.fromDisjunctionThrowable[Id, Int](a).toDisjunction ==== a.leftMap(That.apply))
 
   def fromOption =
     ResultT.fromOption[Id, Int](Some(1), "foo") ==== ResultT.ok(1)
