@@ -1,18 +1,18 @@
 package com.ambiata.mundane.io
 
 import com.ambiata.mundane.testing.ResultTIOMatcher._
-
 import org.specs2._
-
 import scalaz._, Scalaz._
 
-class
-FilesSpec extends Specification with ScalaCheck { def is = s2"""
+class FilesSpec extends Specification with ScalaCheck { def is = s2"""
 
  Files should be able to:
-  read string from file                       $read
-  read bytes from file                        $readBytes
-  read utf8 string with new line from file    $unicode
+  read string from file                                    $read
+  read bytes from file                                     $readBytes
+  read utf8 string with new line from file                 $unicode
+  read lines from file                                     $readLines
+  read a lines with a trailing newline                     $readTrailing
+
 """
 
   def read = prop((s: String) => TemporaryDirPath.withDirPath { work =>
@@ -33,4 +33,27 @@ FilesSpec extends Specification with ScalaCheck { def is = s2"""
       Files.write(path, data) >> Files.read(path)
     } must beOkValue(data)
   }
+
+  def readLines = prop { lines: List[String] =>
+    val linesWithNoNewline = lines.map(_.replaceAll("\\s", ""))
+
+    TemporaryDirPath.withDirPath { work =>
+      val path = work <|> "files-spec.string"
+      Files.writeLines(path, linesWithNoNewline) >> Files.readLines(path)
+    } must beOkValue(linesWithNoNewline.toVector)
+
+  }.set(minTestsOk = 1000)
+
+  def readTrailing = prop { string: String =>
+    // see issue #67
+    // prepareForFile(linesOf(filecontent("abcd\n"))) == filecontent("abcd\n")
+    val stringWithTrailingNewline = string.replaceAll("\\s", "") +"\n"
+    val lines = stringWithTrailingNewline.lines.toSeq
+    TemporaryDirPath.withDirPath { work =>
+      val path = work <|> "files-spec.string"
+      Files.writeLines(path, lines) >> Files.read(path)
+    } must beOkValue(stringWithTrailingNewline)
+
+  }.set(minTestsOk = 1000)
+
 }

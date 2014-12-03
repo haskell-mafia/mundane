@@ -11,7 +11,7 @@ object Files {
       Streams.read(in, encoding) }
 
   def readLines(path: FilePath, encoding: String = "UTF-8"): ResultT[IO, Vector[String]] =
-    read(path, encoding).map(_.split("\n").toVector)
+    read(path, encoding).map(_.lines.toVector)
 
   def write(path: FilePath, content: String, encoding: String = "UTF-8"): ResultT[IO, Unit] = for {
     _ <- Directories.mkdirs(path.dirname)
