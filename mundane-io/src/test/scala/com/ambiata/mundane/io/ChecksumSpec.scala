@@ -49,4 +49,5 @@ Checksum Properties
     _ <- Files.writeBytes(p, b)
     r <- Checksum.file(p, MD5)
   } yield r ==== Checksum.bytes(b, MD5))
+
 }

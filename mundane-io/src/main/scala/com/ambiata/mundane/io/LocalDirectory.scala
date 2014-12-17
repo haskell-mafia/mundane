@@ -5,20 +5,20 @@ import java.io._
 import java.net.URI
 import scalaz._, Scalaz._
 
-//case class DirPath(path: Path)
+//case class LocalDirectory(path: Path)
 
-object DirPath {
+object LocalDirectory {
 
-  def Root: DirPath =
+  def Root: LocalDirectory =
     com.ambiata.mundane.path.Root
 
-  def Relative: DirPath =
+  def Relative: LocalDirectory =
     com.ambiata.mundane.path.Relative
 
-  def fromFile(f: File): DirPath =
+  def fromFile(f: File): LocalDirectory =
     unsafe(f.getPath)
 
-  def fromString(s: String): Option[DirPath] =
+  def fromString(s: String): Option[LocalDirectory] =
     s.split("/").toList match {
       case "" :: Nil =>
         None
@@ -28,9 +28,9 @@ object DirPath {
         parts.traverse(FileName.create).map(LocalFile.fromList(Relative, _))
     }
 
-  def unsafe(s: String): DirPath =
-    fromString(s).getOrElse(sys.error("DirPath.unsafe on an invalid string."))
+  def unsafe(s: String): LocalDirectory =
+    fromString(s).getOrElse(sys.error("LocalDirectory.unsafe on an invalid string."))
 
-  def fromURI(s: URI): Option[DirPath] =
+  def fromURI(s: URI): Option[LocalDirectory] =
     fromString(s.getPath)
 }

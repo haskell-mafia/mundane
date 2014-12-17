@@ -8,9 +8,9 @@ import org.specs2.Specification
 
 import scalaz.{Store => _, _}, Scalaz._, effect.IO
 
-class TemporaryDirPathSpec extends Specification { def is = s2"""
+class TemporaryLocalDirectorySpec extends Specification { def is = s2"""
 
- TemporaryDirPath should clean up its own resources
+ TemporaryLocalDirectory should clean up its own resources
  ===================================================
 
    directory exists             $exists
@@ -29,21 +29,21 @@ class TemporaryDirPathSpec extends Specification { def is = s2"""
   }
 
   def clean = {
-    val dir: DirPath = uniqueDirPath
+    val dir: LocalDirectory = uniqueLocalDirectory
     (for {
-      x <- TemporaryDirPath.runWithDirPath(dir)(path => for {
+      x <- TemporaryLocalDirectory.runWithLocalDirectory(dir)(path => for {
         _ <- Files.write(path </> LocalFile.unsafe("foo"), "")
-        _ <- Files.write(path </> DirPath.unsafe("bar") </> LocalFile.unsafe("foo"), "")
+        _ <- Files.write(path </> LocalDirectory.unsafe("bar") </> LocalFile.unsafe("foo"), "")
         f <- Files.exists(path </> LocalFile.unsafe("foo"))
-        b <- Files.exists(path </> DirPath.unsafe("bar") </> LocalFile.unsafe("foo"))
+        b <- Files.exists(path </> LocalDirectory.unsafe("bar") </> LocalFile.unsafe("foo"))
       } yield f -> b)
       df <- Files.exists(dir </> LocalFile.unsafe("foo"))
-      db <- Files.exists(dir </> DirPath.unsafe("bar") </> LocalFile.unsafe("foo"))
+      db <- Files.exists(dir </> LocalDirectory.unsafe("bar") </> LocalFile.unsafe("foo"))
     } yield (x, df -> db)) must beOkValue(((true, true), (false, false)))
   }
 
   def handlesFail = {
-    val dir: DirPath = uniqueDirPath
+    val dir: LocalDirectory = uniqueLocalDirectory
     TemporaryDirPath.runWithDirPath(dir)(_ => RIO.fail[Int]("")).toOption must beNone
     !dir.toFile.exists()
   }

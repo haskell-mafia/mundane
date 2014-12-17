@@ -8,7 +8,7 @@ import control.{ResultT, RIO}
 
 package object io {
   type LocalFile = P
-  type DirPath = P
+  type LocalDirectory = P
 
   type Logger = String => IO[Unit]
   val noLogging = (s: String) => IO(())
@@ -28,8 +28,8 @@ package object io {
 
   implicit class LocalFileStringSyntax(l: String) {
     def </(n: FileName): LocalFile =
-      DirPath.Relative </ FileName.unsafe(l) </ n
+      LocalDirectory.Relative </ FileName.unsafe(l) </ n
     def </(n: String): LocalFile =
-      DirPath.Relative </ FileName.unsafe(l) </ FileName.unsafe(n)
+      LocalDirectory.Relative </ FileName.unsafe(l) </ FileName.unsafe(n)
   }
 }

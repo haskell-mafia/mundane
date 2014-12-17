@@ -17,11 +17,11 @@ import scalaz.effect._
  *  - ...
  */
 object Directories {
-  def mkdirs(dirPath: DirPath): RIO[Unit] =
+  def mkdirs(dirPath: LocalDirectory): RIO[Unit] =
     RIO.safe[Boolean](dirPath.toFile.mkdirs).void
 
-  def list(dirPath: DirPath): RIO[List[FilePath]] = RIO.safe[List[FilePath]] {
-    def loop(dir: DirPath): Vector[LocalFile] = {
+  def list(dirPath: LocalDirectory): RIO[List[FilePath]] = RIO.safe[List[FilePath]] {
+    def loop(dir: LocalDirectory): Vector[LocalFile] = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.flatMap { f =>
         if (f.isDirectory) loop(dir </ FileName.unsafe(f.getName))
@@ -31,11 +31,11 @@ object Directories {
     loop(dirPath).toList
   }
 
-  def listFirstFileNames(dirPath: DirPath): RIO[List[FileName]] =
+  def listFirstFileNames(dirPath: LocalDirectory): RIO[List[FileName]] =
     RIO.safe[List[FileName]](Option(dirPath.toFile.listFiles).cata(_.toList, List()).map(file => FileName.unsafe(file.getName)))
 
-  def delete(dirPath: DirPath): RIO[Boolean] = RIO.safe[Boolean] {
-    def loop(dir: DirPath): Boolean = {
+  def delete(dirPath: LocalDirectory): RIO[Boolean] = RIO.safe[Boolean] {
+    def loop(dir: LocalDirectory): Boolean = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.forall { f =>
         if (f.isDirectory) loop(dir </ FileName.unsafe(f.getName))
@@ -45,17 +45,17 @@ object Directories {
     loop(dirPath)
   }
 
-  def move(src: DirPath, dest: DirPath): RIO[Unit] = RIO.safe {
+  def move(src: LocalDirectory, dest: LocalDirectory): RIO[Unit] = RIO.safe {
     val destf = dest.toFile
     destf.mkdirs
     src.toFile.renameTo(destf)
   }
 
-  def exists(dirPath: DirPath): RIO[Boolean] = RIO.safe[Boolean] {
+  def exists(dirPath: LocalDirectory): RIO[Boolean] = RIO.safe[Boolean] {
     val file = dirPath.toFile
     file.exists && file.isDirectory
   }
 
-  def size(dirPath: DirPath): RIO[BytesQuantity] =
+  def size(dirPath: LocalDirectory): RIO[BytesQuantity] =
     list(dirPath).map(_.foldMap(_.toFile.length).bytes)
 }

@@ -60,5 +60,4 @@ class FilesSpec extends Specification with ScalaCheck { def is = s2"""
       l <- Files.read(p)
     } yield l ==== stringWithTrailingNewline
   }).set(minTestsOk = 1000)
-
 }

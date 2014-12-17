@@ -10,7 +10,7 @@ import org.specs2.matcher.Matcher
 class LocalFileMiniSpec extends Specification { def is = s2"""
 
    a String
-   ${ DirPath.fromString("hello/world").map(_.path) === Some("hello/world")  }
+   ${ LocalDirectory.fromString("hello/world").map(_.path) === Some("hello/world")  }
 
 """
 
@@ -26,52 +26,52 @@ class LocalFileSpec extends Specification { def is = s2"""
 
  They also map to the notion of file and directory on a filesystem (but not on the Java notion of File which can represent both)
 
- DirPaths
+ LocalDirectorys
  ========
 
- A DirPath can be created from
+ A LocalDirectory can be created from
    a String
-   ${ DirPath.fromString("hello/world").map(_.path) === Some("hello/world")  }
+   ${ LocalDirectory.fromString("hello/world").map(_.path) === Some("hello/world")  }
    a File
-   ${ DirPath.fromFile(new File("/hello/world")).path === "/hello/world"  }
+   ${ LocalDirectory.fromFile(new File("/hello/world")).path === "/hello/world"  }
    a URI
-   ${ DirPath.fromURI(new URI("hello/world")).map(_.path) === Some("hello/world")  }
-   ${ DirPath.fromURI(new URI("hdfs://100.100.1:9000/hello/world")).map(_.path) === Some("/hello/world") }
-   ${ DirPath.fromURI(new URI("hdfs:/hello/world")).map(_.path) === Some("/hello/world")  }
-   ${ DirPath.fromURI(new URI("file:/hello/world")).map(_.path) === Some("/hello/world")  }
-   ${ DirPath.fromURI(new URI("s3://hello/world")).map(_.path) === Some("/world")  }
+   ${ LocalDirectory.fromURI(new URI("hello/world")).map(_.path) === Some("hello/world")  }
+   ${ LocalDirectory.fromURI(new URI("hdfs://100.100.1:9000/hello/world")).map(_.path) === Some("/hello/world") }
+   ${ LocalDirectory.fromURI(new URI("hdfs:/hello/world")).map(_.path) === Some("/hello/world")  }
+   ${ LocalDirectory.fromURI(new URI("file:/hello/world")).map(_.path) === Some("/hello/world")  }
+   ${ LocalDirectory.fromURI(new URI("s3://hello/world")).map(_.path) === Some("/world")  }
 
  An absolute dir path can be built from
    a string starting with a /
-   ${ DirPath.fromString("/hello/world").exists(_.isAbsolute) }
-   the DirPath.Root object
-   ${ (DirPath.Root </ "world").isAbsolute }
-   appending a DirPath to the Root
-   ${ (DirPath.Root </> (DirPath.Relative </ "world")).isAbsolute }
+   ${ LocalDirectory.fromString("/hello/world").exists(_.isAbsolute) }
+   the LocalDirectory.Root object
+   ${ (LocalDirectory.Root </ "world").isAbsolute }
+   appending a LocalDirectory to the Root
+   ${ (LocalDirectory.Root </> (LocalDirectory.Relative </ "world")).isAbsolute }
    // this combination is accepted but should not be valid...
-   ${ (DirPath.Root </> (DirPath.Root </ "world")).isAbsolute }
+   ${ (LocalDirectory.Root </> (LocalDirectory.Root </ "world")).isAbsolute }
 
  A relative dir path can be built from
    a string not starting with a
-   ${ DirPath.fromString("hello/world").exists(_.isRelative) }
-   the DirPath.Relative object
-   ${ (DirPath.Relative </ "world").isRelative }
+   ${ LocalDirectory.fromString("hello/world").exists(_.isRelative) }
+   the LocalDirectory.Relative object
+   ${ (LocalDirectory.Relative </ "world").isRelative }
    a literal string
    ${ ("hello" </ "world").isRelative }
 
- Basic operations can be executed on a DirPath
+ Basic operations can be executed on a LocalDirectory
    get the parent
-   ${ DirPath.Root.parent must beNone }
-   ${ DirPath.unsafe("test").parent must beSome(DirPath.Relative) }
-   ${ (DirPath.Root </ "test").parent must beSome(DirPath.Root) }
+   ${ LocalDirectory.Root.parent must beNone }
+   ${ LocalDirectory.unsafe("test").parent must beSome(LocalDirectory.Relative) }
+   ${ (LocalDirectory.Root </ "test").parent must beSome(LocalDirectory.Root) }
    ${ ("test" </ "hello" </ "world").parent must beSome("test" </ "hello") }
 
    get the basename
    ${ ("test" </ "hello" </ "world").basename === Some(FileName.unsafe("world")) }
 
    get the path as a string
-   ${ DirPath.Root.path must_== "/" }
-   ${ DirPath.unsafe("test").path must_== "test" }
+   ${ LocalDirectory.Root.path must_== "/" }
+   ${ LocalDirectory.unsafe("test").path must_== "test" }
    ${ ("test" </ "hello" </ "world").path must_== "test/hello/world" }
 
    get a portion of the path
@@ -93,18 +93,18 @@ class LocalFileSpec extends Specification { def is = s2"""
 
    get the path as a string
    ${ LocalFile.unsafe("test").path must_== "test" }
-   ${ (DirPath.Relative </ "test" </ "hello" </ "world").path must_== "test/hello/world" }
-   ${ (DirPath.Relative </ "test" </ "hello" </> DirPath.Relative).path must_== "test/hello" }
+   ${ (LocalDirectory.Relative </ "test" </ "hello" </ "world").path must_== "test/hello/world" }
+   ${ (LocalDirectory.Relative </ "test" </ "hello" </> LocalDirectory.Relative).path must_== "test/hello" }
 
    filter hidden files from a list
    ${ List("hello" </ ".world", "hello" </ "world", "hello" </ "_SUCCESS").filterHidden === List("hello" </ "world") }
 
 """
-  def beRelative: Matcher[DirPath] = { dirPath: DirPath =>
+  def beRelative: Matcher[LocalDirectory] = { dirPath: LocalDirectory =>
     (dirPath.isRelative, s"${dirPath} is not relative")
   }
 
-  def beAbsolute: Matcher[DirPath] = { dirPath: DirPath =>
+  def beAbsolute: Matcher[LocalDirectory] = { dirPath: LocalDirectory =>
     (dirPath.isAbsolute, s"${dirPath} is not absolute")
   }
 /*

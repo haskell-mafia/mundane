@@ -8,7 +8,7 @@ import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 sealed trait FileTree {
-  def files(base: DirPath): List[LocalFile] =
+  def files(base: LocalDirectory): List[LocalFile] =
     this match {
       case FileTreeLeaf(label) =>
         List(base </ FileName.unsafe(label))
@@ -16,7 +16,7 @@ sealed trait FileTree {
         children.flatMap(_.files(base </ FileName.unsafe(label)))
     }
 
-  def dirs(base: DirPath): List[DirPath] =
+  def dirs(base: LocalDirectory): List[LocalDirectory] =
     this match {
       case FileTreeLeaf(label) =>
         List()
@@ -25,7 +25,7 @@ sealed trait FileTree {
         dir :: children.flatMap(_.dirs(dir))
     }
 
-  def create(base: DirPath): RIO[Unit] =
+  def create(base: LocalDirectory): RIO[Unit] =
     this match {
       case FileTreeLeaf(label) =>
         val path = base </ FileName.unsafe(label)

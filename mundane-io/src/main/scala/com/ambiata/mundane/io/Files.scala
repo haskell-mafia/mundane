@@ -43,7 +43,7 @@ object Files {
     src.toFile.renameTo(destFile)
   }
 
-  def moveTo(src: LocalFile, dest: DirPath): ResultT[IO, Unit] =
+  def moveTo(src: LocalFile, dest: LocalDirectory): ResultT[IO, Unit] =
     src.basename match {
       case None =>
         ResultT.fail("Source is a top level directory, can't move.")
@@ -51,7 +51,7 @@ object Files {
         move(src, dest </ filename)
     }
 
-  def copyTo(src: LocalFile, dest: DirPath): ResultT[IO, Unit] =
+  def copyTo(src: LocalFile, dest: LocalDirectory): ResultT[IO, Unit] =
     src.basename match {
       case None =>
         ResultT.fail("Source is a top level directory, can't copy.")
