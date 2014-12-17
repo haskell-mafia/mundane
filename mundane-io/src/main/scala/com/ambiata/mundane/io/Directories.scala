@@ -56,6 +56,6 @@ object Directories {
     file.exists && file.isDirectory
   }
 
-  def size(dirPath: DirPath): ResultTIO[BytesQuantity] =
+  def size(dirPath: DirPath): RIO[BytesQuantity] =
     list(dirPath).map(_.foldMap(_.toFile.length).bytes)
 }

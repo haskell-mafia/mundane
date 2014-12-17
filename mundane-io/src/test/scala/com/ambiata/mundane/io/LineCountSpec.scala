@@ -3,7 +3,7 @@ package io
 
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.data.Lists
-import com.ambiata.mundane.testing.ResultTIOMatcher._
+import com.ambiata.mundane.testing.RIOMatcher._
 
 import java.io._
 
@@ -21,7 +21,7 @@ LineCount
   matches wc -l                      $wc
 
 """
-  def withTestFile[A](data: List[Int])(run: File => IO[A]): ResultTIO[A] = TemporaryDirPath.withDirPath { tmp =>
+  def withTestFile[A](data: List[Int])(run: File => IO[A]): RIO[A] = TemporaryDirPath.withDirPath { tmp =>
     val file = (tmp </> FileName.unsafe(scala.util.Random.nextInt.toString)).toFile
     Streams.write(new FileOutputStream(file), Lists.prepareForFile(data.map(_.toString))) >> ResultT.fromIO(run(file))
   }

@@ -39,8 +39,8 @@ object Trace {
   def log[F[_]](k: Key, message: String): Kleisli[F, Trace[F], Unit] =
     Kleisli[F, Trace[F], Unit](_(k, message))
 
-  def io[A](a: => Kleisli[WriterKS, Trace[WriterKS], A]): Kleisli[ResultTIO, Trace[ResultTIO], A] =
-    Kleisli[ResultTIO, Trace[ResultTIO], A](trace => {
+  def io[A](a: => Kleisli[WriterKS, Trace[WriterKS], A]): Kleisli[RIO, Trace[RIO], A] =
+    Kleisli[RIO, Trace[RIO], A](trace => {
       val w = Trace.writerK[Id]
       val (l, v) = a.run(w).run
       l.traverseU({ case (k, s) => trace(k, s) }).as(v)
@@ -49,13 +49,13 @@ object Trace {
   def empty[F[_]: Applicative]: Trace[F] =
     Trace[F]((_, _) => ().pure[F])
 
-  def stream(out: java.io.PrintStream) : Trace[ResultTIO] =
-    Trace[ResultTIO]((_, s) => ResultT.fromIO { IO { out.println(s) } })
+  def stream(out: java.io.PrintStream) : Trace[RIO] =
+    Trace[RIO]((_, s) => ResultT.fromIO { IO { out.println(s) } })
 
-  def out: Trace[ResultTIO] =
+  def out: Trace[RIO] =
     stream(Console.out)
 
-  def err: Trace[ResultTIO] =
+  def err: Trace[RIO] =
     stream(Console.err)
 
   def writer[F[_]: Applicative]: Trace[({ type l[a] = WriterT[F, Vector[String], a] })#l] =

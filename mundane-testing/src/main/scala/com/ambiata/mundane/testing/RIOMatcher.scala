@@ -5,14 +5,14 @@ import com.ambiata.mundane.control._
 import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => SpecsError, _}
 import scalaz.{Success => _, Failure => _, _}, effect.IO, \&/._
 
-object ResultTIOMatcher extends ThrownExpectations {
-  def beOk[A]: Matcher[ResultT[IO, A]] =
+object RIOMatcher extends ThrownExpectations {
+  def beOk[A]: Matcher[RIO[A]] =
     beOkLike(_ => Success())
 
-  def beOkValue[A](expected: A): Matcher[ResultT[IO, A]] =
+  def beOkValue[A](expected: A): Matcher[RIO[A]] =
     beOkLike((actual: A) => new BeEqualTo(expected).apply(createExpectable(actual)).toResult)
 
-  def beOkLike[A](check: A => SpecsResult): Matcher[ResultT[IO, A]] = new Matcher[ResultT[IO, A]] {
+  def beOkLike[A](check: A => SpecsResult): Matcher[RIO[A]] = new Matcher[RIO[A]] {
     def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
       val r = attempt.value.run.unsafePerformIO match {
         case Ok(actual)     => check(actual)
@@ -22,16 +22,16 @@ object ResultTIOMatcher extends ThrownExpectations {
     }
   }
 
-  def beFail[A]: Matcher[ResultT[IO, A]] =
+  def beFail[A]: Matcher[RIO[A]] =
     beFailLike(_ => Success())
 
-  def beFailWithMessage[A](expected: String): Matcher[ResultT[IO, A]] =
+  def beFailWithMessage[A](expected: String): Matcher[RIO[A]] =
     beFailWith(This(expected))
 
-  def beFailWith[A](these: String \&/ Throwable): Matcher[ResultT[IO, A]] =
+  def beFailWith[A](these: String \&/ Throwable): Matcher[RIO[A]] =
     beFailLike((actual: String \&/ Throwable) => new BeEqualTo(these).apply(createExpectable(actual)).toResult)
 
-  def beFailLike[A](check: String \&/ Throwable => SpecsResult): Matcher[ResultT[IO, A]] = new Matcher[ResultT[IO, A]] {
+  def beFailLike[A](check: String \&/ Throwable => SpecsResult): Matcher[RIO[A]] = new Matcher[RIO[A]] {
     def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
       val r: SpecsResult = attempt.value.run.unsafePerformIO match {
         case Ok(value)    => Failure(s"Failure: Result ok with value <$value>")

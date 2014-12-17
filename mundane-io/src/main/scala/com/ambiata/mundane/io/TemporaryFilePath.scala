@@ -15,9 +15,9 @@ object TemporaryFilePath {
     def close(temp: TemporaryFilePath) = temp.clean.run.void // Squelch errors
   }
 
-  def withFilePath[A](f: FilePath => ResultTIO[A]): ResultTIO[A] =
+  def withFilePath[A](f: FilePath => RIO[A]): RIO[A] =
     runWithFilePath(uniqueFilePath)(f)
 
-  def runWithFilePath[A](file: FilePath)(f: FilePath => ResultTIO[A]): ResultTIO[A] =
-    ResultT.using[TemporaryFilePath, TemporaryFilePath, A](TemporaryFilePath(file).pure[ResultTIO])(tmp => f(tmp.file))
+  def runWithFilePath[A](file: FilePath)(f: FilePath => RIO[A]): RIO[A] =
+    ResultT.using[TemporaryFilePath, TemporaryFilePath, A](TemporaryFilePath(file).pure[RIO])(tmp => f(tmp.file))
 }
