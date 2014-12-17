@@ -15,14 +15,14 @@ class DirectoriesSpec extends Specification with ScalaCheck with ResultMatchers 
 Directories
 -----------
 
-  should list all files                     $list
-  should recursively delete all files       $delete
-  should determine if directory exists      $exists
-  should determine if directory not exists  $notExists
-  should determine the size of a directory  $size
+  should list all files                     list
+  should recursively delete all files       delete
+  should determine if directory exists      exists
+  should determine if directory not exists  notExists
+  should determine the size of a directory  size
 
 """
-
+/*
   def list = prop((tree: FileTree, local: LocalTemporary) => for {
     b <- local.directory
     _ <- tree.create(b)
@@ -57,4 +57,5 @@ Directories
     fileSizes     = files.map(_.toFile.length).suml
     directorySize <- Directories.size(base)
   } yield fileSizes.bytes ==== directorySize)
+ */
 }

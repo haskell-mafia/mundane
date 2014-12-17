@@ -8,6 +8,7 @@ import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 sealed trait FileTree {
+/*
   def files(base: LocalDirectory): List[LocalFile] =
     this match {
       case FileTreeLeaf(label) =>
@@ -35,6 +36,7 @@ sealed trait FileTree {
         Directories.mkdirs(path) >>
           children.traverseU(_.create(path)).void
     }
+ */
 }
 
 case class FileTreeLeaf(label: String) extends FileTree

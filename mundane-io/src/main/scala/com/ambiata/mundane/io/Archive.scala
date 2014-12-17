@@ -18,10 +18,10 @@ case class Archive(archiveFile: LocalFile, checksumFile: LocalFile, contents: Li
 object Archive {
   // FIX This is the original copper publish code, for creating archives, but it has some ill-defined sematics
   //     around printing errors to standard out as well as some very  _optimistic_ quoting. Needs work.
-  def create(archiveName: FileName, checksumName: FileName, target: LocalDirectory, contents: List[LocalFile]): RIO[Archive] = {
-    val archive = target </ archiveName
-    val checksum = target </ checksumName
-    val files = contents.map(_.basename).mkString(" ")
+  def create(archiveName: Component, checksumName: Component, target: LocalDirectory, contents: List[LocalFile]): RIO[Archive] = ??? /*{
+    val archive = LocalFile(target.path </ archiveName)
+    val checksum = LocalFile(target.path </ checksumName)
+    val files = contents.map(_.toPath.basename).mkString(" ")
     val command = List("sh", "-c", s"tar czf ${archive.toFile.getAbsolutePath} -C ${target.toFile.getAbsolutePath} ${files} > /dev/null")
     RIO.safe[Int] { Process(command) ! ProcessLogger(o => (), println) }.flatMap({
       case 0 => for {
@@ -31,7 +31,7 @@ object Archive {
       case e =>
         RIO.fail[Archive](s"Error compressing files, tar exit code <$e>")
     })
-  }
+  }*/
 
   def isVaildGzip(path: LocalFile): RIO[Boolean] =  RIO.safe[Boolean] {
     List("sh", "-c", s"gzip -dc ${path} > /dev/null") ! ProcessLogger(o => (), e => ()) == 0

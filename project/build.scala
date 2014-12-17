@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 import com.ambiata.promulgate.project.ProjectPlugin._
+import scoverage.ScoverageSbtPlugin._
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -26,6 +27,7 @@ object build extends Build {
     , organization := "com.ambiata"
     , scalaVersion := "2.11.2"
     , crossScalaVersions := Seq(scalaVersion.value)
+    , fork in run  := true
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
     , updateOptions := updateOptions.value.withCachedResolution(true)
@@ -96,7 +98,7 @@ object build extends Build {
                               depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
-  .dependsOn(control, data, reflect, path, testing % "test->test")
+  .dependsOn(control, data, reflect, path, path % "test->test", testing % "test->test")
 
   lazy val path = Project(
     id = "path"
@@ -179,7 +181,8 @@ object build extends Build {
       case x if x.contains("2.10") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint")
       case x => sys.error("Unsupported scala version: " + x)
     }),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    scalacOptions in ScoverageCompile := Seq("-language:_", "-feature")
   )
 
   lazy val ossBucket: String = 
@@ -193,7 +196,7 @@ object build extends Build {
     logBuffered := false,
     cancelable := true,
     javaOptions += "-Xmx3G"
-  )
+  ) ++ instrumentSettings ++ Seq(ScoverageKeys.highlighting := true)
 
   lazy val prompt = shellPrompt in ThisBuild := { state =>
     val name = Project.extract(state).currentRef.project

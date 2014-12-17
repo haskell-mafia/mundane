@@ -4,9 +4,10 @@ package io
 import com.ambiata.mundane.control._
 import java.io._
 import scalaz.effect.IO
+import MemoryConversions._
 
 object Streams {
-  val DefaultChunkSize = 4096
+  val DefaultChunkSize = 1.mb.toBytes.value.toInt
 
   def read(in: InputStream, encoding: String = "UTF-8"): RIO[String] =
     readBytes(in).map(new String(_, encoding))

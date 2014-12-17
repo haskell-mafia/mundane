@@ -6,8 +6,7 @@ import org.specs2._
 import org.specs2.execute.{Error => SpecsError, Result => SpecsResult, _}
 import org.specs2.matcher._
 
-import scalaz.\&/._
-import scalaz.{Failure => _, Success => _, _}
+import scalaz.{Success => _, Failure => _, _}, Scalaz._, effect.IO, \&/._
 
 object RIOMatcher extends ThrownExpectations with ScalaCheckMatchers {
   implicit def RIOAsResult[A: AsResult]: AsResult[RIO[A]] = new AsResult[RIO[A]] {

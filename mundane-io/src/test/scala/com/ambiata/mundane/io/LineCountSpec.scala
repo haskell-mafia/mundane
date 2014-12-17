@@ -19,10 +19,11 @@ class LineCountSpec extends Specification with ScalaCheck { def is = s2"""
 LineCount
 ---------
 
-  matches in memory calculation      $memory
-  matches wc -l                      $wc
+  matches in memory calculation      memory
+  matches wc -l                      wc
 
 """
+/*
   def withTestFile[A](data: List[Int], local: LocalTemporary)(run: File => IO[A]): RIO[A] = for {
     p <- local.fileThatExists
     f = p.toFile
@@ -39,4 +40,5 @@ LineCount
     prop((data: List[Int], local: LocalTemporary) => withTestFile(data, local) { file =>
       LineCount.count(file).map(_.count -> Process(s"wc -l ${file.getAbsolutePath}").!!.split("\\s+").toList.map(_.trim).filter(!_.isEmpty).head.toInt)
     } must beOkLike(counts => counts._1 === counts._2))
+ */
 }

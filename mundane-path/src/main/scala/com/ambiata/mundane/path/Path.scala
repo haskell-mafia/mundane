@@ -1,5 +1,4 @@
 package com.ambiata.mundane.path
-import java.io.File
 import scalaz._, Scalaz._
 
 /**
@@ -14,17 +13,20 @@ import scalaz._, Scalaz._
  * posix file system it may be the `$CWD` or similar.
  */
 sealed trait Path {
+  override def toString: String =
+    s"Path($path)"
+
   /** Fold over components of this path. Equivalent to pattern match. */
   def fold[X](
     root: => X
   , relative: => X
-  , component: (Path, FileName) => X
+  , component: (Path, Component) => X
   ): X = this match {
     case Root =>
       root
     case Relative =>
       relative
-    case Component(d, n) =>
+    case Components(d, n) =>
       component(d, n)
   }
 
@@ -54,7 +56,7 @@ sealed trait Path {
 
   /** Iff this path has a component, returns 'Some' with the top filename component
       of this 'Path'. This behaves as per posix basename(3) for the 'Some' case. */
-  def basename: Option[FileName] =
+  def basename: Option[Component] =
     fold(None, None, (d, n) => Some(n))
 
   /** Is the provided Path 'p' a prefix of 'this' Path? */
@@ -128,11 +130,11 @@ sealed trait Path {
         Root
       case (Relative, Relative) =>
         Relative
-      case (Component(_, _), Root) =>
+      case (Components(_, _), Root) =>
         Root
-      case (Component(_, _), Relative) =>
+      case (Components(_, _), Relative) =>
         this
-      case (x, Component(d, n)) =>
+      case (x, Components(d, n)) =>
         x </> d </ n
     }
 
@@ -140,29 +142,24 @@ sealed trait Path {
   def join(path: Path): Path =
     </>(path)
 
-  /** Append the specified 'FileName' to this 'Path'. The following invariants
+  /** Append the specified 'Component' to this 'Path'. The following invariants
       always hold:
         - extending this path with a filename and the calling dirname is a no-op
         - extending this path with a filename and the calling basename always
           gives the filename  */
-  def </(other: FileName): Path =
+  def </(other: Component): Path =
     fold(
-      Component(Root, other)
-    , Component(Relative, other)
-    , (_, _) => Component(this, other)
+      Components(Root, other)
+    , Components(Relative, other)
+    , (_, _) => Components(this, other)
     )
 
   def </-(other: String): Path =
     </>(Path(other))
 
-
   /** Named alias for '</' operator. See extended description on '</'. */
-  def extend(other: FileName): Path =
+  def extend(other: Component): Path =
     </(other)
-
-  /** Construct a 'java.io.File' corresponding to this path. */
-  def toFile: File =
-    new File(path)
 
   /** Is this file path absolute? i.e. is the base case the 'Root' element.
       This is the inverse of isRelative. */
@@ -174,12 +171,12 @@ sealed trait Path {
   def isRelative: Boolean =
     !isAbsolute
 
-  /** Return all the 'FileName' components of this 'Path'.
+  /** Return all the 'Component' components of this 'Path'.
 
       WARNING: this is a lossy operation, it should not be used
       in isolation. Any use of this without _isAbsolute_ or
       _isRelative_ is almost certainly a bug. */
-  def names: List[FileName] =
+  def names: List[Component] =
     fold(Vector(), Vector(), (d, n) => d.names :+ n).toList
 
   /** Return all the 'String' names of this 'Path'. This is a
@@ -207,35 +204,36 @@ sealed trait Path {
 }
 
 object Path {
+  /** Construct a path from the given string. This is a _total_ function, there
+      are no strings that do not represent valid paths, however, you do need to
+      be quite careful of filenames that may have been specified incorrectly with
+      a '/', this issue can be avoided by relying on the 'Path' combinators rather
+      than manually constucting paths as strings, and using the safe 'Component'
+      constructor. */
   def apply(s: String): Path =
    s.split("/").toList match {
+      case Nil =>
+        Root
       case "" :: Nil =>
         Relative
       case "" :: parts =>
-        fromList(Root, parts.filter(_.nonEmpty).map(FileName.unsafe))
+        fromList(Root, parts.filter(_.nonEmpty).map(Component.unsafe))
       case parts =>
-        fromList(Relative, parts.filter(_.nonEmpty).map(FileName.unsafe))
+        fromList(Relative, parts.filter(_.nonEmpty).map(Component.unsafe))
     }
 
-  def fromList(dir: Path, parts: List[FileName]): Path =
-    parts.foldLeft(dir)((acc, el) => acc </ el)
+  /** Construct a path from the base path and list of components. */
+  def fromList(dir: Path, components: List[Component]): Path =
+    components.foldLeft(dir)((acc, el) => acc </ el)
 
-  def fromFile(f: File): Path =
-    Option(f.getParentFile) match {
-      case None =>
-        val base = if (f.isAbsolute) Root else Relative
-        if (f.getName == "") base else Component(base, FileName.unsafe(f.getName))
-      case Some(p) =>
-        fromFile(p) </ FileName.unsafe(f.getName)
-    }
+  implicit def PathOrder: Order[Path] =
+    Order.order((x, y) => x.path.?|?(y.path))
 
-  def Parent =
-    FileName.unsafe("..")
+  implicit def PathOrdering =
+    PathOrder.toScalaOrdering
 
-  def Current =
-    FileName.unsafe(".")
 }
 
 case object Root extends Path
 case object Relative extends Path
-case class Component(dir: Path, name: FileName) extends Path
+case class Components(dir: Path, name: Component) extends Path

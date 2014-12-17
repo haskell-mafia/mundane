@@ -1,5 +1,6 @@
 package com.ambiata.mundane.path
 
+import java.io.File
 import org.specs2._
 import org.scalacheck._
 import Arbitraries._
@@ -9,11 +10,29 @@ class PathSpec extends Specification with ScalaCheck { def is = s2"""
 Path
 ====
 
-Paths are a recursive data structure, defined in terms of two base cases,
-and a recursive case. The represent a hierarchical structure similar to
-what one expect for a posix like filesystem. They currently do no support
-any windows like functionality that would require a richer data type to
-describe what a "Root" is, i.e. drive letter, unc or similar.
+Paths are a recursive data structure, defined in terms of two base
+cases, and a recursive case. They represent a hierarchical structure
+similar to what one expect for a posix like filesystem. They currently
+do _not_ support any windows like functionality that would require a
+richer data type to describe what a "Root" is, i.e. drive letter, unc
+or similar.
+
+Constructors
+------------
+
+  'Path.apply' is symmetrical with 'Path#path':
+
+    ${ prop((p: Path) => Path(p.path) ==== p) }
+
+  'Path.apply' is consistent with 'Path#names':
+
+    ${ prop((ns: List[Component]) => Path(ns.map(_.name).mkString("/")).names ==== ns) }
+
+  'Path.fromList' is consistent with 'Path.apply':
+
+    ${ prop((ns: List[Component]) => Path.fromList(Root, ns) ==== Path("/" + ns.map(_.name).mkString("/"))) }
+
+    ${ prop((ns: List[Component]) => Path.fromList(Relative, ns) ==== Path(ns.map(_.name).mkString("/"))) }
 
 Folds
 -----
@@ -31,8 +50,11 @@ Folds
   Folding over 'Component' recursive case should always (and only) cause
   component expression to be evaluated:
 
-    ${ prop((x: Int, base: Path, name: FileName) =>
-         Component(base, name).fold(???, ???, (b, n) => (b, n, x)) ==== ((base, name, x))) }
+    ${ prop((x: Int, base: Path, name: Component) =>
+         Components(base, name).fold(???, ???, (b, n) => (b, n, x)) ==== ((base, name, x))) }
+
+Combinators
+-----------
 
   'isRoot' should return true if and only if this 'Path' is the top level
   'Root' base case:
@@ -41,7 +63,7 @@ Folds
 
     ${ Relative.isRoot ==== false }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).isRoot ==== false ) }
+    ${ prop((base: Path, name: Component) => Components(base, name).isRoot ==== false ) }
 
   'isRelativeRoot' should return true if and only if this 'Path' is the top
   level 'Relative' base case:
@@ -50,7 +72,7 @@ Folds
 
     ${ Relative.isRelativeRoot ==== true }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).isRelativeRoot ==== false ) }
+    ${ prop((base: Path, name: Component) => Components(base, name).isRelativeRoot ==== false ) }
 
   'dirname' should return 'Root' or 'Relative' for the respective base cases (effectively
   a no-op), or return the base of 'Component' stripping the file name. Posix specifications
@@ -60,15 +82,15 @@ Folds
 
     ${ Relative.dirname ==== Relative }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).dirname ==== base ) }
+    ${ prop((base: Path, name: Component) => Components(base, name).dirname ==== base ) }
 
-    ${ (Root </ FileName("usr") </ FileName("local")).dirname === (Root </ FileName("usr")) }
+    ${ (Root </ Component("usr") </ Component("local")).dirname === (Root </ Component("usr")) }
 
-    ${ (Relative </ FileName("usr") </ FileName("local")).dirname === (Relative </ FileName("usr")) }
+    ${ (Relative </ Component("usr") </ Component("local")).dirname === (Relative </ Component("usr")) }
 
-    ${ (Root </ FileName("home")).dirname === Root }
+    ${ (Root </ Component("home")).dirname === Root }
 
-    ${ (Relative </ FileName("home")).dirname === Relative }
+    ${ (Relative </ Component("home")).dirname === Relative }
 
   Note also that the result of dirname will always be a prefix of the starting value:
 
@@ -84,7 +106,7 @@ Folds
 
     ${ Relative.parent ==== None }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).parent ==== Some(base) ) }
+    ${ prop((base: Path, name: Component) => Components(base, name).parent ==== Some(base) ) }
 
     ${ prop((base: Path) => base.parent.isDefined ==> { base.parent ==== Some(base.dirname) })  }
 
@@ -97,7 +119,7 @@ Folds
 
     ${ Relative.basename ==== None }
 
-    ${ prop((base: Path, name: FileName) => Component(base, name).basename ==== Some(name) ) }
+    ${ prop((base: Path, name: Component) => Components(base, name).basename ==== Some(name) ) }
 
 
   'startsWith' on itself should always be true:
@@ -161,13 +183,13 @@ Folds
 
     ${ Relative.path ==== "" }
 
-    ${ (Root </ FileName("usr") </ FileName("local")).path ==== "/usr/local" }
+    ${ (Root </ Component("usr") </ Component("local")).path ==== "/usr/local" }
 
-    ${ (Root </ FileName("home")).path ==== "/home" }
+    ${ (Root </ Component("home")).path ==== "/home" }
 
-    ${ (Relative </ FileName("work")).path ==== "work" }
+    ${ (Relative </ Component("work")).path ==== "work" }
 
-    ${ (Relative </ FileName("work") </ FileName("ambiata")).path ==== "work/ambiata" }
+    ${ (Relative </ Component("work") </ Component("ambiata")).path ==== "work/ambiata" }
 
   Rendering with a custom separator matches standard rendering:
 
@@ -186,7 +208,7 @@ Folds
 
     ${ (Relative </> Relative) ==== Relative  }
 
-    ${ prop((p: Path, q: Path) => (p.isRelative && q.isRelative) ==> (p </> q).isRelative ) }
+    ${ prop((p: RelativePath, q: RelativePath) => (p.path.isRelative && q.path.isRelative) ==> (p.path </> q.path).isRelative ) }
 
     ${ prop((p: Path, q: Path) => (p.isAbsolute || q.isAbsolute) ==> (p </> q).isAbsolute ) }
 
@@ -200,38 +222,33 @@ Folds
 
   Join examples:
 
-    ${ ((Root </ FileName("usr")) </> (Relative </ FileName("local"))) ===
-         (Root </ FileName("usr") </ FileName("local")) }
+    ${ ((Root </ Component("usr")) </> (Relative </ Component("local"))) ===
+         (Root </ Component("usr") </ Component("local")) }
 
-    ${ ((Root </ FileName("usr")) </> (Root </ FileName("home") </ FileName("mundane"))) ===
-         (Root </ FileName("home") </ FileName("mundane")) }
+    ${ ((Root </ Component("usr")) </> (Root </ Component("home") </ Component("mundane"))) ===
+         (Root </ Component("home") </ Component("mundane")) }
 
-    ${ ((Relative </ FileName("work")) </> (Relative </ FileName("ambiata") </ FileName("mundane"))) ===
-         (Relative </ FileName("work") </ FileName("ambiata") </ FileName("mundane")) }
+    ${ ((Relative </ Component("work")) </> (Relative </ Component("ambiata") </ Component("mundane"))) ===
+         (Relative </ Component("work") </ Component("ambiata") </ Component("mundane")) }
 
   'join' is an alias for '</>':
 
     ${ prop((p: Path, q: Path) => (p </> q) ==== p.join(q) ) }
 
 
-  The result of '</' always includes specified FileName as final component / basename.
+  The result of '</' always includes specified Component as final component / basename.
 
-     ${ prop((p: Path, q: FileName) => (p </ q).names.last ==== q) }
+     ${ prop((p: Path, q: Component) => (p </ q).names.last ==== q) }
 
-     ${ prop((p: Path, q: FileName) => (p </ q).basename ==== Some(q) ) }
+     ${ prop((p: Path, q: Component) => (p </ q).basename ==== Some(q) ) }
 
   Invoking '</' followed by dirname is a no-op on some base path.
 
-     ${ prop((p: Path, q: FileName) => (p </ q).dirname ==== p ) }
+     ${ prop((p: Path, q: Component) => (p </ q).dirname ==== p ) }
 
   'extend' is an alias for '</':
 
-    ${ prop((p: Path, q: FileName) => (p </ q) ==== p.extend(q) ) }
-
-
-  Converting to a 'java.io.File' and back should be a no-op.
-
-    ${ prop((p: Path) => Path.fromFile(p.toFile) ==== p) }
+    ${ prop((p: Path, q: Component) => (p </ q) ==== p.extend(q) ) }
 
 
   Any path with the 'Root' base case is absolute:
@@ -245,7 +262,7 @@ Folds
 
     ${ Relative.isRelative }
 
-    ${ prop((ns: List[FileName]) => Path.fromList(Relative, ns).isRelative ) }
+    ${ prop((ns: List[Component]) => Path.fromList(Relative, ns).isRelative ) }
 
 
   'isAbsolute' and 'isRelative' are inverses.
@@ -255,9 +272,9 @@ Folds
 
   'names' contains all filename components (in order):
 
-    ${ prop((ns: List[FileName]) => Path.fromList(Relative, ns).names ==== ns ) }
+    ${ prop((ns: List[Component]) => Path.fromList(Relative, ns).names ==== ns ) }
 
-    ${ prop((p: Path, ns: List[FileName]) => (p </> Path.fromList(Relative, ns)).names ==== (p.names ++ ns) ) }
+    ${ prop((p: Path, ns: List[Component]) => (p </> Path.fromList(Relative, ns)).names ==== (p.names ++ ns) ) }
 
 
   'components' is just a stringly typed 'names':
@@ -287,7 +304,6 @@ Folds
 
     ${ Relative.rebaseTo(Root) ==== None }
 
-
 """
 
 
@@ -298,5 +314,4 @@ Folds
   /** normalize 'n' to between 1 and 'max'. */
   def normalize(n: Int, max: Int): Int =
     (math.abs(n) % 4) + 1
-
 }
