@@ -1,5 +1,4 @@
 package com.ambiata.mundane.path
-
 import java.io.File
 import scalaz._, Scalaz._
 
@@ -32,13 +31,13 @@ sealed trait Path {
   /** Is this the Root base case. Note, this is true iff this is actually the
       Root data type, and should not be used to detemine if this is an absolute
       path. */
-  def isRoot =
+  def isRoot: Boolean =
     fold(true, false, (_, _) => false)
 
   /** Is this the Relative base case. Note, this is true iff this is actually
       the Relative data type and should not be used to detemine if this is a
       relative path. */
-  def isRelativeRoot =
+  def isRelativeRoot: Boolean =
     fold(false, true, (_, _) => false)
 
   /** Return a new path with the top filename component stripped off.
