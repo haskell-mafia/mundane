@@ -1,4 +1,4 @@
-package com.ambiata.mundane.io
+package com.ambiata.mundane.path
 
 import java.io.File
 import scalaz._, Scalaz._

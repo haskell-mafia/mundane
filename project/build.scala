@@ -10,9 +10,9 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ lib("com.ambiata.mundane")
-    , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, testing, testingExtra, time, trace)
+    , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, testing, testingExtra, time, trace, path)
     )
-    .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, testing, time, trace)
+    .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, testing, time, trace, path)
 
   lazy val standardSettings = Defaults.coreDefaultSettings ++
                               projectSettings              ++
@@ -96,7 +96,19 @@ object build extends Build {
                               depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
-  .dependsOn(control, data, reflect, testing % "test->test")
+  .dependsOn(control, data, reflect, path, testing % "test->test")
+
+  lazy val path = Project(
+    id = "path"
+  , base = file("mundane-path")
+  , settings = standardSettings ++ lib("path") ++ Seq[Settings](
+      name := "mundane-path"
+    ) ++ Seq[Settings](
+      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing ++
+                              depend.reflect(scalaVersion.value)
+    )
+  )
+  .dependsOn(control, reflect, testing % "test")
 
   lazy val parse = Project(
     id = "parse"

@@ -1,6 +1,7 @@
 package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
+import com.ambiata.mundane.path._
 import java.io._
 import org.scalacheck._, Arbitrary._
 import scalaz._, Scalaz._

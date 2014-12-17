@@ -1,6 +1,6 @@
-package com.ambiata.mundane
-package io
+package com.ambiata.mundane.io
 
+import com.ambiata.mundane.path._
 import java.io._
 import java.net.URI
 import java.util.UUID
@@ -32,10 +32,10 @@ object FilePath {
 
 object DirPath {
   def Root: DirPath =
-    com.ambiata.mundane.io.Root
+    com.ambiata.mundane.path.Root
 
   def Relative: DirPath =
-    com.ambiata.mundane.io.Relative
+    com.ambiata.mundane.path.Relative
 
   def fromFile(f: File): DirPath =
     unsafe(f.getPath)

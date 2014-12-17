@@ -1,4 +1,4 @@
-package com.ambiata.mundane.io
+package com.ambiata.mundane.path
 
 import scalaz._, Scalaz._
 import java.util.UUID

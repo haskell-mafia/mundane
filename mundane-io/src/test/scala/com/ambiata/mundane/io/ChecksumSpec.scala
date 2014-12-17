@@ -3,6 +3,7 @@ package com.ambiata.mundane.io
 import com.ambiata.mundane.control.RIO
 import com.ambiata.mundane.io.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
+import com.ambiata.mundane.path._
 
 import org.specs2._
 import org.scalacheck._, Arbitrary._

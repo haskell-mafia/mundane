@@ -1,4 +1,4 @@
-package com.ambiata.mundane.io
+package com.ambiata.mundane.path
 
 import org.specs2._
 import org.scalacheck._

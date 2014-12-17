@@ -2,6 +2,7 @@ package com.ambiata.mundane
 package io
 
 import com.ambiata.mundane.control._
+import com.ambiata.mundane.path._
 import java.io._
 
 import scala.sys.process._

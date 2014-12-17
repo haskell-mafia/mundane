@@ -1,5 +1,6 @@
 package com.ambiata.mundane.io
 
+import com.ambiata.mundane.path._
 import java.io.File
 import java.net.URI
 
