@@ -7,8 +7,8 @@ import scalaz.effect.IO
 import control.{ResultT, RIO}
 
 package object io {
-  type LocalFile = P
-  type LocalDirectory = P
+  type LocalFile = Path
+  type LocalDirectory = Path
 
   type Logger = String => IO[Unit]
   val noLogging = (s: String) => IO(())
@@ -27,8 +27,8 @@ package object io {
   }
 
   implicit class LocalFileStringSyntax(l: String) {
-    def </(n: FileName): LocalFile =
-      LocalDirectory.Relative </ FileName.unsafe(l) </ n
+//    def </(n: FileName): LocalFile =
+//      LocalDirectory.Relative </ FileName.unsafe(l) </ n
     def </(n: String): LocalFile =
       LocalDirectory.Relative </ FileName.unsafe(l) </ FileName.unsafe(n)
   }

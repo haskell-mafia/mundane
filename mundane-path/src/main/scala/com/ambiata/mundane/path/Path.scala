@@ -152,6 +152,10 @@ sealed trait Path {
     , (_, _) => Component(this, other)
     )
 
+  def </-(other: String): Path =
+    </>(Path(other))
+
+
   /** Named alias for '</' operator. See extended description on '</'. */
   def extend(other: FileName): Path =
     </(other)

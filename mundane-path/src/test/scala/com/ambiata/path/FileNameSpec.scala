@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 
 class FileNameSpec extends Specification {
   "A file name can be created with a literal" >> {
-    val fs: FileName = "name"
+    val fs: FileName = FileName("name")
     fs.name === "name"
   }
 

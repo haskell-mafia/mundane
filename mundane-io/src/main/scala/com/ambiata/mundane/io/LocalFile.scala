@@ -7,10 +7,10 @@ import java.util.UUID
 import scalaz._, Scalaz._
 
 object LocalFile {
-  def fromFile(f: File): P =
+  def fromFile(f: File): Path =
     unsafe(f.getPath)
 
-  def fromString(s: String): Option[P] =
+  def fromString(s: String): Option[Path] =
     s.split("/").toList match {
       case "" :: Nil =>
         None
@@ -20,7 +20,7 @@ object LocalFile {
         parts.traverse(FileName.create).map(fromList(Relative, _))
     }
 
-  def fromList(dir: P, parts: List[FileName]): P =
+  def fromList(dir: Path, parts: List[FileName]): Path =
     parts.foldLeft(dir)((acc, el) => acc </ el)
 
   def fromURI(s: URI): Option[LocalFile] =

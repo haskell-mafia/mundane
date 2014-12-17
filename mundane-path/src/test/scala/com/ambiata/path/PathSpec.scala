@@ -62,13 +62,13 @@ Folds
 
     ${ prop((base: Path, name: FileName) => Component(base, name).dirname ==== base ) }
 
-    ${ (Root </ "usr" </ "local").dirname === (Root </ "usr") }
+    ${ (Root </ FileName("usr") </ FileName("local")).dirname === (Root </ FileName("usr")) }
 
-    ${ (Relative </ "usr" </ "local").dirname === (Relative </ "usr") }
+    ${ (Relative </ FileName("usr") </ FileName("local")).dirname === (Relative </ FileName("usr")) }
 
-    ${ (Root </ "home").dirname === Root }
+    ${ (Root </ FileName("home")).dirname === Root }
 
-    ${ (Relative </ "home").dirname === Relative }
+    ${ (Relative </ FileName("home")).dirname === Relative }
 
   Note also that the result of dirname will always be a prefix of the starting value:
 
@@ -161,13 +161,13 @@ Folds
 
     ${ Relative.path ==== "" }
 
-    ${ (Root </ "usr" </ "local").path ==== "/usr/local" }
+    ${ (Root </ FileName("usr") </ FileName("local")).path ==== "/usr/local" }
 
-    ${ (Root </ "home").path ==== "/home" }
+    ${ (Root </ FileName("home")).path ==== "/home" }
 
-    ${ (Relative </ "work").path ==== "work" }
+    ${ (Relative </ FileName("work")).path ==== "work" }
 
-    ${ (Relative </ "work" </ "ambiata").path ==== "work/ambiata" }
+    ${ (Relative </ FileName("work") </ FileName("ambiata")).path ==== "work/ambiata" }
 
   Rendering with a custom separator matches standard rendering:
 
@@ -200,11 +200,14 @@ Folds
 
   Join examples:
 
-    ${ ((Root </ "usr") </> (Relative </ "local")) === (Root </ "usr" </ "local") }
+    ${ ((Root </ FileName("usr")) </> (Relative </ FileName("local"))) ===
+         (Root </ FileName("usr") </ FileName("local")) }
 
-    ${ ((Root </ "usr") </> (Root </ "home" </ "mundane")) === (Root </ "home" </ "mundane") }
+    ${ ((Root </ FileName("usr")) </> (Root </ FileName("home") </ FileName("mundane"))) ===
+         (Root </ FileName("home") </ FileName("mundane")) }
 
-    ${ ((Relative </ "work") </> (Relative </ "ambiata" </ "mundane")) === (Relative </ "work" </ "ambiata" </ "mundane") }
+    ${ ((Relative </ FileName("work")) </> (Relative </ FileName("ambiata") </ FileName("mundane"))) ===
+         (Relative </ FileName("work") </ FileName("ambiata") </ FileName("mundane")) }
 
   'join' is an alias for '</>':
 

@@ -31,8 +31,8 @@ class LocalFileSpec extends Specification { def is = s2"""
 
    get the path as a string
    ${ LocalFile.unsafe("test").path must_== "test" }
-   ${ (LocalDirectory.Relative </ "test" </ "hello" </ "world").path must_== "test/hello/world" }
-   ${ (LocalDirectory.Relative </ "test" </ "hello" </> LocalDirectory.Relative).path must_== "test/hello" }
+   ${ (LocalDirectory.Relative </- "test" </- "hello" </- "world").path must_== "test/hello/world" }
+   ${ (LocalDirectory.Relative </- "test" </- "hello" </> LocalDirectory.Relative).path must_== "test/hello" }
 
    filter hidden files from a list
    ${ List("hello" </ ".world", "hello" </ "world", "hello" </ "_SUCCESS").filterHidden === List("hello" </ "world") }

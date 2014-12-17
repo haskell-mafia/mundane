@@ -8,7 +8,6 @@ import scalaz._, Scalaz._
 //case class LocalDirectory(path: Path)
 
 object LocalDirectory {
-
   def Root: LocalDirectory =
     com.ambiata.mundane.path.Root
 

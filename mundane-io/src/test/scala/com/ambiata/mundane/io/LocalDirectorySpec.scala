@@ -40,17 +40,17 @@ class LocalDirectorySpec extends Specification { def is = s2"""
    a string starting with a /
    ${ LocalDirectory.fromString("/hello/world").exists(_.isAbsolute) }
    the LocalDirectory.Root object
-   ${ (LocalDirectory.Root </ "world").isAbsolute }
+   ${ (LocalDirectory.Root </- "world").isAbsolute }
    appending a LocalDirectory to the Root
-   ${ (LocalDirectory.Root </> (LocalDirectory.Relative </ "world")).isAbsolute }
+   ${ (LocalDirectory.Root </> (LocalDirectory.Relative </- "world")).isAbsolute }
    // this combination is accepted but should not be valid...
-   ${ (LocalDirectory.Root </> (LocalDirectory.Root </ "world")).isAbsolute }
+   ${ (LocalDirectory.Root </> (LocalDirectory.Root </- "world")).isAbsolute }
 
  A relative dir path can be built from
    a string not starting with a
    ${ LocalDirectory.fromString("hello/world").exists(_.isRelative) }
    the LocalDirectory.Relative object
-   ${ (LocalDirectory.Relative </ "world").isRelative }
+   ${ (LocalDirectory.Relative </- "world").isRelative }
    a literal string
    ${ ("hello" </ "world").isRelative }
 
@@ -58,22 +58,22 @@ class LocalDirectorySpec extends Specification { def is = s2"""
    get the parent
    ${ LocalDirectory.Root.parent must beNone }
    ${ LocalDirectory.unsafe("test").parent must beSome(LocalDirectory.Relative) }
-   ${ (LocalDirectory.Root </ "test").parent must beSome(LocalDirectory.Root) }
-   ${ ("test" </ "hello" </ "world").parent must beSome("test" </ "hello") }
+   ${ (LocalDirectory.Root </- "test").parent must beSome(LocalDirectory.Root) }
+   ${ ("test" </ "hello" </- "world").parent must beSome("test" </ "hello") }
 
    get the basename
-   ${ ("test" </ "hello" </ "world").basename === Some(FileName.unsafe("world")) }
+   ${ ("test" </ "hello" </- "world").basename === Some(FileName.unsafe("world")) }
 
    get the path as a string
    ${ LocalDirectory.Root.path must_== "/" }
    ${ LocalDirectory.unsafe("test").path must_== "test" }
-   ${ ("test" </ "hello" </ "world").path must_== "test/hello/world" }
+   ${ ("test" </ "hello" </- "world").path must_== "test/hello/world" }
 
    get a portion of the path
-   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("test" </ "hello")  === Some("world" </ "eric") }
-   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("test" </ "hello")  must beSome(beRelative) }
-   ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("other" </ "hello") must beNone }
-   ${ ("test" </ "hello" </ "world").names === List("test", "hello", "world").map(FileName.unsafe) }
+   ${ ("test" </ "hello" </- "world" </- "eric").rebaseTo("test" </ "hello")  === Some("world" </ "eric") }
+   ${ ("test" </ "hello" </- "world" </- "eric").rebaseTo("test" </ "hello")  must beSome(beRelative) }
+   ${ ("test" </ "hello" </- "world" </- "eric").rebaseTo("other" </ "hello") must beNone }
+   ${ ("test" </ "hello" </- "world").names === List("test", "hello", "world").map(FileName.unsafe) }
 
 
 
