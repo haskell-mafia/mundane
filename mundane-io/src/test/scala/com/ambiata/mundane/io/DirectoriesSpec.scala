@@ -47,7 +47,7 @@ Directories
     e <- Directories.exists(p)
   } yield e ==== false)
 
-  def sort(files: List[FilePath]): List[FilePath] =
+  def sort(files: List[LocalFile]): List[LocalFile] =
     files.sortBy(_.path)
 
   def size = prop((tree: FileTree, local: LocalTemporary) => for {

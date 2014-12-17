@@ -21,7 +21,7 @@ object Directories {
     RIO.safe[Boolean](dirPath.toFile.mkdirs).void
 
   def list(dirPath: DirPath): RIO[List[FilePath]] = RIO.safe[List[FilePath]] {
-    def loop(dir: DirPath): Vector[FilePath] = {
+    def loop(dir: DirPath): Vector[LocalFile] = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.flatMap { f =>
         if (f.isDirectory) loop(dir </ FileName.unsafe(f.getName))

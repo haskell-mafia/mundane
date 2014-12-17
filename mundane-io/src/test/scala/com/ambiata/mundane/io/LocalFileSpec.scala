@@ -7,7 +7,7 @@ import java.net.URI
 import org.specs2.Specification
 import org.specs2.matcher.Matcher
 
-class FilePathMiniSpec extends Specification { def is = s2"""
+class LocalFileMiniSpec extends Specification { def is = s2"""
 
    a String
    ${ DirPath.fromString("hello/world").map(_.path) === Some("hello/world")  }
@@ -15,14 +15,14 @@ class FilePathMiniSpec extends Specification { def is = s2"""
 """
 
  }
-class FilePathSpec extends Specification { def is = s2"""
+class LocalFileSpec extends Specification { def is = s2"""
 
  Paths are of 2 sorts:
 
   - file paths
   - directory paths
 
- The essential difference is only director paths can be appended with a path name and become a FilePath.
+ The essential difference is only director paths can be appended with a path name and become a LocalFile.
 
  They also map to the notion of file and directory on a filesystem (but not on the Java notion of File which can represent both)
 
@@ -80,19 +80,19 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </ "hello" </ "world" </ "eric").rebaseTo("other" </ "hello") must beNone }
    ${ ("test" </ "hello" </ "world").names === List("test", "hello", "world").map(FileName.unsafe) }
 
- FilePaths
+ LocalFiles
  ========
 
- A FilePath can be created from
+ A LocalFile can be created from
    a String
-   ${ FilePath.unsafe("hello/world").path === "hello/world"  }
+   ${ LocalFile.unsafe("hello/world").path === "hello/world"  }
    a File
-   ${ FilePath.fromFile(new File("hello/world")).path === "hello/world" }
+   ${ LocalFile.fromFile(new File("hello/world")).path === "hello/world" }
    a URI
-   ${ FilePath.fromURI(new URI("hello/world")).map(_.path) === Some("hello/world")  }
+   ${ LocalFile.fromURI(new URI("hello/world")).map(_.path) === Some("hello/world")  }
 
    get the path as a string
-   ${ FilePath.unsafe("test").path must_== "test" }
+   ${ LocalFile.unsafe("test").path must_== "test" }
    ${ (DirPath.Relative </ "test" </ "hello" </ "world").path must_== "test/hello/world" }
    ${ (DirPath.Relative </ "test" </ "hello" </> DirPath.Relative).path must_== "test/hello" }
 
@@ -108,11 +108,11 @@ class FilePathSpec extends Specification { def is = s2"""
     (dirPath.isAbsolute, s"${dirPath} is not absolute")
   }
 /*
-  def beRelative(implicit p1: ImplicitParam1): Matcher[FilePath] = { filePath: FilePath =>
+  def beRelative(implicit p1: ImplicitParam1): Matcher[LocalFile] = { filePath: LocalFile =>
     (filePath.isRelative, s"${filePath} is not relative")
   }
 
-  def beAbsolute(implicit p1: ImplicitParam1): Matcher[FilePath] = { filePath: FilePath =>
+  def beAbsolute(implicit p1: ImplicitParam1): Matcher[LocalFile] = { filePath: LocalFile =>
     (filePath.isAbsolute, s"${filePath} is not absolute")
   }
 */

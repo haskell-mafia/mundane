@@ -6,7 +6,7 @@ import java.net.URI
 import java.util.UUID
 import scalaz._, Scalaz._
 
-object FilePath {
+object LocalFile {
   def fromFile(f: File): P =
     unsafe(f.getPath)
 
@@ -23,9 +23,9 @@ object FilePath {
   def fromList(dir: P, parts: List[FileName]): P =
     parts.foldLeft(dir)((acc, el) => acc </ el)
 
-  def fromURI(s: URI): Option[FilePath] =
+  def fromURI(s: URI): Option[LocalFile] =
     fromString(s.getPath)
 
-  def unsafe(s: String): FilePath =
-    fromString(s).getOrElse(sys.error("FilePath.unsafe on an invalid string."))
+  def unsafe(s: String): LocalFile =
+    fromString(s).getOrElse(sys.error("LocalFile.unsafe on an invalid string."))
 }

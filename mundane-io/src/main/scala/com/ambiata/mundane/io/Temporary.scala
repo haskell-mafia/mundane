@@ -10,6 +10,6 @@ object Temporary {
   def uniqueDirPath: DirPath =
     DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> tempUniquePath
 
-  def uniqueFilePath: FilePath =
+  def uniqueLocalFile: LocalFile =
     DirPath.unsafe(System.getProperty("java.io.tmpdir", "/tmp")) </> tempUniquePath
 }

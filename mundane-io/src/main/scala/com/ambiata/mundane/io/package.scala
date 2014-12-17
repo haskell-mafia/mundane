@@ -7,7 +7,7 @@ import scalaz.effect.IO
 import control.{ResultT, RIO}
 
 package object io {
-  type FilePath = P
+  type LocalFile = P
   type DirPath = P
 
   type Logger = String => IO[Unit]
@@ -16,20 +16,20 @@ package object io {
 
   type Env = Map[String, String]
 
-  implicit class FilePathAsStream(filePath: FilePath) {
+  implicit class FilePathAsStream(filePath: LocalFile) {
     def toOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path) }
     def toInputStream: RIO[InputStream] = RIO.safe { new FileInputStream(filePath.path) }
   }
 
-  implicit class FilePathListSyntax(l: List[FilePath]) {
-    def filterHidden: List[FilePath] =
+  implicit class LocalFileListSyntax(l: List[LocalFile]) {
+    def filterHidden: List[LocalFile] =
       l.filter(f => !List(".", "_").exists(c => f.basename.exists(_.name.startsWith(c))))
   }
 
-  implicit class FilePathStringSyntax(l: String) {
-    def </(n: FileName): FilePath =
+  implicit class LocalFileStringSyntax(l: String) {
+    def </(n: FileName): LocalFile =
       DirPath.Relative </ FileName.unsafe(l) </ n
-    def </(n: String): FilePath =
+    def </(n: String): LocalFile =
       DirPath.Relative </ FileName.unsafe(l) </ FileName.unsafe(n)
   }
 }

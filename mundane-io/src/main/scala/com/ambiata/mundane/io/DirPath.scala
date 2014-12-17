@@ -23,9 +23,9 @@ object DirPath {
       case "" :: Nil =>
         None
       case "" :: parts =>
-        parts.traverse(FileName.create).map(FilePath.fromList(Root, _))
+        parts.traverse(FileName.create).map(LocalFile.fromList(Root, _))
       case parts =>
-        parts.traverse(FileName.create).map(FilePath.fromList(Relative, _))
+        parts.traverse(FileName.create).map(LocalFile.fromList(Relative, _))
     }
 
   def unsafe(s: String): DirPath =

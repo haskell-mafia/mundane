@@ -10,15 +10,15 @@ import scala.sys.process._
 import scalaz._, Scalaz._, \&/._
 import scalaz.effect._
 
-case class Archive(archiveFile: FilePath, checksumFile: FilePath, contents: List[FilePath], checksum: Checksum) {
-  def files: List[FilePath] =
+case class Archive(archiveFile: LocalFile, checksumFile: LocalFile, contents: List[LocalFile], checksum: Checksum) {
+  def files: List[LocalFile] =
     List(archiveFile, checksumFile)
 }
 
 object Archive {
   // FIX This is the original copper publish code, for creating archives, but it has some ill-defined sematics
   //     around printing errors to standard out as well as some very  _optimistic_ quoting. Needs work.
-  def create(archiveName: FileName, checksumName: FileName, target: DirPath, contents: List[FilePath]): RIO[Archive] = {
+  def create(archiveName: FileName, checksumName: FileName, target: DirPath, contents: List[LocalFile]): RIO[Archive] = {
     val archive = target </ archiveName
     val checksum = target </ checksumName
     val files = contents.map(_.basename).mkString(" ")
@@ -33,11 +33,11 @@ object Archive {
     })
   }
 
-  def isVaildGzip(path: FilePath): RIO[Boolean] =  RIO.safe[Boolean] {
+  def isVaildGzip(path: LocalFile): RIO[Boolean] =  RIO.safe[Boolean] {
     List("sh", "-c", s"gzip -dc ${path} > /dev/null") ! ProcessLogger(o => (), e => ()) == 0
   }
 
-  def extractGzipStream(gzip: InputStream, dest: FilePath): RIO[Unit] = RIO(_ => ResultT(IO {
+  def extractGzipStream(gzip: InputStream, dest: LocalFile): RIO[Unit] = RIO(_ => ResultT(IO {
     val buffer = new StringBuilder
     if (!dest.toFile.getParentFile.exists && !dest.toFile.getParentFile.mkdirs)
       Result.fail(s"Could not create gzip extraction directory for ${dest}.")
@@ -49,13 +49,13 @@ object Archive {
       Result.ok(())
   }))
 
-  def isValidTarball(path: FilePath): RIO[Boolean] = RIO.safe[Boolean] {
+  def isValidTarball(path: LocalFile): RIO[Boolean] = RIO.safe[Boolean] {
     List("sh", "-c", s"tar xfz ${path} -O > /dev/null") ! ProcessLogger(o => (), e => ()) == 0
   }
 
   // FIX this is not cross platform, arg....
   // FIX clean-up strip-levels this is not a good default API it is overly specific to copper-extract
-  def extractTarballStream(tarball: InputStream, dest: FilePath, stripLevels: Int): RIO[Unit] = RIO(_ => ResultT(IO {
+  def extractTarballStream(tarball: InputStream, dest: LocalFile, stripLevels: Int): RIO[Unit] = RIO(_ => ResultT(IO {
     val levels = if (stripLevels > 0) s"-strip-components ${stripLevels}" else ""
     val cmd = s"tar xz -C ${dest} - ${levels}"
     val buffer = new StringBuffer
@@ -70,7 +70,7 @@ object Archive {
   }))
 
   // FIX testing and cross platform support, shelling out to tar is one thing, throwing random flags around is not ok though
-  def extractTarballStreamTheOtherOneThisIsNotOk(tarball: InputStream, dest: FilePath): RIO[Unit] = RIO(_ => ResultT(IO {
+  def extractTarballStreamTheOtherOneThisIsNotOk(tarball: InputStream, dest: LocalFile): RIO[Unit] = RIO(_ => ResultT(IO {
     val cmd = s"tar xz -C ${dest}"
     val buffer = new StringBuffer
     if(!dest.toFile.exists && !dest.toFile.mkdirs)
@@ -83,7 +83,7 @@ object Archive {
       Result.ok(())
   }))
 
-  def extractTarballStreamFlat(tarball: InputStream, dest: FilePath): RIO[Unit] = for {
+  def extractTarballStreamFlat(tarball: InputStream, dest: LocalFile): RIO[Unit] = for {
     _ <- extractTarballStreamTheOtherOneThisIsNotOk(tarball, dest)
     _ <- RIO(_ => ResultT[IO, Unit](IO {
       val buffer = new StringBuffer

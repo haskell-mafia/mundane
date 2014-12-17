@@ -22,7 +22,7 @@ object Checksum {
   def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): RIO[Checksum] =
     RIO.safe[Checksum]  { unsafe(is, algorithm, bufferSize) }
 
-  def file(f: FilePath, algorithm: ChecksumAlgorithm): RIO[Checksum] =
+  def file(f: LocalFile, algorithm: ChecksumAlgorithm): RIO[Checksum] =
     RIO.using(f.toInputStream) { in =>
       stream(in, algorithm)
     }

@@ -8,7 +8,7 @@ import scalaz._, Scalaz._
 import scalaz.effect.IO
 
 sealed trait FileTree {
-  def files(base: DirPath): List[FilePath] =
+  def files(base: DirPath): List[LocalFile] =
     this match {
       case FileTreeLeaf(label) =>
         List(base </ FileName.unsafe(label))
