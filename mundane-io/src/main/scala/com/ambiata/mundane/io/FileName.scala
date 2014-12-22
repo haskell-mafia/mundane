@@ -18,4 +18,10 @@ object FileName {
 
   def fromUUID(uuid: UUID) =
     FileName(uuid.toString)
+
+  def Parent =
+    FileName.unsafe("..")
+
+  def Current =
+    FileName.unsafe(".")
 }

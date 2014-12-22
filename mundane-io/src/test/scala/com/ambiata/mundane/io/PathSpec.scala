@@ -9,11 +9,38 @@ class PathSpec extends Specification with ScalaCheck { def is = s2"""
 Path
 ====
 
-Paths are a recursive data structure, defined in terms of two base cases,
-and a recursive case. The represent a hierarchical structure similar to
-what one expect for a posix like filesystem. They currently do no support
-any windows like functionality that would require a richer data type to
-describe what a "Root" is, i.e. drive letter, unc or similar.
+Paths are a recursive data structure, defined in terms of two base
+cases, and a recursive case. They represent a hierarchical structure
+similar to what one expect for a posix like filesystem. They currently
+do _not_ support any windows like functionality that would require a
+richer data type to describe what a "Root" is, i.e. drive letter, unc
+or similar.
+
+Constructors
+------------
+
+  'Path.apply' is symmetrical with 'Path#path':
+
+    ${ prop((p: Path) => Path(p.path) ==== p) }
+
+  'Path.apply' is consistent with 'Path#names':
+
+    ${ prop((ns: List[FileName]) => Path(ns.map(_.name).mkString("/")).names ==== ns) }
+
+  'Path.fromList' is consistent with 'Path.apply':
+
+    ${ prop((ns: List[FileName]) => Path.fromList(Root, ns) ==== Path("/" + ns.map(_.name).mkString("/"))) }
+
+    ${ prop((ns: List[FileName]) => Path.fromList(Relative, ns) ==== Path(ns.map(_.name).mkString("/"))) }
+
+  'Path.fromFile' is symmetric with Path#toFile:
+
+    ${ prop((p: Path) => Path.fromFile(p.toFile) ==== p) }
+
+  'Path.fromFile' is consistent with Path.apply:
+
+    ${ prop((p: Path) => Path.fromFile(new java.io.File(p.path)) ==== p) }
+
 
 Folds
 -----
@@ -33,6 +60,9 @@ Folds
 
     ${ prop((x: Int, base: Path, name: FileName) =>
          Component(base, name).fold(???, ???, (b, n) => (b, n, x)) ==== ((base, name, x))) }
+
+Combinators
+-----------
 
   'isRoot' should return true if and only if this 'Path' is the top level
   'Root' base case:
@@ -186,7 +216,7 @@ Folds
 
     ${ (Relative </> Relative) ==== Relative  }
 
-    ${ prop((p: Path, q: Path) => (p.isRelative && q.isRelative) ==> (p </> q).isRelative ) }
+    ${ prop((p: RelativePath, q: RelativePath) => (p.path.isRelative && q.path.isRelative) ==> (p.path </> q.path).isRelative ) }
 
     ${ prop((p: Path, q: Path) => (p.isAbsolute || q.isAbsolute) ==> (p </> q).isAbsolute ) }
 
@@ -229,6 +259,8 @@ Folds
   Converting to a 'java.io.File' and back should be a no-op.
 
     ${ prop((p: Path) => Path.fromFile(p.toFile) ==== p) }
+
+    ${ prop((p: Path) => Path.fromFile(p.toFile).toFile ==== p.toFile) }
 
 
   Any path with the 'Root' base case is absolute:
@@ -284,7 +316,6 @@ Folds
 
     ${ Relative.rebaseTo(Root) ==== None }
 
-
 """
 
 
@@ -295,5 +326,4 @@ Folds
   /** normalize 'n' to between 1 and 'max'. */
   def normalize(n: Int, max: Int): Int =
     (math.abs(n) % 4) + 1
-
 }

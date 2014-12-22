@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 import com.ambiata.promulgate.project.ProjectPlugin._
+import scoverage.ScoverageSbtPlugin._
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -145,7 +146,8 @@ object build extends Build {
       case x if x.contains("2.10") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint")
       case x => sys.error("Unsupported scala version: " + x)
     }),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    scalacOptions in ScoverageCompile := Seq("-language:_", "-feature")
   )
 
   def lib(name: String) =
@@ -156,7 +158,7 @@ object build extends Build {
     logBuffered := false,
     cancelable := true,
     javaOptions += "-Xmx3G"
-  )
+  ) ++ instrumentSettings ++ Seq(ScoverageKeys.highlighting := true)
 
   lazy val prompt = shellPrompt in ThisBuild := { state =>
     val name = Project.extract(state).currentRef.project

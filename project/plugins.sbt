@@ -11,3 +11,5 @@ resolvers += Resolver.typesafeRepo("releases")
 addSbtPlugin("com.ambiata" % "promulgate" % "0.11.0-20141014013725-80c129f")
 
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")
+
+addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "0.99.7.1")

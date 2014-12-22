@@ -204,8 +204,16 @@ sealed trait Path {
 }
 
 object Path {
+  /** Construct a path from the given string. This is a _total_ function, there
+      are no strings that do not represent valid paths, however, you do need to
+      be quite careful of filenames that may have been specified incorrectly with
+      a '/', this issue can be avoided by relying on the 'Path' combinators rather
+      than manually constucting paths as strings, and using the safe 'FileName'
+      constructor. */
   def apply(s: String): Path =
    s.split("/").toList match {
+      case Nil =>
+        Root
       case "" :: Nil =>
         Relative
       case "" :: parts =>
@@ -214,23 +222,19 @@ object Path {
         fromList(Relative, parts.filter(_.nonEmpty).map(FileName.unsafe))
     }
 
-  def fromList(dir: Path, parts: List[FileName]): Path =
-    parts.foldLeft(dir)((acc, el) => acc </ el)
+  /** Construct a path from the base path and list of components. */
+  def fromList(dir: Path, components: List[FileName]): Path =
+    components.foldLeft(dir)((acc, el) => acc </ el)
 
+  /** Construct a path from a java.io.File. */
   def fromFile(f: File): Path =
     Option(f.getParentFile) match {
       case None =>
         val base = if (f.isAbsolute) Root else Relative
-        if (f.getName == "") base else Component(base, FileName.unsafe(f.getName))
+        if (f.getName.isEmpty) base else Component(base, FileName.unsafe(f.getName))
       case Some(p) =>
         fromFile(p) </ FileName.unsafe(f.getName)
     }
-
-  def Parent =
-    FileName.unsafe("..")
-
-  def Current =
-    FileName.unsafe(".")
 }
 
 case object Root extends Path
