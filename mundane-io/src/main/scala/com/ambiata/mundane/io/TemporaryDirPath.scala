@@ -15,11 +15,11 @@ object TemporaryDirPath {
     def close(temp: TemporaryDirPath) = temp.clean.run.void // Squelch errors
   }
 
-  def withDirPath[A](f: DirPath => ResultTIO[A]): ResultTIO[A] = {
+  def withDirPath[A](f: DirPath => RIO[A]): RIO[A] = {
     val dir = uniqueDirPath
     Directories.mkdirs(dir) >> runWithDirPath(dir)(f)
   }
 
-  def runWithDirPath[A](dir: DirPath)(f: DirPath => ResultTIO[A]): ResultTIO[A] =
-    ResultT.using(TemporaryDirPath(dir).pure[ResultTIO])(tmp => f(tmp.dir))
+  def runWithDirPath[A](dir: DirPath)(f: DirPath => RIO[A]): RIO[A] =
+    ResultT.using(TemporaryDirPath(dir).pure[RIO])(tmp => f(tmp.dir))
 }

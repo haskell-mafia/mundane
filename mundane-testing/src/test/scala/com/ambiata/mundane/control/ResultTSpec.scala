@@ -50,7 +50,7 @@ class ResultTSpec extends Specification with ScalaCheck { def is = s2"""
     (ResultT.ok[Option, Int](a) ||| b) == ResultT.ok[Option, Int](a))
 
   def okOrIO = {
-    import scalaz.effect._, testing.ResultTIOMatcher._
+    import scalaz.effect._, testing.RIOMatcher._
     var i = 0
     val result = ResultT.fromIO(IO { i = i + 1; i })
     (result ||| result) must beOkValue(1)

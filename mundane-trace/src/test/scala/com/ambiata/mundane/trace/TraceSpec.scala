@@ -1,6 +1,6 @@
 package com.ambiata.mundane.trace
 
-import com.ambiata.mundane.testing.ResultTIOMatcher._
+import com.ambiata.mundane.testing.RIOMatcher._
 import com.ambiata.mundane.data.Lists
 import com.ambiata.mundane.control._
 
@@ -76,7 +76,7 @@ Trace Demonstration
   object demo {
     import Trace.{Key, log, io, WriterKS}
 
-    type App[A] = ReaderT[ResultTIO, Trace[ResultTIO], A]
+    type App[A] = ReaderT[RIO, Trace[RIO], A]
     type Purity[A] = ReaderT[WriterKS, Trace[WriterKS], A]
 
     val adding = Key("adding")
@@ -84,9 +84,9 @@ Trace Demonstration
 
     /* Simulating some effectful computation in IO. */
     def work(m: Int, n: Int, o: Int): App[Unit] = for {
-      _ <- log[ResultTIO](doing, s"working on ${m}, ${n}, ${o}")
+      _ <- log[RIO](doing, s"working on ${m}, ${n}, ${o}")
       p <- io { add(m, n).flatMap(add(_, o)) }
-      _ <- log[ResultTIO](doing, s"done with $p")
+      _ <- log[RIO](doing, s"done with $p")
     } yield ()
 
     /* Simulating some pure computation. */
@@ -103,7 +103,7 @@ Trace Demonstration
       _ <- y.traverseU(trace(two, _))
     } yield ()).run._1
 
-  def capture[A](f: PrintStream => ResultTIO[A])(check: String => org.specs2.execute.Result) = {
+  def capture[A](f: PrintStream => RIO[A])(check: String => org.specs2.execute.Result) = {
     val baos = new ByteArrayOutputStream
     val out = new PrintStream(baos, true, "UTF-8")
     (f(out) must beOk) and check(new String(baos.toString))

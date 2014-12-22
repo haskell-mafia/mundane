@@ -2,7 +2,7 @@ package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.io.Temporary._
-import com.ambiata.mundane.testing.ResultTIOMatcher._
+import com.ambiata.mundane.testing.RIOMatcher._
 
 import org.specs2.Specification
 

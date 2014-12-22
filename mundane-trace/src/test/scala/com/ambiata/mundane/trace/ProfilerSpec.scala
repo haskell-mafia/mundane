@@ -1,6 +1,6 @@
 package com.ambiata.mundane.trace
 
-import com.ambiata.mundane.testing.ResultTIOMatcher._
+import com.ambiata.mundane.testing.RIOMatcher._
 import com.ambiata.mundane.data.Lists
 import com.ambiata.mundane.control._
 
@@ -70,17 +70,17 @@ Profiler Combinators
       beOkValue(Profile(Nil, Map(c -> n.toLong))) })
 
   def start = prop((n: Int) =>
-    run(p => p.start(s) >> n.pure[ResultTIO]) must
+    run(p => p.start(s) >> n.pure[RIO]) must
      beOkLike(p => p.sections.isEmpty))
 
   def endx = prop((n: Int) =>
-    run(p => n.pure[ResultTIO] >> p.end(s)) must beOk.not)
+    run(p => n.pure[RIO] >> p.end(s)) must beOk.not)
 
   def both = prop((n: Int) =>
-    run(p => p.start(s) >> n.pure[ResultTIO] >> p.end(s)) must
+    run(p => p.start(s) >> n.pure[RIO] >> p.end(s)) must
      beOkLike(p => p.sections.exists(t => t.tid == tid && t.context == Vector(s))))
 
-  def run[A](f: Profiler[ResultTIO] => ResultT[IO, A]): ResultT[IO, Profile] = for {
+  def run[A](f: Profiler[RIO] => ResultT[IO, A]): ResultT[IO, Profile] = for {
     p <- Profiler.tree
     _ <- f(p)
     r <- p.done()

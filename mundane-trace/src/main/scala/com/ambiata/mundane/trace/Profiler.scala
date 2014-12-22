@@ -47,7 +47,7 @@ object Profiler {
   def empty[F[_]: Applicative]: Profiler[F] =
     Profiler[F](_ => ().pure[F], _ => ().pure[F], (_, _) => ().pure[F], () => Profile(Nil, Map.empty).pure[F])
 
-  def tree: ResultT[IO, Profiler[ResultTIO]] = ResultT.io {
+  def tree: ResultT[IO, Profiler[RIO]] = ResultT.io {
     case class Start(tid: ThreadId, context: Vector[Section], timestamp: Timestamp)
 
     val running = new ThreadLocal[Map[Vector[Section], Start]] { override def initialValue = Map.empty }
@@ -97,7 +97,7 @@ object Profiler {
         counters.get(c)
       }).addAndGet(n) }
 
-    Profiler[ResultTIO](
+    Profiler[RIO](
       s => start(s)
     , s => end(s)
     , (c, n) => count(c, n)
