@@ -80,7 +80,7 @@ Profiler Combinators
     run(p => p.start(s) >> n.pure[RIO] >> p.end(s)) must
      beOkLike(p => p.sections.exists(t => t.tid == tid && t.context == Vector(s))))
 
-  def run[A](f: Profiler[RIO] => ResultT[IO, A]): ResultT[IO, Profile] = for {
+  def run[A](f: Profiler[RIO] => RIO[A]): RIO[Profile] = for {
     p <- Profiler.tree
     _ <- f(p)
     r <- p.done()

@@ -1,5 +1,4 @@
-package com.ambiata.mundane
-package io
+package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
 import MemoryConversions._
@@ -17,10 +16,10 @@ import scalaz.effect._
  *  - ...
  */
 object Directories {
-  def mkdirs(dirPath: DirPath): ResultT[IO, Unit] =
-    ResultT.safe[IO, Boolean](dirPath.toFile.mkdirs).void
+  def mkdirs(dirPath: DirPath): RIO[Unit] =
+    RIO.safe[Boolean](dirPath.toFile.mkdirs).void
 
-  def list(dirPath: DirPath): ResultT[IO, List[FilePath]] = ResultT.safe[IO, List[FilePath]] {
+  def list(dirPath: DirPath): RIO[List[FilePath]] = RIO.safe[List[FilePath]] {
     def loop(dir: DirPath): Vector[FilePath] = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.flatMap { f =>
@@ -31,10 +30,10 @@ object Directories {
     loop(dirPath).toList
   }
 
-  def listFirstFileNames(dirPath: DirPath): ResultT[IO, List[FileName]] =
-    ResultT.safe[IO, List[FileName]](Option(dirPath.toFile.listFiles).cata(_.toList, List()).map(file => FileName.unsafe(file.getName)))
+  def listFirstFileNames(dirPath: DirPath): RIO[List[FileName]] =
+    RIO.safe[List[FileName]](Option(dirPath.toFile.listFiles).cata(_.toList, List()).map(file => FileName.unsafe(file.getName)))
 
-  def delete(dirPath: DirPath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+  def delete(dirPath: DirPath): RIO[Boolean] = RIO.safe[Boolean] {
     def loop(dir: DirPath): Boolean = {
       val files = Option(dir.toFile.listFiles).cata(_.toVector, Vector())
       files.forall { f =>
@@ -45,13 +44,13 @@ object Directories {
     loop(dirPath)
   }
 
-  def move(src: DirPath, dest: DirPath): ResultT[IO, Unit] = ResultT.safe {
+  def move(src: DirPath, dest: DirPath): RIO[Unit] = RIO.safe {
     val destf = dest.toFile
     destf.mkdirs
     src.toFile.renameTo(destf)
   }
 
-  def exists(dirPath: DirPath): ResultT[IO, Boolean] = ResultT.safe[IO, Boolean] {
+  def exists(dirPath: DirPath): RIO[Boolean] = RIO.safe[Boolean] {
     val file = dirPath.toFile
     file.exists && file.isDirectory
   }

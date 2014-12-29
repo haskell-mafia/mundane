@@ -218,4 +218,3 @@ class DirPathSyntax(name: FileName) {
   def </>(other: FileName): DirPath  = DirPath(name) </> other
   def <|>(other: FileName): FilePath = DirPath(name) <|> other
 }
-

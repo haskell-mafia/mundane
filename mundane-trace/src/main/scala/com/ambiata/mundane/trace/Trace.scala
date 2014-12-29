@@ -50,7 +50,7 @@ object Trace {
     Trace[F]((_, _) => ().pure[F])
 
   def stream(out: java.io.PrintStream) : Trace[RIO] =
-    Trace[RIO]((_, s) => ResultT.fromIO { IO { out.println(s) } })
+    Trace[RIO]((_, s) => RIO.fromIO { IO { out.println(s) } })
 
   def out: Trace[RIO] =
     stream(Console.out)

@@ -19,11 +19,11 @@ object Checksum {
   def toHexString(bytes: Array[Byte]): String =
     bytes.map("%02X".format(_)).mkString.toLowerCase
 
-  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): ResultT[IO, Checksum] =
-    ResultT.safe[IO, Checksum]  { unsafe(is, algorithm, bufferSize) }
+  def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): RIO[Checksum] =
+    RIO.safe[Checksum]  { unsafe(is, algorithm, bufferSize) }
 
-  def file(f: FilePath, algorithm: ChecksumAlgorithm): ResultT[IO, Checksum] =
-    ResultT.using(f.toInputStream) { in =>
+  def file(f: FilePath, algorithm: ChecksumAlgorithm): RIO[Checksum] =
+    RIO.using(f.toInputStream) { in =>
       stream(in, algorithm)
     }
 

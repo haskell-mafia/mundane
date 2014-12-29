@@ -56,9 +56,6 @@ object ResultT extends LowPriorityResultT {
   def safe[F[_]: Monad, A](thunk: => A): ResultT[F, A] =
     ResultT[F, A](Result.safe(thunk).point[F])
 
-  def io[A](thunk: => A): ResultT[IO, A] =
-    fromIO { IO { thunk } }
-
   def option[F[_]: Monad, A](thunk: => A): ResultT[F, Option[A]] =
     ResultT[F, Option[A]](Result.option(thunk).point[F])
 
@@ -77,15 +74,6 @@ object ResultT extends LowPriorityResultT {
   def fail[F[_]: Monad, A](message: String): ResultT[F, A] =
     these[F, A](This(message))
 
-  def failIO[A](message: String): ResultT[IO, A] =
-    fail[IO, A](message)
-
-  /**
-   * For User Messages
-   **/
-  def putStrLn(x: String): ResultT[IO, Unit] =
-    fromIO(IO.putStrLn(x))
-
   def error[F[_]: Monad, A](message: String, t: Throwable): ResultT[F, A] =
     these[F, A](Both(message, t))
 
@@ -97,9 +85,6 @@ object ResultT extends LowPriorityResultT {
 
   def fromDisjunction[F[_]: Monad, A](v: These[String, Throwable] \/ A): ResultT[F, A] =
     fromDisjunctionF(v.point[F])
-
-  def fromIO[A](v: IO[A]): ResultT[IO, A] =
-    ResultT(v.map(Result.ok))
 
   def fromDisjunctionString[F[_]: Monad, A](v: String \/ A): ResultT[F, A] =
     fromDisjunction(v.leftMap(This.apply))
@@ -134,15 +119,6 @@ object ResultT extends LowPriorityResultT {
   implicit def ResultTEqual[F[_], A](implicit E: Equal[F[Result[A]]]): Equal[ResultT[F, A]] =
     implicitly[Equal[F[Result[A]]]].contramap(_.run)
 
-  def toTask[A](result: =>ResultT[IO, A]): Task[A] =
-    Task.delay {
-      result.run.unsafePerformIO.foldAll(
-        a => Task.delay(a),
-        m => Task.fail(new Exception(m)),
-        Task.fail,
-        (m, e) => Task.fail(new Exception(m, e))
-      )
-    }.flatMap(identity)
 }
 
 trait LowPriorityResultT {

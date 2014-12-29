@@ -31,7 +31,7 @@ class TemporaryFilePathSpec extends Specification { def is = s2"""
 
   def handlesFail = {
     val file: FilePath = uniqueFilePath
-    TemporaryFilePath.runWithFilePath(file)( _ => ResultT.fail[IO, Int]("")).toOption.unsafePerformIO() must beNone
+    TemporaryFilePath.runWithFilePath(file)( _ => RIO.fail[Int]("")).toOption must beNone
     !file.toFile.exists()
   }
 }

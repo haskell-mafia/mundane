@@ -6,7 +6,7 @@ import com.ambiata.mundane.io.Temporary._
 import scalaz._, Scalaz._, effect._
 
 case class TemporaryFilePath(file: FilePath) {
-  def clean: ResultT[IO, Unit] =
+  def clean: RIO[Unit] =
     Files.delete(file)
 }
 
@@ -19,5 +19,5 @@ object TemporaryFilePath {
     runWithFilePath(uniqueFilePath)(f)
 
   def runWithFilePath[A](file: FilePath)(f: FilePath => RIO[A]): RIO[A] =
-    ResultT.using[TemporaryFilePath, TemporaryFilePath, A](TemporaryFilePath(file).pure[RIO])(tmp => f(tmp.file))
+    RIO.using[TemporaryFilePath, TemporaryFilePath, A](RIO.ok(TemporaryFilePath(file)))(tmp => f(tmp.file))
 }

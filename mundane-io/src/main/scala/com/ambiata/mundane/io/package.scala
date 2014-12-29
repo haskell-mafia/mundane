@@ -4,7 +4,7 @@ import java.io._
 import reflect.MacrosCompat
 import scalaz._, Scalaz._
 import scalaz.effect.IO
-import control.{ResultT, ActionTSupport, ActionT}
+import control.{ResultT, ActionTSupport, ActionT, RIO}
 
 package object io extends MacrosCompat {
 
@@ -39,8 +39,8 @@ package object io extends MacrosCompat {
   }
 
   implicit class FilePathAsStream(filePath: FilePath) {
-    def toOutputStream: ResultT[IO, OutputStream] = ResultT.safe { new FileOutputStream(filePath.path) }
-    def toInputStream: ResultT[IO, InputStream] = ResultT.safe { new FileInputStream(filePath.path) }
+    def toOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path) }
+    def toInputStream: RIO[InputStream] = RIO.safe { new FileInputStream(filePath.path) }
   }
 
   implicit class FilePathListSyntax(l: List[FilePath]) {
@@ -76,5 +76,3 @@ package object io extends MacrosCompat {
     }
   }
 }
-
-

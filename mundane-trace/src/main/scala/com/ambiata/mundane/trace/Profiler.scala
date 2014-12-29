@@ -38,16 +38,16 @@ object Profiler {
   case class Tag(tid: ThreadId, context: List[Section], start: Timestamp, end: Timestamp)
   case class Profile(sections: List[Tag], counters: Map[Counter, Long])
 
-  def getThreadId: ResultT[IO, ThreadId] =
-    ResultT.io { ThreadId(Thread.currentThread.getId) }
+  def getThreadId: RIO[ThreadId] =
+    RIO.io { ThreadId(Thread.currentThread.getId) }
 
-  def getCurrentTime: ResultT[IO, Timestamp] =
-    ResultT.io { Timestamp(System.currentTimeMillis) }
+  def getCurrentTime: RIO[Timestamp] =
+    RIO.io { Timestamp(System.currentTimeMillis) }
 
   def empty[F[_]: Applicative]: Profiler[F] =
     Profiler[F](_ => ().pure[F], _ => ().pure[F], (_, _) => ().pure[F], () => Profile(Nil, Map.empty).pure[F])
 
-  def tree: ResultT[IO, Profiler[RIO]] = ResultT.io {
+  def tree: RIO[Profiler[RIO]] = RIO.io {
     case class Start(tid: ThreadId, context: Vector[Section], timestamp: Timestamp)
 
     val running = new ThreadLocal[Map[Vector[Section], Start]] { override def initialValue = Map.empty }
@@ -55,7 +55,7 @@ object Profiler {
     val counters = new ConcurrentHashMap[Counter, AtomicLong]
     val sections = new ConcurrentLinkedQueue[Tag]
 
-    def toProfile: ResultT[IO, Profile] = ResultT.io {
+    def toProfile: RIO[Profile] = RIO.io {
       import scala.collection.JavaConverters._
       Profile(
         sections.asScala.toList.sortBy(t => (t.tid.id, t.start.millis, t.context.map(_.name).mkString(".")))
@@ -63,36 +63,36 @@ object Profiler {
       )
     }
 
-    def start(s: Section): ResultT[IO, Unit] = for {
+    def start(s: Section): RIO[Unit] = for {
       tid  <- getThreadId
       time <- getCurrentTime
-      _    <- ResultT.io {
+      _    <- RIO.io {
         val ctx = context.get :+ s
         context.set(ctx);
         running.set(running.get + (ctx -> Start(tid, ctx, time)))
       }
     } yield ()
 
-    def end(s: Section): ResultT[IO, Unit] = for {
-      ctx   <- ResultT.io { context.get }
+    def end(s: Section): RIO[Unit] = for {
+      ctx   <- RIO.io { context.get }
       time  <- getCurrentTime
-      start <- ResultT.io { running.get.get(ctx) }
+      start <- RIO.io { running.get.get(ctx) }
       _     <- start match {
         case None =>
-          ResultT.failIO(s"Profile end without start for key [${ctx.mkString(".")}].")
+          RIO.failIO(s"Profile end without start for key [${ctx.mkString(".")}].")
         case Some(start) if ctx.isEmpty =>
-          ResultT.failIO(s"Profile end without any start for section [${s}].")
+          RIO.failIO(s"Profile end without any start for section [${s}].")
         case Some(start) if ctx.last != s =>
-          ResultT.failIO(s"Profile end does not match start for key [${ctx.mkString(".")}], with end section [${s}].")
+          RIO.failIO(s"Profile end does not match start for key [${ctx.mkString(".")}], with end section [${s}].")
         case Some(start) =>
-          ResultT.io {
+          RIO.io {
             context.set(ctx.init)
             sections.offer(Tag(start.tid, ctx.toList, start.timestamp, time)) }
           }
     } yield ()
 
-    def count(c: Counter, n: Long): ResultT[IO, Unit] =
-      ResultT.io { Option(counters.get(c)).getOrElse({
+    def count(c: Counter, n: Long): RIO[Unit] =
+      RIO.io { Option(counters.get(c)).getOrElse({
         counters.putIfAbsent(c, new AtomicLong(0L))
         counters.get(c)
       }).addAndGet(n) }
