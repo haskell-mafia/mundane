@@ -4,7 +4,7 @@ import java.io._
 import reflect.MacrosCompat
 import scalaz._, Scalaz._
 import scalaz.effect.IO
-import control.{ResultT, ActionTSupport, ActionT, RIO}
+import control.{ResultT, RIO}
 
 package object io extends MacrosCompat {
 
@@ -12,14 +12,7 @@ package object io extends MacrosCompat {
   lazy val noLogging = (s: String) => IO(())
   lazy val consoleLogging = (s: String) => IO(println(s))
 
-  type IOAction[A] = ActionT[IO, Unit, Logger, A]
-  object IOActions extends ActionTSupport[IO, Unit, Logger]
-
   type Env = Map[String, String]
-
-  /** log a value, using the logger coming from the Reader environment */
-  def log[R](r: R): IOAction[Unit] =
-    IOActions.ask.flatMap(logger => logger(r.toString).liftIO[IOAction])
 
   implicit def stringToDirPathSyntax(s: String): DirPathSyntax =
     macro createDirPathSyntax

@@ -61,6 +61,9 @@ case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[F
   def |||(otherwise: => RIO[A]): RIO[A] =
     RIO[A](finalizers => exec(finalizers).|||(otherwise.exec(finalizers)))
 
+  def orElse(otherwise: => A): RIO[A] =
+     |||(RIO.ok(otherwise))
+
   def zip[B](other: RIO[B]): RIO[(A, B)] =
     flatMap(a => other.map(a -> _))
 }
@@ -84,7 +87,10 @@ object RIO {
   def unit: RIO[Unit] =
     RIO[Unit](_ => ResultT.ok(()))
 
-  def result[A](result: ResultT[IO, A]): RIO[A] =
+  def result[A](result: Result[A]): RIO[A] =
+    RIO[A](_ => ResultT.result(result))
+
+  def resultT[A](result: ResultT[IO, A]): RIO[A] =
     RIO[A](_ => result)
 
   def exception[A](t: Throwable): RIO[A] =
