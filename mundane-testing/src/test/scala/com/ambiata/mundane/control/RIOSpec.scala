@@ -81,10 +81,10 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
     RIO.when(true, RIO.fail("foo")) ===== RIO.fail("foo")
 
   def unless =
-    RIO.unless[Id](true, RIO.fail("foo")) ===== RIO.unit
+    RIO.unless(true, RIO.fail("foo")) ===== RIO.unit
 
   def unlessF =
-    RIO.unless[Id](false, RIO.fail("foo")) ===== RIO.fail("foo")
+    RIO.unless(false, RIO.fail("foo")) ===== RIO.fail("foo")
 
   def safe = prop((a: Int) =>
     RIO.safe[Int](a) ===== RIO.ok[Int](a))
