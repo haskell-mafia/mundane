@@ -2,7 +2,6 @@ package com.ambiata.mundane
 package io
 
 import control._
-import ActionT._
 import scalaz._, Scalaz._
 import scala.sys.process._
 import java.io.File
@@ -15,25 +14,25 @@ trait Shell {
   /**
    * execute a shell command
    */
-  def execute(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+  def execute(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): RIO[String] =
     attempt(cmd, env, arguments, verbose, commandType).flatMap({
       case (returnValue, out, err) =>
         val dud = makeErrorMessage(cmd, commandType, err.mkString("\n"), returnValue, env)
-        if (returnValue == 0) IOActions.ok(out.mkString("\n") + (if (err.isEmpty) "" else dud))
-        else                  IOActions.fail(dud)
+        if (returnValue == 0) RIO.ok(out.mkString("\n") + (if (err.isEmpty) "" else dud))
+        else                  RIO.fail(dud)
     })
 
   /**
    * execute a shell command
    */
-  def attempt(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): IOAction[(Int, List[String], List[String])] =
+  def attempt(cmd: String, env: Env, arguments: Seq[String] = Seq(), verbose: Boolean = false, commandType: Option[String] = None): RIO[(Int, List[String], List[String])] =
     for {
-      _ <- if (verbose) log(s"""${commandType.map(ct => s"[$ct]").getOrElse("")} executing command '$cmd'""") else IOActions.ok(())
-      r <- IOActions.result { logger =>
+      _ <- if (verbose) RIO.putStrLn(s"""${commandType.map(ct => s"[$ct]").getOrElse("")} executing command '$cmd'""") else RIO.ok(())
+      r <- RIO.result {
         val resultOut = new scala.collection.mutable.ListBuffer[String]
         val resultErr = new scala.collection.mutable.ListBuffer[String]
-        val processLogger = ProcessLogger(out => { logger(out).unsafePerformIO; resultOut.append(out) },
-          err => { logger(err).unsafePerformIO; resultErr.append(err) })
+        val processLogger = ProcessLogger(out => { RIO.putStrLn(out).unsafePerformIO; resultOut.append(out) },
+          err => { RIO.putStrLn(err).unsafePerformIO; resultErr.append(err) })
 
         val returnValue = Process(Seq("sh", "-c", cmd + arguments.mkString(" ", " ", "")), None, env.toSeq:_*) ! processLogger
         Result.ok((returnValue, resultOut.toList, resultErr.toList))
@@ -66,17 +65,17 @@ trait Shell {
   /**
    * execute a shell command remotely
    */
-  def executeRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+  def executeRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): RIO[String] =
     execute(s"ssh ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}${remote.remoteHost} '$command'", env, Seq(), verbose, commandType)
 
   /**
    * attempt a shell command remotely
    */
-  def attemptRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[(Int, List[String], List[String])] =
+  def attemptRemotely(command: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): RIO[(Int, List[String], List[String])] =
     attempt(s"ssh ${remote.remoteKey} -p ${remote.remotePort} ${remote.remoteUser}${remote.remoteHost} '$command'", env, Seq(), verbose, commandType)
 
   /** upload a file to a remote server */
-  def upload(file: File, destination: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): IOAction[String] =
+  def upload(file: File, destination: String, env: Env, remote: Remote, verbose: Boolean = false, commandType: Option[String] = None): RIO[String] =
     execute(s"scp ${remote.remoteKey} -P ${remote.remotePort} ${file.getPath} ${remote.remoteUser}${remote.remoteHost}:$destination", env, Seq(), verbose, commandType)
 
 }

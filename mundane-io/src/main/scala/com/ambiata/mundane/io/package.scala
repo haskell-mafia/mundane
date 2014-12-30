@@ -4,7 +4,7 @@ import java.io._
 import reflect.MacrosCompat
 import scalaz._, Scalaz._
 import scalaz.effect.IO
-import control.{ResultT, ActionTSupport, ActionT}
+import control.{ResultT, RIO}
 
 package object io extends MacrosCompat {
 
@@ -12,14 +12,7 @@ package object io extends MacrosCompat {
   lazy val noLogging = (s: String) => IO(())
   lazy val consoleLogging = (s: String) => IO(println(s))
 
-  type IOAction[A] = ActionT[IO, Unit, Logger, A]
-  object IOActions extends ActionTSupport[IO, Unit, Logger]
-
   type Env = Map[String, String]
-
-  /** log a value, using the logger coming from the Reader environment */
-  def log[R](r: R): IOAction[Unit] =
-    IOActions.ask.flatMap(logger => logger(r.toString).liftIO[IOAction])
 
   implicit def stringToDirPathSyntax(s: String): DirPathSyntax =
     macro createDirPathSyntax
@@ -39,8 +32,8 @@ package object io extends MacrosCompat {
   }
 
   implicit class FilePathAsStream(filePath: FilePath) {
-    def toOutputStream: ResultT[IO, OutputStream] = ResultT.safe { new FileOutputStream(filePath.path) }
-    def toInputStream: ResultT[IO, InputStream] = ResultT.safe { new FileInputStream(filePath.path) }
+    def toOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path) }
+    def toInputStream: RIO[InputStream] = RIO.safe { new FileInputStream(filePath.path) }
   }
 
   implicit class FilePathListSyntax(l: List[FilePath]) {
@@ -76,5 +69,3 @@ package object io extends MacrosCompat {
     }
   }
 }
-
-

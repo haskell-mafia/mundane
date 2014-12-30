@@ -2,7 +2,7 @@ package com.ambiata.mundane.testing
 
 import org.scalacheck._
 import Arbitrary._
-import scalaz._, Scalaz._
+import scalaz._, Scalaz._, effect.IO
 import com.ambiata.mundane.control._
 
 object Arbitraries {
@@ -12,6 +12,10 @@ object Arbitraries {
   implicit def ResultTArbitrary[F[+_], A](implicit F: Functor[F], A: Arbitrary[F[(String \&/ Throwable) \/ A]]): Arbitrary[ResultT[F, A]] = {
     Functor[F]
     Arbitrary(arbitrary[F[(String \&/ Throwable) \/ A]].map(ResultT.fromDisjunctionF[F, A]))
+  }
+
+  implicit def RIOArbitrary[A](implicit A: Arbitrary[(String \&/ Throwable) \/ A]): Arbitrary[RIO[A]] = {
+    Arbitrary(arbitrary[(String \&/ Throwable) \/ A].map(RIO.fromDisjunction[A](_)))
   }
 
   /** WARNING: can't use scalaz-scalacheck-binding because of specs/scalacheck/scalaz compatibility at the moment */

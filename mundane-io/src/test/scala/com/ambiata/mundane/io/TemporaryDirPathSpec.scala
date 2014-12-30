@@ -44,7 +44,7 @@ class TemporaryDirPathSpec extends Specification { def is = s2"""
 
   def handlesFail = {
     val dir: DirPath = uniqueDirPath
-    TemporaryDirPath.runWithDirPath(dir)(_ => ResultT.fail[IO, Int]("")).toOption.unsafePerformIO() must beNone
+    TemporaryDirPath.runWithDirPath(dir)(_ => RIO.fail[Int]("")).toOption must beNone
     !dir.toFile.exists()
   }
 }

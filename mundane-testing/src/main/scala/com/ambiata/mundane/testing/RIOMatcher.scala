@@ -6,6 +6,35 @@ import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => SpecsEr
 import scalaz.{Success => _, Failure => _, _}, effect.IO, \&/._
 
 object RIOMatcher extends ThrownExpectations {
+  implicit def RIOAsResult[A: AsResult]: AsResult[RIO[A]] = new AsResult[RIO[A]] {
+    def asResult(t: => RIO[A]): SpecsResult = {
+      t.run.unsafePerformIO match {
+        case Ok(actual)     => AsResult(actual)
+        case Error(error)   => Failure(s"Result failed with <${Result.asString(error)}>")
+      }
+    }
+  }
+
+  def switchResult[A](result: RIO[A]): RIO[These[String, Throwable]] =
+    result.run.unsafePerformIO match {
+      case Ok(actual) =>
+        RIO.failIO(s"Result was Ok $actual")
+      case Error(error) =>
+        RIO.these(error)
+    }
+
+  def switchResultString[A](result: RIO[A]): RIO[String] =
+    result.run.unsafePerformIO match {
+      case Ok(actual) =>
+        RIO.failIO(s"Result was Ok $actual")
+      case Error(error) => error match {
+        case This(s) =>
+          RIO.ok[String](s)
+        case _ =>
+          RIO.failIO(s"Result was real failure <${Result.asString(error)}>")
+      }
+    }
+
   def beOk[A]: Matcher[RIO[A]] =
     beOkLike(_ => Success())
 
@@ -13,15 +42,14 @@ object RIOMatcher extends ThrownExpectations {
     beOkLike((actual: A) => new BeEqualTo(expected).apply(createExpectable(actual)).toResult)
 
   def beOkLike[A](check: A => SpecsResult): Matcher[RIO[A]] = new Matcher[RIO[A]] {
-    def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
-      val r = attempt.value.run.unsafePerformIO match {
+    def apply[S <: RIO[A]](attempt: Expectable[S]) = {
+      val r = attempt.value.unsafePerformIO match {
         case Ok(actual)     => check(actual)
         case Error(error)   => Failure(s"Result failed with <${Result.asString(error)}>")
       }
       result(r.isSuccess, r.message, r.message, attempt)
     }
   }
-
   def beFail[A]: Matcher[RIO[A]] =
     beFailLike(_ => Success())
 
@@ -32,8 +60,8 @@ object RIOMatcher extends ThrownExpectations {
     beFailLike((actual: String \&/ Throwable) => new BeEqualTo(these).apply(createExpectable(actual)).toResult)
 
   def beFailLike[A](check: String \&/ Throwable => SpecsResult): Matcher[RIO[A]] = new Matcher[RIO[A]] {
-    def apply[S <: ResultT[IO, A]](attempt: Expectable[S]) = {
-      val r: SpecsResult = attempt.value.run.unsafePerformIO match {
+    def apply[S <: RIO[A]](attempt: Expectable[S]) = {
+      val r: SpecsResult = attempt.value.unsafePerformIO match {
         case Ok(value)    => Failure(s"Failure: Result ok with value <$value>")
         case Error(error) => check(error)
       }

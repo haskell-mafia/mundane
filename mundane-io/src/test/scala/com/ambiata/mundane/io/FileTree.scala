@@ -24,7 +24,7 @@ sealed trait FileTree {
         dir :: children.flatMap(_.dirs(dir))
     }
 
-  def create(base: DirPath): ResultT[IO, Unit] =
+  def create(base: DirPath): RIO[Unit] =
     this match {
       case FileTreeLeaf(label) =>
         val path = base <|> FileName.unsafe(label)

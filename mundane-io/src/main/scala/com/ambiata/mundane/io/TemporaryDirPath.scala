@@ -6,7 +6,7 @@ import com.ambiata.mundane.io.Temporary._
 import scalaz._, Scalaz._, effect._
 
 case class TemporaryDirPath(dir: DirPath) {
-  def clean: ResultT[IO, Boolean] =
+  def clean: RIO[Boolean] =
     Directories.delete(dir)
 }
 
@@ -21,5 +21,5 @@ object TemporaryDirPath {
   }
 
   def runWithDirPath[A](dir: DirPath)(f: DirPath => RIO[A]): RIO[A] =
-    ResultT.using(TemporaryDirPath(dir).pure[RIO])(tmp => f(tmp.dir))
+    RIO.using(RIO.ok(TemporaryDirPath(dir)))(tmp => f(tmp.dir))
 }
