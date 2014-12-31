@@ -7,13 +7,6 @@ import scalaz.effect.IO
 import control.{ResultT, RIO}
 
 package object io extends MacrosCompat {
-
-  type Logger = String => IO[Unit]
-  lazy val noLogging = (s: String) => IO(())
-  lazy val consoleLogging = (s: String) => IO(println(s))
-
-  type Env = Map[String, String]
-
   implicit def stringToDirPathSyntax(s: String): DirPathSyntax =
     macro createDirPathSyntax
 
@@ -23,7 +16,6 @@ package object io extends MacrosCompat {
       case Expr(Literal(Constant(v: String))) => c.Expr(q"new DirPathSyntax(${createFileNameFromString(c)(v)})")
       case _ => c.abort(c.enclosingPosition, s"Not a literal ${showRaw(s)}")
     }
-
   }
 
   implicit class NameToDirPathSyntax(name: FileName) {

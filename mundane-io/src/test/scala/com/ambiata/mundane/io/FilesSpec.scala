@@ -1,5 +1,6 @@
 package com.ambiata.mundane.io
 
+import com.ambiata.mundane.io.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
 import org.specs2._
 import scalaz._, Scalaz._
@@ -15,45 +16,47 @@ class FilesSpec extends Specification with ScalaCheck { def is = s2"""
 
 """
 
-  def read = prop((s: String) => TemporaryDirPath.withDirPath { work =>
-    val path = work <|> "files-spec.string"
-    Files.write(path, s) >> Files.read(path)
-  } must beOkValue(s)).set(minTestsOk = 1000)
+  def read = prop((s: String, local: LocalTemporary) => for {
+    p <- local.file
+    _ <- Files.write(p, s)
+    d <- Files.read(p)
+  } yield d ==== s)
 
-  def readBytes = prop((bs: Array[Byte]) => TemporaryDirPath.withDirPath { work =>
-    val path = work <|> "files-spec.bytes"
-    Files.writeBytes(path, bs) >> Files.readBytes(path)
-  } must beOkValue(bs))
+  def readBytes = prop((bs: Array[Byte], local: LocalTemporary) => for {
+    p <- local.file
+    _ <- Files.writeBytes(p, bs)
+    d <- Files.readBytes(p)
+  } yield d ==== bs)
 
-  def unicode = {
+  def unicode = prop((local: LocalTemporary) => {
     val data = """섋騚㊼
 乡왇㛩鴄〫⑁䨜嵏风녇佞ው煓괄ꎮꒀ醆魓ﰺ評떜뻀썲荘㳰锉䤲߶㊢ᅫ㠏⴫⃅⒊逢墵⍓刹军"""
-    TemporaryDirPath.withDirPath { work =>
-      val path = work <|> "unicode"
-      Files.write(path, data) >> Files.read(path)
-    } must beOkValue(data)
-  }
+    for {
+      p <- local.file
+      _ <- Files.write(p, data)
+      d <- Files.read(p)
+    } yield d ==== data
+  })
 
-  def readLines = prop { lines: List[String] =>
+  def readLines = prop((lines: List[String], local: LocalTemporary) => {
     val linesWithNoNewline = lines.map(_.replaceAll("\\s", ""))
+    for {
+      p <- local.file
+      _ <- Files.writeLines(p, linesWithNoNewline)
+      d <- Files.readLines(p)
+    } yield d ==== linesWithNoNewline.toVector
+  }).set(minTestsOk = 1000)
 
-    TemporaryDirPath.withDirPath { work =>
-      val path = work <|> "files-spec.string"
-      Files.writeLines(path, linesWithNoNewline) >> Files.readLines(path)
-    } must beOkValue(linesWithNoNewline.toVector)
-
-  }.set(minTestsOk = 1000)
-
-  def readTrailing = prop { string: String =>
+  def readTrailing = prop((string: String, local: LocalTemporary) => {
     // see issue #67
     // prepareForFile(linesOf(filecontent("abcd\n"))) == filecontent("abcd\n")
     val stringWithTrailingNewline = string.replaceAll("\\s", "") +"\n"
     val lines = stringWithTrailingNewline.lines.toSeq
-    TemporaryDirPath.withDirPath { work =>
-      val path = work <|> "files-spec.string"
-      Files.writeLines(path, lines) >> Files.read(path)
-    } must beOkValue(stringWithTrailingNewline)
-
-  }.set(minTestsOk = 1000)
+    for {
+      p <- local.file
+      _ <- Files.writeLines(p, lines)
+      l <- Files.read(p)
+    } yield l ==== stringWithTrailingNewline
+  }).set(minTestsOk = 1000)
 
 }

@@ -9,14 +9,7 @@ import scala.collection.JavaConverters._
 case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[Finalizer] => ResultT[IO, A]) {
   def unsafePerformIO: Result[A] = {
     val x = new java.util.concurrent.ConcurrentLinkedQueue[Finalizer]
-    liftExceptions.ensuring(RIO.safe(x.asScala.toList.foreach(_.run.unsafePerformIO match {
-      case Ok(_) => ()
-      case Error(e) => e match {
-        case This(s) => throw new RuntimeException(s)
-        case That(t) => throw new RuntimeException(t)
-        case Both(s, t) => throw new RuntimeException(s, t)
-      }
-    }))).exec(x).run.unsafePerformIO
+    liftExceptions.ensuring(RIO.unsafeFlushFinalizers).exec(x).run.unsafePerformIO
   }
 
   def isOk: RIO[Boolean] =
@@ -80,6 +73,17 @@ case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[F
 object RIO {
   def addFinalizer(f: Finalizer): RIO[Unit] =
     RIO(finalizers => { finalizers.add(f); ResultT.unit })
+
+  def unsafeFlushFinalizers: RIO[Unit] = RIO(x => {
+    ResultT.safe[IO, Unit](x.asScala.toList.foreach(_.run.unsafePerformIO match {
+      case Ok(_) => ()
+      case Error(e) => e match {
+        case This(s) => throw new RuntimeException(s)
+        case That(t) => throw new RuntimeException(t)
+        case Both(s, t) => throw new RuntimeException(s, t)
+      }
+    }))
+  })
 
   def safe[A](thunk: => A): RIO[A] =
     RIO[A](_ => ResultT.safe(thunk))

@@ -31,4 +31,5 @@ object Arbitraries {
       arbitrary[A].map(-\/(_)),
       arbitrary[B].map(\/-(_))
     ))
+
 }

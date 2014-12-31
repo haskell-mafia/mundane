@@ -29,6 +29,7 @@ object build extends Build {
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
     , updateOptions := updateOptions.value.withCachedResolution(true)
+    , publishArtifact in Test := true
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
@@ -71,7 +72,7 @@ object build extends Build {
       name := "mundane-io"
     ) ++ Seq[Settings](
       libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing ++
-                              depend.reflect(scalaVersion.value)
+                              depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
   .dependsOn(control, data, reflect, testing % "test")

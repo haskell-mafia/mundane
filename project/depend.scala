@@ -20,6 +20,9 @@ object depend {
 
   val testing = specs2.map(_ % "test")
 
+  val disorder =
+    Seq("com.ambiata" %% "disorder" % "0.0.1-20150102073535-5c2d9d6" % "test")
+
   def reflect(version: String) =
     Seq("org.scala-lang" % "scala-compiler" % version, "org.scala-lang" % "scala-reflect" % version) ++
       (if (version.contains("2.10")) Seq(
@@ -42,5 +45,6 @@ object depend {
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")
     , Resolver.typesafeRepo("releases")
+    , Resolver.url("ambiata-oss", new URL("https://ambiata-oss.s3.amazonaws.com"))(Resolver.ivyStylePatterns)
     , "Scalaz Bintray Repo"   at "http://dl.bintray.com/scalaz/releases")
 }
