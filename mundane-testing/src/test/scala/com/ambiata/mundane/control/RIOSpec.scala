@@ -22,9 +22,6 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
    ||| ok case                       $okOr
    ||| ok case with side effects     $okOrIO
    ||| error case                    $errorOr
-   disjunction conversions           $disjunction
-   disjunction string conversions    $disjunctionString
-   disjunction throwable conversions $disjunctionThrowable
    fromOption                        $fromOption
    fromOption error case             $fromOptionF
    when                              $when
@@ -39,6 +36,13 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
    exception safety (exception)   $exception
    option safety (none)           $nullage
    option safety (some)           $some
+
+ RIO Finalizers
+ ==============
+
+   clean up resources                  $cleanup
+   handles failure                     $handlesFailure
+   clean up resources with failure     $cleanupFailure
 
 """
   type Fail = String \&/ Throwable
@@ -58,15 +62,6 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
 
   def errorOr = prop((a: Fail, b: RIO[Int]) =>
     (RIO.these[Int](a) ||| b) ===== b)
-
-  def disjunction = prop((a: Fail \/ Int) =>
-    RIO.fromDisjunction[Int](a).runT.toDisjunction.unsafePerformIO ==== a)
-
-  def disjunctionString = prop((a: String \/ Int) =>
-    RIO.fromDisjunctionString[Int](a).runT.toDisjunction.unsafePerformIO ==== a.leftMap[These[String, Throwable]](This.apply))
-
-  def disjunctionThrowable = prop((a: Throwable \/ Int) =>
-    RIO.fromDisjunctionThrowable[Int](a).runT.toDisjunction.unsafePerformIO ==== a.leftMap[These[String, Throwable]](That.apply))
 
   def fromOption =
     RIO.fromOption[Int](Some(1), "foo") ===== RIO.ok(1)
@@ -103,6 +98,24 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
   implicit class Foo[A](a: RIO[A]) {
     def =====(b: RIO[A]): org.specs2.execute.Result =
       a.unsafePerformIO ==== b.unsafePerformIO
+  }
+
+  def cleanup = {
+    var v = 0
+    RIO.addFinalizer(Finalizer(RIO.safe(v = 1))).unsafePerformIO
+    v ==== 1
+  }
+
+  def handlesFailure = {
+    var v = 0
+    RIO.addFinalizer(Finalizer(RIO.fail(""))).unsafePerformIO
+    v ==== 0
+  }
+
+  def cleanupFailure = {
+    var v = 0
+    (RIO.addFinalizer(Finalizer(RIO.safe(v = 1))) >> RIO.fail("")).unsafePerformIO
+    v ==== 1
   }
 }
 

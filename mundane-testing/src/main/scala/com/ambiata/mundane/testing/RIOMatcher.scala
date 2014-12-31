@@ -3,20 +3,24 @@ package testing
 
 import com.ambiata.mundane.control._
 import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => SpecsError, _}
+import org.scalacheck.Prop
 import scalaz.{Success => _, Failure => _, _}, effect.IO, \&/._
 
-object RIOMatcher extends ThrownExpectations {
+object RIOMatcher extends ThrownExpectations with ScalaCheckMatchers {
   implicit def RIOAsResult[A: AsResult]: AsResult[RIO[A]] = new AsResult[RIO[A]] {
     def asResult(t: => RIO[A]): SpecsResult = {
-      t.run.unsafePerformIO match {
+      t.unsafePerformIO match {
         case Ok(actual)     => AsResult(actual)
         case Error(error)   => Failure(s"Result failed with <${Result.asString(error)}>")
       }
     }
   }
 
+  implicit def RIOProp[A : AsResult](r: => RIO[A]): Prop =
+    resultProp(AsResult(r))
+
   def switchResult[A](result: RIO[A]): RIO[These[String, Throwable]] =
-    result.run.unsafePerformIO match {
+    result.unsafePerformIO match {
       case Ok(actual) =>
         RIO.failIO(s"Result was Ok $actual")
       case Error(error) =>
@@ -24,7 +28,7 @@ object RIOMatcher extends ThrownExpectations {
     }
 
   def switchResultString[A](result: RIO[A]): RIO[String] =
-    result.run.unsafePerformIO match {
+    result.unsafePerformIO match {
       case Ok(actual) =>
         RIO.failIO(s"Result was Ok $actual")
       case Error(error) => error match {

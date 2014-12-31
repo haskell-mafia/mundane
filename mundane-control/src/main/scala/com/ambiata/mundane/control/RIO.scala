@@ -7,13 +7,17 @@ import scalaz.effect._
 import scala.collection.JavaConverters._
 
 case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[Finalizer] => ResultT[IO, A]) {
-  def run: IO[Result[A]] = {
+  def unsafePerformIO: Result[A] = {
     val x = new java.util.concurrent.ConcurrentLinkedQueue[Finalizer]
-    liftExceptions.exec(x).run.ensuring(x.asScala.toList.traverse(_.run(())))
+    liftExceptions.ensuring(RIO.safe(x.asScala.toList.foreach(_.run.unsafePerformIO match {
+      case Ok(_) => ()
+      case Error(e) => e match {
+        case This(s) => throw new RuntimeException(s)
+        case That(t) => throw new RuntimeException(t)
+        case Both(s, t) => throw new RuntimeException(s, t)
+      }
+    }))).exec(x).run.unsafePerformIO
   }
-
-  def runT: ResultT[IO, A] =
-    ResultT(run)
 
   def isOk: RIO[Boolean] =
     RIO(f => RIO.fromIO(exec(f).isOk).exec(f))
@@ -25,6 +29,14 @@ case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[F
         case \/-(s) => ResultT.result[IO, A](s).run
       }))
     })
+
+  def bracket[B, C](after: Result[A] => RIO[B])(during: Result[A] => RIO[C]): RIO[C] =
+    RIO(f => ResultT(exec(f).run.bracket(a => after(a).exec(f).run)(a => during(a).exec(f).run)))
+
+  def ensuring[B](sequel: RIO[B]): RIO[A] =
+    RIO(f =>
+      ResultT(exec(f).run.ensuring(sequel.exec(f).run))
+    )
 
   def on[X](f: Result[A] => RIO[X]): RIO[X] =
     RIO(finalizers => {
@@ -39,9 +51,6 @@ case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[F
       case Error(e) =>
         f(e)
     })
-
-  def unsafePerformIO: Result[A] =
-    run.unsafePerformIO()
 
   def map[B](f: A => B): RIO[B] =
     RIO(finalizers => exec(finalizers).map(f))
@@ -133,13 +142,13 @@ object RIO {
     when(!v, thunk)
 
   def using[A: Resource, B <: A, C](a: RIO[B])(run: B => RIO[C]): RIO[C] =
-    RIO(_ => ResultT(a.run.bracket((aa: Result[B]) => aa match {
-      case Error(e) => IO { () }
-      case Ok(aaa) => implicitly[Resource[A]].close(aaa)
+    a.bracket((aa: Result[B]) => aa match {
+      case Error(e) => RIO.unit
+      case Ok(aaa) => RIO.fromIO(implicitly[Resource[A]].close(aaa))
     })((aa: Result[B]) => aa match {
-      case Error(e) => IO { Error(e) }
-      case Ok(aaa) => run(aaa).run
-    })))
+      case Error(e) => RIO.these[C](e)
+      case Ok(aaa) => run(aaa)
+    })
 
   implicit def RIOMonad: MonadIO[({ type l[a] = RIO[a] })#l] = {
     type ResultTIO[A] = ResultT[IO, A]
@@ -152,7 +161,7 @@ object RIO {
 
   def toTask[A](result: =>RIO[A]): Task[A] =
     Task.delay {
-      result.run.unsafePerformIO.foldAll(
+      result.unsafePerformIO.foldAll(
         a => Task.delay(a),
         m => Task.fail(new Exception(m)),
         Task.fail,
@@ -161,4 +170,4 @@ object RIO {
     }.flatMap(identity)
 }
 
-case class Finalizer(run: Unit => IO[Unit])
+case class Finalizer(run: RIO[Unit])
