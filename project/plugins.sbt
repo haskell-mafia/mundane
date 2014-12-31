@@ -12,4 +12,4 @@ addSbtPlugin("com.ambiata" % "promulgate" % "0.11.0-20160104104535-e21b092")
 
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")
 
-addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "0.99.7.1")
+addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "1.0.1")
