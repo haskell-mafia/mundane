@@ -1,6 +1,7 @@
-package com.ambiata.mundane
-package io
+package com.ambiata.mundane.io
 
+import com.ambiata.mundane.control.RIO
+import com.ambiata.mundane.io.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
 
 import org.specs2._
@@ -37,13 +38,16 @@ Checksum Properties
     prop((s: String) =>
       Checksum.string(s, alg).algorithm must_== alg)
 
-  def text = prop((s: String) => TemporaryDirPath.withDirPath { work =>
-    val path = work <|> "text"
-    Files.write(path, s) >> Checksum.file(path, MD5)
-  } must beOkValue(Checksum.string(s, MD5)))
+  def text = prop((s: String, local: LocalTemporary) => for {
+    p <- local.fileWithContent(s)
+    r <- Checksum.file(p, MD5)
+  } yield r ==== Checksum.string(s, MD5))
 
-  def bytes = prop((b: Array[Byte]) => TemporaryDirPath.withDirPath { work =>
-    val path = work <|> "bytes"
-    Files.writeBytes(path, b) >> Checksum.file(path, MD5)
-  } must beOkValue(Checksum.bytes(b, MD5)))
+
+  def bytes = prop((b: Array[Byte], local: LocalTemporary) => for {
+    p <- local.file
+    _ <- Files.writeBytes(p, b)
+    r <- Checksum.file(p, MD5)
+  } yield r ==== Checksum.bytes(b, MD5))
+
 }

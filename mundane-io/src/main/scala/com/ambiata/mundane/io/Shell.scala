@@ -10,6 +10,7 @@ import java.io.File
  * Run a command: ls or a script, with some given environment variables
  */
 trait Shell {
+  type Env = Map[String, String]
 
   /**
    * execute a shell command
