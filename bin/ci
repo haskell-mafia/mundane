@@ -1,3 +1,3 @@
 #!/bin/sh
 
-./sbt -ivy ~/.ivy-mundane -Dsbt.log.noformat=true "; clean; stats; test-only -- console junitxml; +publish;  echo-version"
+./sbt -ivy ~/.ivy-mundane -Dsbt.log.noformat=true "; clean; stats; test-only -- console junitxml; publish;  echo-version"
