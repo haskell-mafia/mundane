@@ -29,7 +29,7 @@ object build extends Build {
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
     , updateOptions := updateOptions.value.withCachedResolution(true)
-    , publishArtifact in Test := true
+    , publishArtifact in (Test, packageBin) := true
   ) ++ Seq(prompt)
 
   lazy val cli = Project(
