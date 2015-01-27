@@ -2,6 +2,7 @@ package com.ambiata.mundane.io
 
 import com.ambiata.disorder._
 import com.ambiata.mundane.control._
+import com.ambiata.mundane.io.Arbitraries._
 import com.ambiata.mundane.io.Temporary._
 import com.ambiata.mundane.io.LocalPath._
 import com.ambiata.mundane.path._
@@ -46,44 +47,48 @@ class LocalDirectorySpec extends Specification with ScalaCheck { def is = s2"""
    a string starting with a /
    ${ LocalDirectory.fromString("/hello/world").exists(_.path.isAbsolute) }
    the LocalDirectory.Root object
-   ${ (LocalDirectory.Root </- "world").isAbsolute }
+   ${ (LocalDirectory.Root /- "world").isAbsolute }
    appending a LocalDirectory to the Root
-   ${ (LocalDirectory.Root </> (LocalDirectory.Relative </- "world")).isAbsolute }
+   ${ (LocalDirectory.Root / (LocalDirectory.Relative /- "world")).isAbsolute }
    // this combination is accepted but should not be valid...
-   ${ (LocalDirectory.Root </> (LocalDirectory.Root </- "world")).isAbsolute }
+   ${ (LocalDirectory.Root / (LocalDirectory.Root /- "world")).isAbsolute }
 
  A relative dir path can be built from
    a string not starting with a
    ${ LocalDirectory.fromString("hello/world").exists(_.path.isRelative) }
    the LocalDirectory.Relative object
-   ${ (LocalDirectory.Relative </- "world").isRelative }
+   ${ (LocalDirectory.Relative /- "world").isRelative }
    a literal string
-   { ("hello" </ "world").isRelative } //nh
+   { ("hello" | "world").isRelative } //nh
 
  Basic operations can be executed on a LocalDirectory
    get the parent
    ${ LocalDirectory.Root.parent must beNone }
-   ${ LocalDirectory.unsafe("test").parent must beSome(LocalDirectory.Relative) }
-   ${ (LocalDirectory.Root </- "test").parent must beSome(LocalDirectory.Root) }
+   ${ LocalDirectory.unsafe("test").parent.map(_.path) ==== LocalDirectory.Relative.some }
+   ${ (LocalDirectory.Root /- "test").parent ==== Some(LocalDirectory.Root) } // TODO how does this type check
 
    get the path as a string
    ${ LocalDirectory.Root.path must_== "/" }
-   ${ LocalDirectory.unsafe("test").path must_== "test" }
+   ${ LocalDirectory.unsafe("test").path.path must_== "test" }
 
  IO
  ==
 
  List
   files
-   ${ prop((v: Component) => TemporaryLocalPath.withLocalPath(path => path.mkdirs >>= (dir =>
-      (path | v).touch >> dir.listFilesRelativeTo.map(_.map(_._2.basename)))) must
-        beOkValue(List(v.some))) }
+   ${ prop((v: Component, local: LocalTemporary) => for {
+        d <- local.directory
+        _ <- (d.toLocalPath | v).touch
+        r <- d.listFilesRelativeTo.map(_.map(_._2.basename))
+      } yield r ==== List(v.some)) }
 
  List recursively
   files
-   ${ prop((v: Component) => TemporaryLocalPath.withLocalPath(path => path.mkdirs >>= (dir =>
-      (path | v | v).touch >> dir.listRecursivelyRelativeTo.map(_.map(_._2)))) must
-        beOkValue(List(LocalPath(Path(v.name)) | v))) }
+   ${ prop((v: Component, local: LocalTemporary) => for {
+        d <- local.directory
+        _ <- (d.toLocalPath | v | v).touch
+        r <- d.listRecursivelyRelativeTo.map(_.map(_._2))
+      } yield r ==== List(LocalPath(Path(v.name) | v))) }
 
 """
 }

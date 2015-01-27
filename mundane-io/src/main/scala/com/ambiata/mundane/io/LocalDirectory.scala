@@ -16,8 +16,22 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def toFile: File =
     new File(path.path)
 
-  def delete: RIO[Unit] =
-    listPathsRecursively >>= (_.traverse(_.deleteIt).void)
+/**
+  This needs to list recursively and delete from the leaf up.
+  i.e.
+  .
+  └── a
+      ├── b
+      │   ├── bar
+      │   └── c
+      └── foo
+  Delete in this order: (bar -> c -> b -> foo -> a)
+  */
+  def delete: RIO[Unit] = for {
+    f <- RIO.safe(Option(path.toFile.listFiles).cata(_.toList, List()))
+    _ <- f.traverse(p => (toLocalPath | Component.unsafe(p.getName)).delete)
+    _ <- RIO.safe(toFile.delete)
+  } yield ()
 
   def parent: Option[LocalDirectory] =
     path.parent match {
@@ -35,7 +49,7 @@ class LocalDirectory private (val path: Path) extends AnyVal {
       case None =>
         RIO.fail("Source is a top level directory, can't move")
       case Some(filename) =>
-        RIO.safe(toFile.renameTo((destination.path </ filename).toFile))
+        RIO.safe(toFile.renameTo((destination.path | filename).toFile))
     }
 
   def copy(destination: LocalPath): RIO[Unit] =
@@ -70,8 +84,8 @@ class LocalDirectory private (val path: Path) extends AnyVal {
       def loop(p: Path): List[Path] = {
         val f = Option(new File(p.path).listFiles).cata(_.toList, List())
         f.flatMap({ f =>
-          if (f.isDirectory) loop(p </ Component.unsafe(f.getName))
-          else               List(p </ Component.unsafe(f.getName))
+          if (f.isDirectory) loop(p | Component.unsafe(f.getName))
+          else               List(p | Component.unsafe(f.getName))
         })
       }
       loop(path)
@@ -82,7 +96,7 @@ class LocalDirectory private (val path: Path) extends AnyVal {
       def loop(p: Path): List[Path] = {
         val f = Option(new File(p.path).listFiles).cata(_.toList, List())
         f.flatMap({ f => {
-          val path = p </ Component.unsafe(f.getName)
+          val path = p | Component.unsafe(f.getName)
           if (f.isDirectory) List(path) ++ loop(path)
           else               List()
         }})
@@ -106,7 +120,7 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def listDirectories: RIO[List[LocalDirectory]] =
     RIO.safe[List[Path]]({
       Option(new File(path.path).listFiles).cata(_.toList, List()).flatMap(f => {
-        if (f.isDirectory) List(path </- f.getName)
+        if (f.isDirectory) List(path /- f.getName)
         else               List()
       })
     }) >>= (_.traverseU(LocalPath(_).determineDirectory))
@@ -114,7 +128,7 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def listFiles: RIO[List[LocalFile]] =
     RIO.safe[List[Path]]({
       Option(path.toFile.listFiles).cata(_.toList, List()).flatMap(f => {
-        if (f.isFile) List(path </- f.getName)
+        if (f.isFile) List(path /- f.getName)
         else          List()
       })
     }) >>= (_.traverseU(LocalPath(_).determineFile))
@@ -147,7 +161,7 @@ object LocalDirectory {
     }
 
   def fromList(dir: Path, parts: List[Component]): LocalDirectory =
-    new LocalDirectory(parts.foldLeft(dir)((acc, el) => acc </ el))
+    new LocalDirectory(parts.foldLeft(dir)((acc, el) => acc | el))
 
   def unsafe(s: String): LocalDirectory =
     fromString(s).getOrElse(sys.error("LocalDirectory.unsafe on an invalid string."))

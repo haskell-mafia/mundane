@@ -84,13 +84,13 @@ Combinators
 
     ${ prop((base: Path, name: Component) => Components(base, name).dirname ==== base ) }
 
-    ${ (Root </ Component("usr") </ Component("local")).dirname === (Root </ Component("usr")) }
+    ${ (Root | Component("usr") | Component("local")).dirname === (Root | Component("usr")) }
 
-    ${ (Relative </ Component("usr") </ Component("local")).dirname === (Relative </ Component("usr")) }
+    ${ (Relative | Component("usr") | Component("local")).dirname === (Relative | Component("usr")) }
 
-    ${ (Root </ Component("home")).dirname === Root }
+    ${ (Root | Component("home")).dirname === Root }
 
-    ${ (Relative </ Component("home")).dirname === Relative }
+    ${ (Relative | Component("home")).dirname === Relative }
 
   Note also that the result of dirname will always be a prefix of the starting value:
 
@@ -183,79 +183,79 @@ Combinators
 
     ${ Relative.path ==== "" }
 
-    ${ (Root </ Component("usr") </ Component("local")).path ==== "/usr/local" }
+    ${ (Root | Component("usr") | Component("local")).path ==== "/usr/local" }
 
-    ${ (Root </ Component("home")).path ==== "/home" }
+    ${ (Root | Component("home")).path ==== "/home" }
 
-    ${ (Relative </ Component("work")).path ==== "work" }
+    ${ (Relative | Component("work")).path ==== "work" }
 
-    ${ (Relative </ Component("work") </ Component("ambiata")).path ==== "work/ambiata" }
+    ${ (Relative | Component("work") | Component("ambiata")).path ==== "work/ambiata" }
 
   Rendering with a custom separator matches standard rendering:
 
     ${ prop((p: Path) => p.path.replace('/', '^') ==== p.pathWith("^")) }
 
-  Path join, a.k.a. '</>', verify that the document semantics and invariants
-  hold, there is significantly more detail documented on the '</>' function,
+  Path join, a.k.a. '/', verify that the document semantics and invariants
+  hold, there is significantly more detail documented on the '/' function,
   but these properties should be self evident in light of the function
   description:
 
-    ${ (Root </> Root) ==== Root }
+    ${ (Root / Root) ==== Root }
 
-    ${ (Root </> Relative) ==== Root }
+    ${ (Root / Relative) ==== Root }
 
-    ${ (Relative </> Root) ==== Root  }
+    ${ (Relative / Root) ==== Root  }
 
-    ${ (Relative </> Relative) ==== Relative  }
+    ${ (Relative / Relative) ==== Relative  }
 
-    ${ prop((p: RelativePath, q: RelativePath) => (p.path.isRelative && q.path.isRelative) ==> (p.path </> q.path).isRelative ) }
+    ${ prop((p: RelativePath, q: RelativePath) => (p.path.isRelative && q.path.isRelative) ==> (p.path / q.path).isRelative ) }
 
-    ${ prop((p: Path, q: Path) => (p.isAbsolute || q.isAbsolute) ==> (p </> q).isAbsolute ) }
+    ${ prop((p: Path, q: Path) => (p.isAbsolute || q.isAbsolute) ==> (p / q).isAbsolute ) }
 
-    ${ prop((p: Path, q: Path) => q.isAbsolute ==> {  (p </> q) ==== q } ) }
+    ${ prop((p: Path, q: Path) => q.isAbsolute ==> {  (p / q) ==== q } ) }
 
-    ${ prop((p: Path, q: Path) => q.isRelative ==> { (p </> q).components ==== (p.components ++ q.components) } ) }
+    ${ prop((p: Path, q: Path) => q.isRelative ==> { (p / q).components ==== (p.components ++ q.components) } ) }
 
   Join is associative:
 
-    ${ prop((p: Path, q: Path, r: Path) => ((p </> q) </> r) ==== (p </> (q </> r)) ) }
+    ${ prop((p: Path, q: Path, r: Path) => ((p / q) / r) ==== (p / (q / r)) ) }
 
   Join examples:
 
-    ${ ((Root </ Component("usr")) </> (Relative </ Component("local"))) ===
-         (Root </ Component("usr") </ Component("local")) }
+    ${ ((Root | Component("usr")) / (Relative | Component("local"))) ===
+         (Root | Component("usr") | Component("local")) }
 
-    ${ ((Root </ Component("usr")) </> (Root </ Component("home") </ Component("mundane"))) ===
-         (Root </ Component("home") </ Component("mundane")) }
+    ${ ((Root | Component("usr")) / (Root | Component("home") | Component("mundane"))) ===
+         (Root | Component("home") | Component("mundane")) }
 
-    ${ ((Relative </ Component("work")) </> (Relative </ Component("ambiata") </ Component("mundane"))) ===
-         (Relative </ Component("work") </ Component("ambiata") </ Component("mundane")) }
+    ${ ((Relative | Component("work")) / (Relative | Component("ambiata") | Component("mundane"))) ===
+         (Relative | Component("work") | Component("ambiata") | Component("mundane")) }
 
-  'join' is an alias for '</>':
+  'join' is an alias for '/':
 
-    ${ prop((p: Path, q: Path) => (p </> q) ==== p.join(q) ) }
+    ${ prop((p: Path, q: Path) => (p / q) ==== p.join(q) ) }
 
 
-  The result of '</' always includes specified Component as final component / basename.
+  The result of '|' always includes specified Component as final component / basename.
 
-     ${ prop((p: Path, q: Component) => (p </ q).names.last ==== q) }
+     ${ prop((p: Path, q: Component) => (p | q).names.last ==== q) }
 
-     ${ prop((p: Path, q: Component) => (p </ q).basename ==== Some(q) ) }
+     ${ prop((p: Path, q: Component) => (p | q).basename ==== Some(q) ) }
 
-  Invoking '</' followed by dirname is a no-op on some base path.
+  Invoking '|' followed by dirname is a no-op on some base path.
 
-     ${ prop((p: Path, q: Component) => (p </ q).dirname ==== p ) }
+     ${ prop((p: Path, q: Component) => (p | q).dirname ==== p ) }
 
-  'extend' is an alias for '</':
+  'extend' is an alias for '|':
 
-    ${ prop((p: Path, q: Component) => (p </ q) ==== p.extend(q) ) }
+    ${ prop((p: Path, q: Component) => (p | q) ==== p.extend(q) ) }
 
 
   Any path with the 'Root' base case is absolute:
 
     ${ Root.isAbsolute }
 
-    ${ prop((p: Path) => (Root </> p).isAbsolute ) }
+    ${ prop((p: Path) => (Root / p).isAbsolute ) }
 
 
   Any path with the 'Relative' base case is absolute:
@@ -274,7 +274,7 @@ Combinators
 
     ${ prop((ns: List[Component]) => Path.fromList(Relative, ns).names ==== ns ) }
 
-    ${ prop((p: Path, ns: List[Component]) => (p </> Path.fromList(Relative, ns)).names ==== (p.names ++ ns) ) }
+    ${ prop((p: Path, ns: List[Component]) => (p / Path.fromList(Relative, ns)).names ==== (p.names ++ ns) ) }
 
 
   'components' is just a stringly typed 'names':

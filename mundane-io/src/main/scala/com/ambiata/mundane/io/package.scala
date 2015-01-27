@@ -20,7 +20,8 @@ package object io {
 
   implicit class LocalPathSyntax(filePath: Path) {
     def toFile: File = new File(filePath.path)
-    def toOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path) }
+    def toOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path, true) }
+    def toOverwriteOutputStream: RIO[OutputStream] = RIO.safe { new FileOutputStream(filePath.path, false) }
   }
 
   implicit class LocalFileListSyntax(l: List[LocalFile]) {

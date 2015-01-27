@@ -1,6 +1,7 @@
 package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
+import com.ambiata.mundane.data._
 import com.ambiata.mundane.path._
 import java.io._
 import java.util.Date
@@ -16,19 +17,19 @@ import MemoryConversions._
  */
 case class LocalPath(path: Path) {
   def /(other: Path): LocalPath =
-    LocalPath(path </> other)
+    LocalPath(path / other)
 
   def join(other: Path): LocalPath =
     /(other)
 
   def |(other: Component): LocalPath =
-    LocalPath(path </ other)
+    LocalPath(path | other)
 
   def extend(other: Component): LocalPath =
     |(other)
 
   def /-(other: String): LocalPath =
-    LocalPath(path </- other)
+    LocalPath(path /- other)
 
   def rebaseTo(other: LocalPath): Option[LocalPath] =
     path.rebaseTo(other.path).map(LocalPath(_))
@@ -51,6 +52,26 @@ case class LocalPath(path: Path) {
     } yield r
   }
 
+  def append(content: String): RIO[LocalFile] =
+    appendWithEncoding(content, Codec.UTF8)
+
+  def appendWithEncoding(content: String, encoding: Codec): RIO[LocalFile] =
+    RIO.using(path.toOutputStream)(out => Streams.writeWithEncoding(out, content, encoding)) >>
+      LocalFile.unsafe(path.path).pure[RIO]
+
+  def appendLines(content: List[String]): RIO[LocalFile] =
+    appendLinesWithEncoding(content, Codec.UTF8)
+
+  def appendLinesWithEncoding(content: List[String], encoding: Codec): RIO[LocalFile] =
+    appendWithEncoding(Lists.prepareForFile(content), encoding) >> LocalFile.unsafe(path.path).pure[RIO]
+
+  def appendBytes(content: Array[Byte]): RIO[LocalFile] =
+    RIO.using(path.toOutputStream)(Streams.writeBytes(_, content)) >> LocalFile.unsafe(path.path).pure[RIO]
+
+
+/**
+  TODO re-implement write operations to fail if exists first else append
+  */
   def write(content: String): RIO[LocalFile] =
     writeWithEncoding(content, "UTF-8")
 
@@ -65,7 +86,7 @@ case class LocalPath(path: Path) {
 
   def writeLinesWithEncoding(content: List[String], encoding: String): RIO[LocalFile] = for {
     _ <- dirname.mkdirs
-    _ <- RIO.using(path.toOutputStream)(Streams.write(_, if (content.isEmpty) "" else content.mkString("", "\n", "\n"), encoding))
+    _ <- writeWithEncoding(Lists.prepareForFile(content), encoding)
   } yield LocalFile.unsafe(path.path)
 
   def writeBytes(content: Array[Byte]): RIO[LocalFile] = for {
@@ -77,6 +98,14 @@ case class LocalPath(path: Path) {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield LocalFile.unsafe(path.path)
+
+  def overwrite = ???
+  def overwriteWithEncoding = ???
+  def overwriteLines = ???
+  def overwriteLinesWithEncoding = ???
+  def overwriteBytes = ???
+
+
 
   def mkdirs: RIO[LocalDirectory] =
     RIO.safe[Boolean](path.toFile.mkdirs).void >>
@@ -150,23 +179,15 @@ case class LocalPath(path: Path) {
   def size: RIO[BytesQuantity] =
     listFilesRecursively.map(_.foldMap(_.toFile.length).bytes)
 
-  def deleteIt: RIO[Unit] =
-    RIO.safe[Unit](path.toFile.delete)
-
-  def deleteFiles: RIO[Unit] = for {
-    l <- listFilesRecursively
-    _ <- l.traverseU(s => RIO.safe[Unit](s.toFile.delete))
-  } yield ()
-
-  def deleteAll: RIO[Unit] =
-    listPathsRecursively >>= (_.traverse(_.deleteIt).void)
+  def delete: RIO[Unit] =
+    determinef(_.delete, _.delete)
 
   def move(destination: LocalPath): RIO[Unit] =
     determinef(file =>
       destination.determinefWith(
           _ => RIO.failIO(s"File exists in target location $destination. Can not move $path file.")
         , d => file.moveTo(d)
-        , file.move(destination))
+        , file.move(destination).void)
       , dir =>
       destination.determinefWith(
           _ => RIO.failIO(s"File eixsts in the target location $destination. Can not move $path directory.")
@@ -179,12 +200,19 @@ case class LocalPath(path: Path) {
       destination.determinefWith(
           _ => RIO.failIO(s"File exists in target location $destination. Can not move $path file.")
         , d => file.copyTo(d)
-        , file.copy(destination))
+        , file.copy(destination).void)
       , dir =>
       destination.determinefWith(
           _ => RIO.failIO(s"File eixsts in the target location $destination. Can not move $path directory.")
         , d => dir.copyTo(d)
         , dir.copy(destination)
       ))
+}
 
+object LocalPath {
+  implicit def LocalPathOrder: Order[LocalPath] =
+    Order.order((x, y) => x.path.?|?(y.path))
+
+  implicit def LocalPathOrdering =
+    LocalPathOrder.toScalaOrdering
 }
