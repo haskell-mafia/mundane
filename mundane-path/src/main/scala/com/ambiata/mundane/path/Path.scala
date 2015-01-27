@@ -120,7 +120,7 @@ sealed trait Path {
       Also note the strong implication that combining two paths is
       associative.
   */
-  def </>[B](other: Path): Path =
+  def /[B](other: Path): Path =
     (this, other) match {
       case (Root, Root) =>
         Root
@@ -135,31 +135,31 @@ sealed trait Path {
       case (Components(_, _), Relative) =>
         this
       case (x, Components(d, n)) =>
-        x </> d </ n
+        x / d | n
     }
 
-  /** Named alias for '</>' operator. See extended description on '</>'. */
+  /** Named alias for '/' operator. See extended description on '/'. */
   def join(path: Path): Path =
-    </>(path)
+    /(path)
 
   /** Append the specified 'Component' to this 'Path'. The following invariants
       always hold:
         - extending this path with a filename and the calling dirname is a no-op
         - extending this path with a filename and the calling basename always
           gives the filename  */
-  def </(other: Component): Path =
+  def |(other: Component): Path =
     fold(
       Components(Root, other)
     , Components(Relative, other)
     , (_, _) => Components(this, other)
     )
 
-  def </-(other: String): Path =
-    </>(Path(other))
+  def /-(other: String): Path =
+    /(Path(other))
 
-  /** Named alias for '</' operator. See extended description on '</'. */
+  /** Named alias for '|' operator. See extended description on '|'. */
   def extend(other: Component): Path =
-    </(other)
+    |(other)
 
   /** Is this file path absolute? i.e. is the base case the 'Root' element.
       This is the inverse of isRelative. */
@@ -199,8 +199,8 @@ sealed trait Path {
       fold(
         None
       , None
-      , (d, p) => if (d == other) (Relative </ p).some
-                  else            d.rebaseTo(other).map(_ </ p))
+      , (d, p) => if (d == other) (Relative | p).some
+                  else            d.rebaseTo(other).map(_ | p))
 }
 
 object Path {
@@ -224,7 +224,7 @@ object Path {
 
   /** Construct a path from the base path and list of components. */
   def fromList(dir: Path, components: List[Component]): Path =
-    components.foldLeft(dir)((acc, el) => acc </ el)
+    components.foldLeft(dir)((acc, el) => acc | el)
 
   implicit def PathOrder: Order[Path] =
     Order.order((x, y) => x.path.?|?(y.path))
