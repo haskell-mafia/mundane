@@ -3,20 +3,30 @@ package io
 
 import com.ambiata.mundane.control._
 import java.io._
+import scala.io.Codec
 import scalaz.effect.IO
 import MemoryConversions._
 
 object Streams {
   val DefaultChunkSize = 1.mb.toBytes.value.toInt
 
-  def read(in: InputStream, encoding: String = "UTF-8"): RIO[String] =
-    readBytes(in).map(new String(_, encoding))
+  def read(in: InputStream): RIO[String] =
+    readWithEncoding(in, Codec.UTF8)
 
-  def write(out: OutputStream, data: String, encoding: String = "UTF-8"): RIO[Unit] =
-    RIO.safe(writeToStream(out, data, encoding))
+  def readWithEncoding(in: InputStream, encoding: Codec): RIO[String] =
+    readBytes(in).map(new String(_, encoding.name))
 
-  def writeToStream(out: OutputStream, data: String, encoding: String = "UTF-8") = {
-    val writer = new PrintStream(out, false, encoding)
+  def write(out: OutputStream, data: String): RIO[Unit] =
+    writeWithEncoding(out, data, Codec.UTF8)
+
+  def writeWithEncoding(out: OutputStream, data: String, encoding: Codec): RIO[Unit] =
+    RIO.safe(writeToStreamWithEncoding(out, data, encoding))
+
+  def writeToStream(out: OutputStream, data: String, encoding: Codec) =
+    writeToStreamWithEncoding(out, data, encoding)
+
+  def writeToStreamWithEncoding(out: OutputStream, data: String, encoding: Codec) = {
+    val writer = new PrintStream(out, false, encoding.name)
     try     writer.print(data)
     finally writer.close
   }

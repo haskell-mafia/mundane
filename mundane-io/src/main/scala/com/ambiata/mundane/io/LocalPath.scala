@@ -5,6 +5,7 @@ import com.ambiata.mundane.data._
 import com.ambiata.mundane.path._
 import java.io._
 import java.util.Date
+import scala.io.Codec
 import scalaz._, Scalaz._, effect._, Effect._
 import MemoryConversions._
 
@@ -73,18 +74,18 @@ case class LocalPath(path: Path) {
   TODO re-implement write operations to fail if exists first else append
   */
   def write(content: String): RIO[LocalFile] =
-    writeWithEncoding(content, "UTF-8")
+    writeWithEncoding(content, Codec.UTF8)
 
-  def writeWithEncoding(content: String, encoding: String): RIO[LocalFile] = for {
+  def writeWithEncoding(content: String, encoding: Codec): RIO[LocalFile] = for {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream) { out =>
-      Streams.write(out, content, encoding) }
+      Streams.writeWithEncoding(out, content, encoding) }
   } yield LocalFile.unsafe(path.path)
 
   def writeLines(content: List[String]): RIO[LocalFile] =
-    writeLinesWithEncoding(content, "UTF-8")
+    writeLinesWithEncoding(content, Codec.UTF8)
 
-  def writeLinesWithEncoding(content: List[String], encoding: String): RIO[LocalFile] = for {
+  def writeLinesWithEncoding(content: List[String], encoding: Codec): RIO[LocalFile] = for {
     _ <- dirname.mkdirs
     _ <- writeWithEncoding(Lists.prepareForFile(content), encoding)
   } yield LocalFile.unsafe(path.path)
