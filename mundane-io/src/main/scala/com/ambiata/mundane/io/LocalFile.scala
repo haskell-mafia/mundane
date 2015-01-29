@@ -102,8 +102,10 @@ class LocalFile private (val path: Path) extends AnyVal {
   def readBytes: RIO[Option[Array[Byte]]] =
     optionExists(RIO.using(this.toInputStream)(Streams.readBytes(_)))
 
-  def writeStream(content: InputStream): RIO[Unit] =
-    RIO.using(path.toOutputStream)(Streams.pipe(content, _))
+  def writeStream(content: InputStream): RIO[Unit] = for {
+    _ <- toLocalPath.dirname.mkdirs
+    _ <- RIO.using(path.toOutputStream)(Streams.pipe(content, _))
+  } yield ()
 
   def writeWithMode(content: String, mode: WriteMode): RIO[Unit] =
     mode.fold(append(content), overwrite(content), toLocalPath.write(content)).void
@@ -114,7 +116,8 @@ class LocalFile private (val path: Path) extends AnyVal {
       , overwriteWithEncoding(content, encoding)
       , toLocalPath.writeWithEncoding(content, encoding)).void
 
-  def writeLinesWithMode(content: List[String], mode: WriteMode): RIO[Unit] =
+  def writeLinesWithMode(content: List[String], mode: WriteMode
+): RIO[Unit] =
     mode.fold(appendLines(content), overwriteLines(content), toLocalPath.writeLines(content)).void
 
   def writeLinesWithEncodingMode(content: List[String], encoding: Codec, mode: WriteMode): RIO[Unit] =

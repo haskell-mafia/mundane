@@ -285,7 +285,7 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
          } yield ()) must beFail })
        }
 
-    Can write with different Mode's
+    Can write bytes with different Mode's
 
       ${ prop((a: Array[Byte], b: Array[Byte], l: LocalTemporary) => for {
            p <- l.path
@@ -313,8 +313,22 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
   LocalFile should be able to overwrite content in files
 
-    ${ prop((d: DistinctPair[S], l: LocalTemporary) => l.path.flatMap(_.write(d.first.value)).flatMap(f => f.overwrite(d.second.value) >> f.read) must
-         beOkValue(d.second.value.some)) }
+    ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
+         p <- l.path
+         f <- p.write(d.first.value)
+         _ <- f.overwrite(d.second.value)
+         r <- f.read
+       } yield r ==== d.second.value.some)
+     }
+
+    ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
+         p <- l.path
+         f <- p.write(d.first.value)
+         _ <- f.delete
+         _ <- f.overwrite(d.second.value)
+         r <- f.read
+       } yield r ==== d.second.value.some)
+     }
 
       ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) => (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
            p <- l.path

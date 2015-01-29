@@ -33,15 +33,24 @@ class LocalDirectorySpec extends Specification with ScalaCheck { def is = s2"""
 
  A LocalDirectory can be created from
    a String
-   ${ LocalDirectory.fromString("hello/world").map(_.path.path) === Some("hello/world")  }
+
+     ${ LocalDirectory.fromString("hello/world").map(_.path.path) === Some("hello/world")  }
+
    a File
-   ${ LocalDirectory.fromFile(new File("/hello/world")).path.path === "/hello/world"  }
+
+     ${ LocalDirectory.fromFile(new File("/hello/world")).path.path === "/hello/world"  }
+
    a URI
-   ${ LocalDirectory.fromURI(new URI("hello/world")).map(_.path.path) === Some("hello/world")  }
-   ${ LocalDirectory.fromURI(new URI("hdfs://100.100.1:9000/hello/world")).map(_.path.path) === Some("/hello/world") }
-   ${ LocalDirectory.fromURI(new URI("hdfs:/hello/world")).map(_.path.path) === Some("/hello/world")  }
-   ${ LocalDirectory.fromURI(new URI("file:/hello/world")).map(_.path.path) === Some("/hello/world")  }
-   ${ LocalDirectory.fromURI(new URI("s3://hello/world")).map(_.path.path) === Some("/world")  }
+
+     ${ LocalDirectory.fromURI(new URI("hello/world")).map(_.path.path) === Some("hello/world")  }
+
+     ${ LocalDirectory.fromURI(new URI("hdfs://100.100.1:9000/hello/world")).map(_.path.path) === Some("/hello/world") }
+
+     ${ LocalDirectory.fromURI(new URI("hdfs:/hello/world")).map(_.path.path) === Some("/hello/world")  }
+
+     ${ LocalDirectory.fromURI(new URI("file:/hello/world")).map(_.path.path) === Some("/hello/world")  }
+
+     ${ LocalDirectory.fromURI(new URI("s3://hello/world")).map(_.path.path) === Some("/world")  }
 
  An absolute dir path can be built from
    a string starting with a /
