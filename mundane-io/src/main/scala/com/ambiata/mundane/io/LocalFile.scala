@@ -30,27 +30,32 @@ class LocalFile private (val path: Path) extends AnyVal {
     file.exists && file.isFile
   }
 
+  def onExists[A](success: => RIO[A], missing: => RIO[A]): RIO[A] =
+    exists >>= (e =>
+      if (e) success
+      else   missing
+    )
+
   def optionExists[A](thunk: => RIO[A]): RIO[Option[A]] =
-    exists >>= (e =>
-      if   (e) thunk.map(_.some)
-      else none.pure[RIO]
-    )
+    onExists(thunk.map(_.some), none.pure[RIO])
 
-  def unlessExists[A](error: String, thunk: => RIO[A]): RIO[A] =
-    exists >>= (e =>
-      if (e) RIO.failIO(error)
-      else thunk
-    )
+  def whenExists(thunk: => RIO[Unit]): RIO[Unit] =
+    onExists(thunk, RIO.unit)
 
-  def delete: RIO[Unit] = for {
-    e <- exists
-  } yield !e || toFile.delete
+  def doesExist[A](error: String, thunk: => RIO[A]): RIO[A] =
+    onExists(thunk, RIO.failIO(error))
+
+  def doesNotExist[A](error: String, thunk: => RIO[A]): RIO[A] =
+    onExists(RIO.failIO(error), thunk)
+
+  def delete: RIO[Unit] =
+    whenExists(RIO.safe(toFile.delete))
 
   def read: RIO[Option[String]] =
     readWithEncoding(Codec.UTF8)
 
   def readOrFail: RIO[String] =
-    read.flatMap(RIO.fromOption(_, "Failed to read file - file does not exist"))
+    read.flatMap(RIO.fromOption(_, s"Failed to read file - LocalFile($path) does not exist"))
 
   def readWithEncoding(encoding: Codec): RIO[Option[String]] =
     optionExists(RIO.using(this.toInputStream) { in => Streams.readWithEncoding(in, encoding) })
@@ -100,11 +105,26 @@ class LocalFile private (val path: Path) extends AnyVal {
   def writeStream(content: InputStream): RIO[Unit] =
     RIO.using(path.toOutputStream)(Streams.pipe(content, _))
 
-  def writeWithMode(content: String): RIO[Unit] = ???
-  def writeWithEncodingMode(content: String): RIO[Unit] = ???
-  def writeLinesWithMode(content: String): RIO[Unit] = ???
-  def writeLinesWithEncodingMode(content: String): RIO[Unit] = ???
-  def writeBytesWithMode(content: Array[Byte]): RIO[Unit] = ???
+  def writeWithMode(content: String, mode: WriteMode): RIO[Unit] =
+    mode.fold(append(content), overwrite(content), toLocalPath.write(content)).void
+
+  def writeWithEncodingMode(content: String, encoding: Codec, mode: WriteMode): RIO[Unit] =
+    mode.fold(
+        appendWithEncoding(content, encoding)
+      , overwriteWithEncoding(content, encoding)
+      , toLocalPath.writeWithEncoding(content, encoding)).void
+
+  def writeLinesWithMode(content: List[String], mode: WriteMode): RIO[Unit] =
+    mode.fold(appendLines(content), overwriteLines(content), toLocalPath.writeLines(content)).void
+
+  def writeLinesWithEncodingMode(content: List[String], encoding: Codec, mode: WriteMode): RIO[Unit] =
+    mode.fold(
+        appendLinesWithEncoding(content, encoding)
+      , overwriteLinesWithEncoding(content, encoding)
+      , toLocalPath.writeLinesWithEncoding(content, encoding)).void
+
+  def writeBytesWithMode(content: Array[Byte], mode: WriteMode): RIO[Unit] =
+    mode.fold(appendBytes(content), overwriteBytes(content), toLocalPath.writeBytes(content)).void
 
   def append(content: String): RIO[Unit] =
     appendWithEncoding(content, Codec.UTF8)
@@ -136,47 +156,51 @@ class LocalFile private (val path: Path) extends AnyVal {
   def overwriteBytes(content: Array[Byte]): RIO[Unit] =
     RIO.using(path.toOverwriteOutputStream)(Streams.writeBytes(_, content))
 
-/**
-TODO
-- write with mode ( overwrite or append or fail)
-- move with mode ( overwrite or fail)
-- move needs to assert source file exists
-- add optionExists to LocalPath
-
-  */
-
   def move(destination: LocalPath): RIO[LocalFile] =
-    destination.unlessExists(s"File exists in target location $destination. Can not move source file $path",
+    doesExist(s"Source file does not exist. LocalFile($path)",
+      destination.doesNotExist(s"File exists in target location $destination. Can not move source file LocalFile($path)",
+        RIO.safe {
+          val destFile = destination.toFile
+          destination.dirname.toFile.mkdirs
+          this.toFile.renameTo(destFile)
+        }.as(LocalFile.unsafe(destination.path.path))))
+
+  def moveWithMode(destination: LocalPath, mode: TargetMode): RIO[LocalFile] =
+    mode.fold(doesExist(s"Source file does not exist. LocalFile($path)",
       RIO.safe {
         val destFile = destination.toFile
         destination.dirname.toFile.mkdirs
         this.toFile.renameTo(destFile)
-      }.as(LocalFile.unsafe(destination.path.path)))
+      }.as(LocalFile.unsafe(destination.path.path))), move(destination))
 
-  def moveWithMode(destination: LocalPath): RIO[LocalFile] = ???
-
-  def moveTo(destination: LocalDirectory): RIO[Unit] =
-    path.basename match {
+  def moveTo(destination: LocalDirectory): RIO[LocalFile] =
+    (path.basename match {
       case None =>
-        RIO.fail("Source is a top level directory, can't move.")
+        RIO.fail(s"Source is a top level directory, can't move. Source($path)")
       case Some(filename) =>
-        move(destination.toLocalPath | filename).void
-    }
+        move(destination.toLocalPath | filename) // check that dosnt exist
+    })
 
   def copy(destination: LocalPath): RIO[LocalFile] =
-    destination.unlessExists(s"File exists in target location $destination. Can not move source file $path` ",
+    doesExist(s"Source file does not exist. LocalFile($path)",
+      destination.doesNotExist(s"File exists in target location $destination. Can not move source file LocalFile($path)",
         destination.dirname.mkdirs >>
-          RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destination.writeStream(_))).as(LocalFile.unsafe(destination.path.path))
+          RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destination.writeStream(_))).as(LocalFile.unsafe(destination.path.path)))
 
-  def copyWithMode(destination: LocalPath): RIO[LocalFile] = ???
+  def copyWithMode(destination: LocalPath, mode: TargetMode): RIO[LocalFile] =
+    mode.fold(doesExist(s"Source file does not exist. LocalFile($path)",
+      destination.dirname.mkdirs >>
+        RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destination.overwriteStream(_))).as(LocalFile.unsafe(destination.path.path)),
+      copy(destination))
 
-  def copyTo(destination: LocalDirectory): RIO[Unit] =
+  def copyTo(destination: LocalDirectory): RIO[LocalFile] =
     path.basename match {
       case None =>
-        RIO.fail("Source is a top level directory, can't copy.")
+        RIO.fail(s"Source is a top level directory, can't copy. Source($path)")
       case Some(filename) =>
         val destLocalFile = destination.toLocalPath | filename
-        RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destLocalFile.writeStream(_))
+        RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destLocalFile.writeStream(_)).as(
+          LocalFile.unsafe(destLocalFile.path.path))
     }
 }
 
@@ -208,7 +232,7 @@ object LocalFile {
     fromString(s.getPath)
 
   def unsafe(s: String): LocalFile =
-    fromString(s).getOrElse(sys.error("LocalFile.unsafe on an invalid string."))
+    fromString(s).getOrElse(sys.error(s"LocalFile.unsafe on an invalid string. String($s)"))
 
   implicit def LocalFileOrder: Order[LocalFile] =
     Order.order((x, y) => x.path.?|?(y.path))

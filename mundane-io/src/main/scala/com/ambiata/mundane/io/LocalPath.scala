@@ -76,37 +76,39 @@ case class LocalPath(path: Path) {
   def write(content: String): RIO[LocalFile] =
     writeWithEncoding(content, Codec.UTF8)
 
-  def writeWithEncoding(content: String, encoding: Codec): RIO[LocalFile] = for {
+  def writeWithEncoding(content: String, encoding: Codec): RIO[LocalFile] = doesNotExist("baddy", for {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream) { out =>
       Streams.writeWithEncoding(out, content, encoding) }
-  } yield LocalFile.unsafe(path.path)
+  } yield LocalFile.unsafe(path.path))
 
   def writeLines(content: List[String]): RIO[LocalFile] =
     writeLinesWithEncoding(content, Codec.UTF8)
 
-  def writeLinesWithEncoding(content: List[String], encoding: Codec): RIO[LocalFile] = for {
+  def writeLinesWithEncoding(content: List[String], encoding: Codec): RIO[LocalFile] = doesNotExist("baddy", for {
     _ <- dirname.mkdirs
     _ <- writeWithEncoding(Lists.prepareForFile(content), encoding)
-  } yield LocalFile.unsafe(path.path)
+  } yield LocalFile.unsafe(path.path))
 
-  def writeBytes(content: Array[Byte]): RIO[LocalFile] = for {
+  def writeBytes(content: Array[Byte]): RIO[LocalFile] = doesNotExist("baddy", for {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream)(Streams.writeBytes(_, content))
-  } yield LocalFile.unsafe(path.path)
+  } yield LocalFile.unsafe(path.path))
 
-  def writeStream(content: InputStream): RIO[Unit] =  for {
+  def writeStream(content: InputStream): RIO[Unit] = doesNotExist("baddy", for {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream)(Streams.pipe(content, _))
-  } yield LocalFile.unsafe(path.path)
+  } yield LocalFile.unsafe(path.path))
 
   def overwrite = ???
+
+  def overwriteStream(content: InputStream): RIO[LocalFile] =
+    RIO.using(path.toOverwriteOutputStream)(Streams.pipe(content, _)).as(LocalFile.unsafe(path.path))
+
   def overwriteWithEncoding = ???
   def overwriteLines = ???
   def overwriteLinesWithEncoding = ???
   def overwriteBytes = ???
-
-
 
   def mkdirs: RIO[LocalDirectory] =
     RIO.safe[Boolean](path.toFile.mkdirs).void >>
@@ -187,7 +189,7 @@ case class LocalPath(path: Path) {
     determinef(file =>
       destination.determinefWith(
           _ => RIO.failIO(s"File exists in target location $destination. Can not move $path file.")
-        , d => file.moveTo(d)
+        , d => file.moveTo(d).void
         , file.move(destination).void)
       , dir =>
       destination.determinefWith(
@@ -200,7 +202,7 @@ case class LocalPath(path: Path) {
     determinef(file =>
       destination.determinefWith(
           _ => RIO.failIO(s"File exists in target location $destination. Can not move $path file.")
-        , d => file.copyTo(d)
+        , d => file.copyTo(d).void
         , file.copy(destination).void)
       , dir =>
       destination.determinefWith(
