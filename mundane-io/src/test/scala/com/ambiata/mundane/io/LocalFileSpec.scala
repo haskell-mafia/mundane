@@ -359,7 +359,7 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
          f <- l.fileWithContent(s.value)
          n <- f.move(p)
          e <- f.exists
-         r <- LocalFile.unsafe(p.path.path).readOrFail
+         r <- n.readOrFail
        } yield e -> r ==== false -> s.value)
      }
 

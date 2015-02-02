@@ -161,7 +161,7 @@ class LocalFile private (val path: Path) extends AnyVal {
 
   def move(destination: LocalPath): RIO[LocalFile] =
     doesExist(s"Source file does not exist. LocalFile($path)",
-      destination.doesNotExist(s"File exists in target location $destination. Can not move source file LocalFile($path)",
+      destination.doesNotExist(s"A file/directory exists in target location $destination. Can not move source file LocalFile($path)",
         RIO.safe {
           val destFile = destination.toFile
           destination.dirname.toFile.mkdirs
@@ -181,12 +181,12 @@ class LocalFile private (val path: Path) extends AnyVal {
       case None =>
         RIO.fail(s"Source is a top level directory, can't move. Source($path)")
       case Some(filename) =>
-        move(destination.toLocalPath | filename) // check that dosnt exist
+        move(destination.toLocalPath | filename)
     })
 
   def copy(destination: LocalPath): RIO[LocalFile] =
     doesExist(s"Source file does not exist. LocalFile($path)",
-      destination.doesNotExist(s"File exists in target location $destination. Can not move source file LocalFile($path)",
+      destination.doesNotExist(s"A file/directory exists in target location $destination. Can not move source file LocalFile($path)",
         destination.dirname.mkdirs >>
           RIO.using(RIO.safe[InputStream](new FileInputStream(toFile)))(destination.writeStream(_))).as(LocalFile.unsafe(destination.path.path)))
 

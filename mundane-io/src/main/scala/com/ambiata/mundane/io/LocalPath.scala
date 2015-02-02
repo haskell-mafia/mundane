@@ -276,8 +276,8 @@ case class LocalPath(path: Path) {
       , dir =>
       destination.determinefWith(
           _ => RIO.failIO(s"File eixsts in the target location $destination. Can not move $path directory.")
-        , d => dir.moveTo(d)
-        , dir.move(destination)
+        , d => dir.moveTo(d).void
+        , dir.move(destination).void
       ))
 
   def copy(destination: LocalPath): RIO[Unit] =
@@ -288,6 +288,7 @@ case class LocalPath(path: Path) {
         , file.copy(destination).void)
       , dir =>
         RIO.fail(s"Copying from a LocalDirectory(path) is current an unsupported operation"))
+
 }
 
 object LocalPath {

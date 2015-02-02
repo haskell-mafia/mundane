@@ -16,6 +16,26 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def toFile: File =
     new File(path.path)
 
+  def exists: RIO[Boolean] = RIO.safe[Boolean] {
+    val file = toFile
+    file.exists && file.isDirectory
+  }
+
+  def onExists[A](success: => RIO[A], missing: => RIO[A]): RIO[A] =
+    exists >>= (e =>
+      if (e) success
+      else   missing
+    )
+
+  def whenExists(thunk: => RIO[Unit]): RIO[Unit] =
+    onExists(thunk, RIO.unit)
+
+  def doesExist[A](error: String, thunk: => RIO[A]): RIO[A] =
+    onExists(thunk, RIO.failIO(error))
+
+  def doesNotExist[A](error: String, thunk: => RIO[A]): RIO[A] =
+    onExists(RIO.failIO(error), thunk)
+
 /**
   This needs to list recursively and delete from the leaf up.
   i.e.
@@ -41,43 +61,45 @@ class LocalDirectory private (val path: Path) extends AnyVal {
         none
     }
 
-  def move(destination: LocalPath): RIO[Unit] =
-    RIO.safe(toFile.renameTo(destination.toFile))
+  def move(destination: LocalPath): RIO[LocalDirectory] =
+    path.basename match {
+      case None =>
+        RIO.fail("Source is a top level directory, can't move")
+      case Some(_) =>
+        doesExist(s"Source directory does not exists. LocalDirectory($path)",
+          destination.doesNotExist(s"A file/directory exists in the target location $destination. Can not move source directory LocalDirectory($path).",
+            RIO.safe({
+              val dest = destination.toFile
+              destination.dirname.toFile.mkdirs
+              toFile.renameTo(dest)
+            }).as(LocalDirectory.unsafe(destination.path.path))))
+    }
 
-  def moveTo(destination: LocalDirectory): RIO[Unit] =
+  def moveWithMode(destination: LocalPath, mode: TargetMode): RIO[LocalDirectory] =
+    mode.fold(doesExist(s"Source directory does not exists. LocalDirectory($path)",
+      RIO.safe({
+        val dest = destination.toFile
+        destination.dirname.toFile.mkdirs
+        toFile.renameTo(dest)
+      }).as(LocalDirectory.unsafe(destination.path.path))), move(destination))
+
+  def moveTo(destination: LocalDirectory): RIO[LocalDirectory] =
     path.basename match {
       case None =>
         RIO.fail("Source is a top level directory, can't move")
       case Some(filename) =>
-        RIO.safe(toFile.renameTo((destination.path | filename).toFile))
-    }
-
-  def copy(destination: LocalPath): RIO[Unit] =
-    listRecursivelyRelativeTo.flatMap(_.traverseU(p =>
-      p._1.copy(destination / p._2.path)
-    )).void
-
-  def copyTo(destination: LocalDirectory): RIO[Unit] =
-    path.basename match {
-      case None =>
-        RIO.fail("Source is a top level directory, can't copy")
-      case Some(filename) =>
-        listRecursivelyRelativeTo.flatMap(_.traverseU(p =>
-          p._1.copy((destination.toLocalPath | filename) / p._2.path)
-        )).void
+        move(destination.toLocalPath | filename)
     }
 
   def listFilesRelativeTo: RIO[List[(LocalFile, LocalPath)]] =
     listFiles.flatMap(_.traverseU(f =>
       RIO.fromOption[LocalPath](f.toLocalPath.rebaseTo(toLocalPath),
-        "Invariant failure, this is likely a bug: https://github.com/ambiata/mundane/issues").map(f -> _)
-    ))
+        "Invariant failure, this is likely a bug: https://github.com/ambiata/mundane/issues").map(f -> _)))
 
-  def listRecursivelyRelativeTo: RIO[List[(LocalFile, LocalPath)]] =
+  def listFilesRecursivelyRelativeTo: RIO[List[(LocalFile, LocalPath)]] =
     listFilesRecursively.flatMap(_.traverseU(f =>
       RIO.fromOption[LocalPath](f.toLocalPath.rebaseTo(toLocalPath),
-        "Invariant failure, this is likely a bug: https://github.com/ambiata/mundane/issues").map(f -> _)
-    ))
+        "Invariant failure, this is likely a bug: https://github.com/ambiata/mundane/issues").map(f -> _)))
 
   def listFilesRecursively: RIO[List[LocalFile]] =
     RIO.safe[List[Path]]({

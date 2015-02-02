@@ -9,8 +9,6 @@ import control.{ResultT, RIO}
 package object io {
 
   type Logger = String => IO[Unit]
-  val noLogging = (s: String) => IO(())
-  val consoleLogging = (s: String) => IO(println(s))
 
   type Env = Map[String, String]
 
