@@ -22,9 +22,6 @@ object Streams {
   def writeWithEncoding(out: OutputStream, data: String, encoding: Codec): RIO[Unit] =
     RIO.safe(writeToStreamWithEncoding(out, data, encoding))
 
-  def writeToStream(out: OutputStream, data: String, encoding: Codec) =
-    writeToStreamWithEncoding(out, data, encoding)
-
   def writeToStreamWithEncoding(out: OutputStream, data: String, encoding: Codec) = {
     val writer = new PrintStream(out, false, encoding.name)
     try     writer.print(data)
