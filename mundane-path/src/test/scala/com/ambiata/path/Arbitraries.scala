@@ -15,6 +15,12 @@ object Arbitraries {
     path <- genPathFrom(base)
   } yield path)
 
+  implicit def WriteModeArbitrary: Arbitrary[WriteMode] =
+    Arbitrary(Gen.oneOf(WriteMode.Append, WriteMode.Overwrite, WriteMode.Fail))
+
+  implicit def TargetModeArbitrary: Arbitrary[TargetMode] =
+    Arbitrary(Gen.oneOf(TargetMode.Overwrite, TargetMode.Fail))
+
   case class RelativePath(path: Path)
 
   implicit def RelativePathArbitrary: Arbitrary[RelativePath] =
