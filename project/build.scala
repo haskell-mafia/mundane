@@ -106,11 +106,11 @@ object build extends Build {
   , settings = standardSettings ++ lib("path") ++ Seq[Settings](
       name := "mundane-path"
     ) ++ Seq[Settings](
-      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing ++
+      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++
                               depend.reflect(scalaVersion.value)
     )
   )
-  .dependsOn(control, reflect, testing % "test")
+  .dependsOn(control, reflect, testing % "test->test")
 
   lazy val parse = Project(
     id = "parse"
@@ -174,14 +174,34 @@ object build extends Build {
   .dependsOn(data, control, io, testing % "test->test")
 
   lazy val compilationSettings: Seq[Settings] = Seq(
-    javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
-    maxErrors := 10,
-    scalacOptions <++= scalaVersion.map({
-      case x if x.contains("2.11") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Xlint")
-      case x if x.contains("2.10") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint")
-      case x => sys.error("Unsupported scala version: " + x)
-    }),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    javaOptions ++= Seq(
+      "-Xmx3G"
+    , "-Xms512m"
+    , "-Xss4m"
+    )
+  , javacOptions ++= Seq(
+      "-source"
+    , "1.6"
+    , "-target"
+    , "1.6"
+    )
+  , maxErrors := 10
+  , scalacOptions ++= Seq(
+      "-target:jvm-1.6"
+    , "-deprecation"
+    , "-unchecked"
+    , "-feature"
+    , "-language:_"
+    , "-Ywarn-unused-import"
+    , "-Ywarn-value-discard"
+    , "-Yno-adapted-args"
+    , "-Xlint"
+    , "-Xfatal-warnings"
+    , "-Yinline-warnings"
+    )
+  , scalacOptions in (Compile,console) := Seq("-language:_", "-feature")
+  , scalacOptions in (Test) ++= Seq("-Yrangepos")
+  , scalacOptions in (Test,console) := Seq("-language:_", "-feature")
   )
 
   lazy val ossBucket: String = 

@@ -1,7 +1,6 @@
 package com.ambiata.mundane.parse
 
 import scalaz.Equal
-import scalaz.Scalaz._
 
 object TextEscaping {
 

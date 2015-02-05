@@ -105,7 +105,7 @@ sealed trait Path {
        - (abs) is some arbitrary absolute path
        - (rel) is some arbitrary relative path
 
-      Note this can be captured by the general hueristics:
+      Note this can be captured by the general heuristics:
        - anytime 'other' is absolute, the result is just 'other'.
          - otherwise it is a combination of 'this' and 'other'.
        - if any of the components are absolute, the result will be absolute

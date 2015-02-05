@@ -5,9 +5,6 @@ import com.ambiata.mundane.control._
 import java.io._
 import java.security.MessageDigest
 
-import scalaz._, Scalaz._, \&/._
-import scalaz.effect._, Effect._
-
 case class Checksum(algorithm: ChecksumAlgorithm, hash: String)
 
 sealed abstract class ChecksumAlgorithm(val value: String)
@@ -19,12 +16,7 @@ object Checksum {
     bytes.map("%02X".format(_)).mkString.toLowerCase
 
   def stream(is: InputStream, algorithm: ChecksumAlgorithm, bufferSize: Int = 4096): RIO[Checksum] =
-    RIO.safe[Checksum]  { unsafe(is, algorithm, bufferSize) }
-
-  def file(f: LocalFile, algorithm: ChecksumAlgorithm): RIO[Checksum] =
-    RIO.using(f.toInputStream) { in =>
-      stream(in, algorithm)
-    }
+    RIO.safe[Checksum](unsafe(is, algorithm, bufferSize))
 
   def string(s: String, algorithm: ChecksumAlgorithm): Checksum =
     bytes(s.getBytes("UTF-8"), algorithm)

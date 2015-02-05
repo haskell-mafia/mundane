@@ -104,6 +104,12 @@ case class LocalPath(path: Path) {
       , _ => RIO.fail(s"Can not read a directory, LocalDirectory($path).")
       , RIO.fail(s"Can not read nothing, $path."))
 
+  def checksum(algorithm: ChecksumAlgorithm): RIO[Option[Checksum]] =
+    readWithOption(_.checksum(algorithm))
+
+  def lineCount: RIO[Option[Int]] =
+    readWithOption(_.lineCount)
+
   def readWithOption[A](thunk: LocalFile => RIO[Option[A]]): RIO[Option[A]] =
     determinefWith(
         thunk
@@ -143,8 +149,8 @@ case class LocalPath(path: Path) {
   def touch: RIO[LocalFile] = {
     for {
       e <- exists
-      r <- if (e) RIO.safe[Unit](toFile.setLastModified(System.currentTimeMillis)).as(LocalFile.unsafe(path.path))
-           else write("")
+      r <- if (e) RIO.safe[Unit]({ toFile.setLastModified(System.currentTimeMillis); () }).as(LocalFile.unsafe(path.path))
+           else   write("")
     } yield r
   }
 
@@ -190,7 +196,7 @@ case class LocalPath(path: Path) {
     _ <- RIO.using(path.toOutputStream)(Streams.writeBytes(_, content))
   } yield LocalFile.unsafe(path.path))
 
-  def writeStream(content: InputStream): RIO[Unit] = writeExists(for {
+  def writeStream(content: InputStream): RIO[LocalFile] = writeExists(for {
     _ <- dirname.mkdirs
     _ <- RIO.using(path.toOutputStream)(Streams.pipe(content, _))
   } yield LocalFile.unsafe(path.path))
@@ -295,8 +301,21 @@ object LocalPath {
   implicit def LocalPathOrder: Order[LocalPath] =
     Order.order((x, y) => x.path.?|?(y.path))
 
-  implicit def LocalPathOrdering =
+  implicit def LocalPathOrdering: scala.Ordering[LocalPath] =
     LocalPathOrder.toScalaOrdering
+
+  def fromString(s: String): Option[LocalPath] =
+    s.split("/").toList match {
+      case "" :: Nil =>
+        none
+      case "" :: parts =>
+        parts.traverse(Component.create).map(fromList(Root, _))
+      case parts =>
+        parts.traverse(Component.create).map(fromList(Relative, _))
+    }
+
+  def fromList(dir: Path, parts: List[Component]): LocalPath =
+    new LocalPath(parts.foldLeft(dir)((acc, el) => acc | el))
 
   def fromFile(f: File): LocalPath =
     Option(f.getParentFile) match {

@@ -1,7 +1,6 @@
 package com.ambiata.mundane
 package csv
 
-import scala.collection.JavaConversions._
 import scalaz._, Scalaz._
 
 /**

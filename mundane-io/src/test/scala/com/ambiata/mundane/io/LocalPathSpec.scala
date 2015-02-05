@@ -3,7 +3,6 @@ package com.ambiata.mundane.io
 import com.ambiata.disorder._
 import com.ambiata.mundane.control.{Result => RR, _}
 import com.ambiata.mundane.io.Arbitraries._
-import com.ambiata.mundane.io.Temporary._
 import com.ambiata.mundane.io.LocalPath._
 import com.ambiata.mundane.path._
 import com.ambiata.mundane.path.Arbitraries._
@@ -13,8 +12,6 @@ import java.io.File
 import java.net.URI
 
 import org.specs2._
-import org.scalacheck._
-import org.specs2.execute.{Error => _, _}
 import org.specs2.matcher.Matcher
 import org.specs2.matcher.MatchResult
 import org.specs2.matcher.DisjunctionMatchers
@@ -62,165 +59,221 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
  LocalPath IO
  ============
 
- LocalPath should be able to determine files, directories and handle failure cases
+  LocalPath should be able to determine files, directories and handle failure cases
 
-   ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determine) must beOkLike(_ must beFile) }
+    ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determine) must beOkLike(_ must beFile) }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determine) must beOkLike(_ must beDirectory) }
+    ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determine) must beOkLike(_ must beDirectory) }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.determine) must beOkLike(_ must beNone) }
+    ${ LocalTemporary.random.path.flatMap(path => path.determine) must beOkLike(_ must beNone) }
 
-   ${ LocalPath(Path("")).determine must beOkLike(_ must beNone) }
+    ${ LocalPath(Path("")).determine must beOkLike(_ must beNone) }
 
- LocalPath can determine a file and handle failure cases
+  LocalPath can determine a file and handle failure cases
 
-   ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineFile) must beOk }
+    ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineFile) must beOk }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineFile) must beFailWithMessage("Not a valid file") }
+    ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineFile) must beFailWithMessage("Not a valid file") }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.determineFile) must beFailWithMessage("Not a valid File or Directory") }
+    ${ LocalTemporary.random.path.flatMap(path => path.determineFile) must beFailWithMessage("Not a valid File or Directory") }
 
- LocalPath can determine a directory and handle failure cases
+  LocalPath can determine a directory and handle failure cases
 
-   ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineDirectory) must beFailWithMessage("Not a valid directory") }
+    ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineDirectory) must beFailWithMessage("Not a valid directory") }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineDirectory) must beOk }
+    ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineDirectory) must beOk }
 
-   ${ LocalTemporary.random.path.flatMap(path => path.determineDirectory) must beFailWithMessage("Not a valid File or Directory") }
-
-
- LocalPath should be able to perform these basic operations
-
-   Check if a path exists
-
-     ${ prop((l: LocalTemporary) => l.path.flatMap(p => p.touch >> p.exists) must beOkValue(true)) }
-
-     ${ prop((l: LocalTemporary) => l.path.flatMap(p => p.mkdirs >> p.exists) must beOkValue(true)) }
-
-     ${ prop((l: LocalTemporary) => l.path.flatMap(_.exists) must beOkValue(false)) }
-
-     ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(p => p.touch >> p.doesExist("", RIO.io({
-          i = 1; i }))) must beOkValue(1) }) }
-
-     ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(p => p.touch >>
-          p.whenExists(RIO.io({ i = 1; i }).void)).as(i) must beOkValue(1) }) }
-
-     ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(_.doesNotExist("", RIO.io({ i = 1; i }).void)).as(i) must beOkValue(1) }) }
-
-   Delete a path
-
-     ${ prop((l: LocalTemporary) => for {
-          p <- l.path
-          _ <- p.touch
-          b <- p.exists
-          _ <- p.delete
-          r <- p.exists
-        } yield b -> r ==== true -> false)
-      }
-
-     ${ prop((l: LocalTemporary) => for {
-          p <- l.path
-          _ <- p.mkdirs
-          b <- p.exists
-          _ <- p.delete
-          r <- p.exists
-        } yield b -> r ==== true -> false)
-      }
-
-     ${ prop((l: LocalTemporary) => (for {
-          p <- l.path
-          _ <- p.delete
-        } yield ()) must beFail)
-      }
-
- LocalPath should be able to read and write to a file. These operations should be symmetrical
-
-   ${ prop((s: S, l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.write(s.value)
-        r <- p.readOrFail
-      } yield r ==== s.value)
-    }
-
-   ${ prop((v: S, l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.write(v.value)
-        r <- p.read
-      } yield r ==== v.value.some)
-    }
-
-   ${ prop((v: S, c: Codec, l: LocalTemporary) => validForCodec(v, c) ==> (for {
-        p <- l.path
-        _ <- p.writeWithEncoding(v.value, c)
-        r <- p.readWithEncoding(c)
-      } yield r ==== v.value.some))
-    }
-
-   ${ prop((v: List[S], l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.writeLines(v.map(noNewLines))
-        r <- p.readLines
-      } yield r ==== v.map(noNewLines).some)
-    }
-
-   ${ prop((v: List[S], c: Codec, l: LocalTemporary) => v.map(validForCodec(_, c)).suml ==> (for {
-        p <- l.path
-        _ <- p.writeLinesWithEncoding(v.map(noNewLines), c)
-        r <- p.readLinesWithEncoding(c)
-      } yield r ==== v.map(noNewLines).some))
-    }
-
-   ${ prop((s: S, l: LocalTemporary) => {
-        var x: String = "";
-        for {
-          p <- l.path
-          _ <- p.write(s.value)
-          _ <- p.readUnsafe(in => for {
-            v <- Streams.read(in)
-            _ <- RIO.safe(x = v)
-          } yield ())
-        } yield x ==== s.value
-      })
-    }
-
-   ${ prop((list: List[S], l: LocalTemporary) => {
-        var i = scala.collection.mutable.ListBuffer[String]()
-        for {
-          p <- l.path
-          _ <- p.writeLines(list.map(noNewLines))
-          r <- p.doPerLine(s =>
-            RIO.safe(i += s))
-        } yield i.toList ==== list.map(noNewLines)
-      })
-    }
-
-   ${ prop((list: List[S], l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.writeLines(list.map(noNewLines))
-        r <- p.readPerLine(scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
-      } yield r.toList ==== list.map(noNewLines))
-    }
-
-   ${ prop((list: List[S], c: Codec, l: LocalTemporary) => list.map(validForCodec(_, c)).suml ==> (for {
-        p <- l.path
-        _ <- p.writeLinesWithEncoding(list.map(noNewLines), c)
-        r <- p.readPerLineWithEncoding(c, scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
-      } yield r.toList ==== list.map(noNewLines)))
-    }
+    ${ LocalTemporary.random.path.flatMap(path => path.determineDirectory) must beFailWithMessage("Not a valid File or Directory") }
 
 
-   ${ prop((bs: Array[Byte], l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.writeBytes(bs)
-        r <- p.readBytes
-      } yield r.map(_.toList) ==== bs.toList.some)
-    }
+  LocalPath should be able to perform these basic operations
 
-   Handle failures
+    Check if a path exists
 
-     ${ prop((l: LocalTemporary) => l.path.flatMap(_.read) must beOkLike(_ must beNone)) }
+      ${ prop((l: LocalTemporary) => l.path.flatMap(p => p.touch >> p.exists) must beOkValue(true)) }
 
-     ${ prop((l: LocalTemporary) => l.path.flatMap(_.readOrFail) must beFail) }
+      ${ prop((l: LocalTemporary) => l.path.flatMap(p => p.mkdirs >> p.exists) must beOkValue(true)) }
+
+      ${ prop((l: LocalTemporary) => l.path.flatMap(_.exists) must beOkValue(false)) }
+
+      ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(p => p.touch >> p.doesExist("", RIO.io({
+           i = 1; i }))) must beOkValue(1) }) }
+
+      ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(p => p.touch >>
+           p.whenExists(RIO.io({ i = 1; i }).void)).as(i) must beOkValue(1) }) }
+
+      ${ prop((l: LocalTemporary) => { var i = 0; l.path.flatMap(_.doesNotExist("",
+           RIO.io({ i = 1; i }).void)).as(i) must beOkValue(1) }) }
+
+    Delete a path
+
+      ${ prop((l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.touch
+           b <- p.exists
+           _ <- p.delete
+           r <- p.exists
+         } yield b -> r ==== true -> false)
+       }
+
+      ${ prop((l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.mkdirs
+           b <- p.exists
+           _ <- p.delete
+           r <- p.exists
+         } yield b -> r ==== true -> false)
+       }
+
+      ${ prop((l: LocalTemporary) => (for {
+           p <- l.path
+           _ <- p.delete
+         } yield ()) must beFail)
+       }
+
+    Checksum a path
+
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.write(s.value)
+           r <- p.checksum(MD5)
+         } yield r ==== Checksum.string(s.value, MD5).some)
+       }
+
+      ${ prop((s: S, l: LocalTemporary) => (for {
+           p <- l.path
+           _ <- p.mkdirs
+           r <- p.checksum(MD5)
+         } yield r) must beFail)
+       }
+
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           r <- p.checksum(MD5)
+         } yield r ==== None)
+       }
+
+    Count the number of lines in a file
+
+      ${ prop((s: List[Int], l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.writeLines(s.map(_.toString))
+           r <- p.lineCount
+         } yield r ==== s.length.some)
+       }
+
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           r <- p.lineCount
+         } yield r ==== None)
+       }
+
+
+  LocalPath should be able to read and write to a file. These operations should be symmetrical
+
+    Write a string to a file and read it back
+
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.write(s.value)
+           r <- p.readOrFail
+         } yield r ==== s.value)
+       }
+
+      ${ prop((v: S, l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.write(v.value)
+           r <- p.read
+         } yield r ==== v.value.some)
+       }
+
+    Read and write a string with a specific encoding
+
+      ${ prop((v: S, c: Codec, l: LocalTemporary) => validForCodec(v, c) ==> (for {
+           p <- l.path
+           _ <- p.writeWithEncoding(v.value, c)
+           r <- p.readWithEncoding(c)
+         } yield r ==== v.value.some))
+       }
+
+    Read and write a lines to a file
+
+      ${ prop((v: List[S], l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.writeLines(v.map(noNewLines))
+           r <- p.readLines
+         } yield r ==== v.map(noNewLines).some)
+       }
+
+    Read and write lines with a specific encoding to a file
+
+      ${ prop((v: List[S], c: Codec, l: LocalTemporary) => v.map(validForCodec(_, c)).suml ==> (for {
+           p <- l.path
+           _ <- p.writeLinesWithEncoding(v.map(noNewLines), c)
+           r <- p.readLinesWithEncoding(c)
+         } yield r ==== v.map(noNewLines).some))
+       }
+
+    Read a file using an InputStream
+
+      ${ prop((s: S, l: LocalTemporary) => {
+           var x: String = "";
+           for {
+             p <- l.path
+             _ <- p.write(s.value)
+             _ <- p.readUnsafe(in => for {
+               v <- Streams.read(in)
+               _ <- RIO.safe(x = v)
+             } yield ())
+           } yield x ==== s.value
+         })
+       }
+
+    Run a function for every line read in as a String
+
+      ${ prop((list: List[S], l: LocalTemporary) => {
+           var i = scala.collection.mutable.ListBuffer[String]()
+           for {
+             p <- l.path
+             _ <- p.writeLines(list.map(noNewLines))
+             r <- p.doPerLine(s =>
+               RIO.safe({ i += s; () }))
+           } yield i.toList ==== list.map(noNewLines)
+         })
+       }
+
+    Fold over each line read, keeping an accumulator
+
+      ${ prop((list: List[S], l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.writeLines(list.map(noNewLines))
+           r <- p.readPerLine(scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
+         } yield r.toList ==== list.map(noNewLines))
+       }
+
+    Read lines with a specific encoding from a file
+
+      ${ prop((list: List[S], c: Codec, l: LocalTemporary) => list.map(validForCodec(_, c)).suml ==> (for {
+           p <- l.path
+           _ <- p.writeLinesWithEncoding(list.map(noNewLines), c)
+           r <- p.readPerLineWithEncoding(c, scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
+         } yield r.toList ==== list.map(noNewLines)))
+       }
+
+    Read and write bytes to a file
+
+      ${ prop((bs: Array[Byte], l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.writeBytes(bs)
+           r <- p.readBytes
+         } yield r.map(_.toList) ==== bs.toList.some)
+       }
+
+    Handle failure cases
+
+      ${ prop((l: LocalTemporary) => l.path.flatMap(_.read) must beOkLike(_ must beNone)) }
+
+      ${ prop((l: LocalTemporary) => l.path.flatMap(_.readOrFail) must beFail) }
 
 
    Write stream
@@ -235,25 +288,25 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
       }
 
 
- LocalPath should be able to touch files which will update the last modified time, but not affect the content.
+  LocalPath should be able to touch files which will update the last modified time, but not affect the content.
 
-   ${ prop((v: S, l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.write(v.value)
-        _ <- p.touch
-        r <- p.readOrFail
-      } yield r ==== v.value)
-    }
+    ${ prop((v: S, l: LocalTemporary) => for {
+         p <- l.path
+         _ <- p.write(v.value)
+         _ <- p.touch
+         r <- p.readOrFail
+       } yield r ==== v.value)
+     }
 
-   ${ prop((l: LocalTemporary) => for {
-        p <- l.path
-        _ <- p.touch
-        b <- RIO.safe(p.toFile.lastModified)
-        _ <- RIO.safe(Thread.sleep(1100))
-        _ <- p.touch
-        a <- RIO.safe(p.toFile.lastModified)
-      } yield b must be_<(a)).set(minTestsOk = 3)
-    }
+    ${ prop((l: LocalTemporary) => for {
+         p <- l.path
+         _ <- p.touch
+         b <- RIO.safe(p.toFile.lastModified)
+         _ <- RIO.safe(Thread.sleep(1100))
+         _ <- p.touch
+         a <- RIO.safe(p.toFile.lastModified)
+       } yield b must be_<(a)).set(minTestsOk = 3)
+     }
 
  LocalPath should be able to append different content to files
 
@@ -265,7 +318,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
        } yield r ==== (d.first.value ++ d.second.value))
      }
 
-    ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) => (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
+    ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) =>
+       (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
          p <- l.path
          _ <- p.writeWithEncoding(d.first.value, c)
          _ <- p.appendWithEncoding(d.second.value, c)
@@ -281,7 +335,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
        } yield r ==== (i ++ s).map(noNewLines).some)
      }
 
-    ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) => (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
+    ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) =>
+       (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
          p <- l.path
          _ <- p.writeLinesWithEncoding(i.map(noNewLines), c)
          _ <- p.appendLinesWithEncoding(s.map(noNewLines), c)
@@ -307,7 +362,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
        } yield r ==== d.second.value)
      }
 
-    ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) => (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
+    ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) =>
+       (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
          p <- l.path
          _ <- p.writeWithEncoding(d.first.value, c)
          _ <- p.overwriteWithEncoding(d.second.value, c)
@@ -323,7 +379,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
        } yield r ==== s.map(noNewLines).some)
      }
 
-    ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) => (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
+    ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) =>
+       (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
          p <- l.path
          _ <- p.writeLinesWithEncoding(i.map(noNewLines), c)
          _ <- p.overwriteLinesWithEncoding(s.map(noNewLines), c)
@@ -349,7 +406,6 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
           r <- b.readOrFail
         } yield r ==== s.first.value)
       }
-
 
  LocalPath should be able to write with different modes
 
@@ -451,7 +507,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
 
     Can write lines with different Codec's and Mode's
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> (for {
            p <- l.path
            _ <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- p.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Append)
@@ -459,7 +516,8 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
          } yield r ==== (a ++ b).map(noNewLines).some))
        }
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> (for {
            p <- l.path
            _ <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- p.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Overwrite)
@@ -467,14 +525,16 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
          } yield r ==== (b.map(noNewLines).some)))
        }
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> { (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> { (for {
            p <- l.path
            _ <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- p.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Fail)
          } yield ()) must beFail })
        }
 
-      ${ prop((b: List[S], c: Codec, l: LocalTemporary, mode: WriteMode) => b.map(validForCodec(_, c)).suml ==> { (for {
+      ${ prop((b: List[S], c: Codec, l: LocalTemporary, mode: WriteMode) =>
+         b.map(validForCodec(_, c)).suml ==> { (for {
            p <- l.path
            _ <- p.mkdirs
            _ <- p.writeLinesWithEncodingMode(b.map(noNewLines), c, mode)

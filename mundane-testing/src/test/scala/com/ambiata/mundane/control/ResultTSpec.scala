@@ -3,7 +3,7 @@ package control
 
 import testing.Arbitraries._
 import testing.Laws._
-import org.specs2._, specification._, matcher._
+import org.specs2._
 import scalaz._, Scalaz._, \&/._
 
 class ResultTSpec extends Specification with ScalaCheck { def is = s2"""

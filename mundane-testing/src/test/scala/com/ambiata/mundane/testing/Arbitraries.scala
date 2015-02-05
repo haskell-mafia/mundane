@@ -4,7 +4,7 @@ import com.ambiata.mundane.control._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 
-import scalaz._
+import scalaz._, effect.IO
 
 object Arbitraries {
   implicit def ResultArbitrary[A: Arbitrary]: Arbitrary[Result[A]] =

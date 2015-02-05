@@ -2,7 +2,6 @@ package com.ambiata.mundane.path
 
 import java.io.File
 import org.specs2._
-import org.scalacheck._
 import Arbitraries._
 
 class PathSpec extends Specification with ScalaCheck { def is = s2"""

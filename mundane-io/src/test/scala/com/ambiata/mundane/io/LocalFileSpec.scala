@@ -1,7 +1,6 @@
 package com.ambiata.mundane.io
 
 import com.ambiata.disorder._
-import com.ambiata.mundane.data._
 import com.ambiata.mundane.path._
 import com.ambiata.mundane.path.Arbitraries._
 import com.ambiata.mundane.control._
@@ -11,7 +10,6 @@ import java.io.File
 import java.net.URI
 
 import org.specs2._
-import org.scalacheck._
 import scala.io.Codec
 import scalaz._, Scalaz._, effect.Effect._
 
@@ -31,11 +29,11 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
   'LocalFile.fromFile' is symmetric with Path#toFile:
 
-    ${ prop((p: Path) => LocalFile.fromFile(p.toFile).path ==== p) }
+    ${ prop((p: Path) => LocalFile.fromFile(p.toFile).map(_.path) must beOkValue(p)) }
 
   'LocalFile.fromFile' is consistent with Path.apply:
 
-    ${ prop((p: Path) => LocalFile.fromFile(new java.io.File(p.path)).path ==== p) }
+    ${ prop((p: Path) => LocalFile.fromFile(new java.io.File(p.path)).map(_.path) must beOkValue(p)) }
 
   'LocalFile.toLocalPath' is symmetric with Path#determine
 
@@ -52,11 +50,17 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
    a File
 
-     ${ LocalFile.fromFile(new File("hello/world")).path.path === "hello/world" }
+     ${ LocalFile.fromFile(new File("hello/world")).map(_.path.path) must beOkValue("hello/world") }
 
    a URI
 
-     ${ LocalFile.fromURI(new URI("hello/world")).map(_.path.path) === Some("hello/world")  }
+     ${ prop((l: LocalTemporary) => for {
+          p <- l.path
+          f <- p.touch
+          u = new java.io.File(f.path.path).toURI()
+          n <- LocalFile.fromURI(u)
+        } yield f.some ==== n)
+      }
 
    get the path as a string
 
@@ -68,8 +72,8 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
    filter hidden files from a list
 
-     ${ List(LocalFile.unsafe("hello/.world"), LocalFile.unsafe("hello/world"), LocalFile.unsafe("hello/_SUCCESS")).filterHidden ===
-          List(LocalFile.unsafe("hello/world")) }
+     ${ LocalFile.filterHidden(List(LocalFile.unsafe("hello/.world"), LocalFile.unsafe("hello/world"),
+          LocalFile.unsafe("hello/_SUCCESS"))) ==== List(LocalFile.unsafe("hello/world")) }
 
  A LocalFile can be ordered
 
@@ -82,6 +86,15 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
     ${ LocalTemporary.random.file.flatMap(_.exists) must beOkValue(true) }
 
+    ${ prop((l: LocalTemporary) => (for {
+         p <- l.path
+         f <- p.touch
+         _ <- p.delete
+         _ <- p.mkdirs
+         _ <- f.exists
+       } yield ()) must beFail)
+     }
+
     ${ var i = 0; LocalTemporary.random.file.flatMap(_.whenExists(RIO.io({ i = 1; i }).void)).as(i) must beOkValue(1) }
 
     ${ var i = 0; LocalTemporary.random.file.flatMap(_.doesExist("", RIO.io({ i = 1; i }))) must beOkValue(1) }
@@ -92,92 +105,189 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
     ${ LocalTemporary.random.file.flatMap(f => f.delete >> f.exists) must beOkValue(false) }
 
+  LocalFile should be able to perform a checksum
+
+    ${ prop((s: S, l: LocalTemporary) => for {
+         f <- l.fileWithContent(s.value)
+         r <- f.checksum(MD5)
+       } yield r ==== Checksum.string(s.value, MD5).some)
+     }
+
+    ${ prop((s: S, l: LocalTemporary) => for {
+         f <- l.fileWithContent(s.value)
+         _ <- f.delete
+         r <- f.checksum(MD5)
+       } yield r ==== None)
+     }
+
+  LocalFile should be able to count the number of lines in a file
+
+    ${ prop((s: List[Int], l: LocalTemporary) => for {
+         p <- l.path
+         f <- p.writeLines(s.map(_.toString))
+         r <- f.lineCount
+       } yield r ==== s.length.some)
+     }
+
+    ${ prop((l: LocalTemporary) => for {
+         p <- l.path
+         f <- p.touch
+         r <- f.lineCount
+       } yield r ==== 0.some)
+     }
 
   LocalFile should be able to read different content from files using different methods
 
-    ${ prop((s: S, l: LocalTemporary) => l.fileWithContent(s.value).flatMap(_.read) must beOkValue(s.value.some)) }
+    Read a string from a file
 
-    ${ prop((c: Codec, s: S, l: LocalTemporary) => validForCodec(s, c) ==> (
-         l.path.flatMap(_.writeWithEncoding(s.value, c).flatMap(_.readWithEncoding(c))) must beOkValue(s.value.some))) }
-
-    ${ prop((s: List[S], l: LocalTemporary) =>
-         l.path.flatMap(_.writeLines(s.map(noNewLines)).flatMap(_.readLines)) must beOkValue(s.map(noNewLines).some) )}
-
-    ${ prop((s: S, l: LocalTemporary) => {
-         var x: String = "";
-         for {
+      ${ prop((s: S, l: LocalTemporary) => for {
            f <- l.fileWithContent(s.value)
-           _ <- f.readUnsafe(in => for {
-             v <- Streams.read(in)
-             _ <- RIO.safe(x = v)
-           } yield ())
-         } yield x ==== s.value
-       })
-     }
+           r <- f.read
+         } yield r ==== s.value.some)
+       }
 
-    ${ prop((list: List[S], l: LocalTemporary) => {
-         var i = scala.collection.mutable.ListBuffer[String]()
-         for {
+    Read a string with a specific encoding from a file
+
+      ${ prop((c: Codec, s: S, l: LocalTemporary) => validForCodec(s, c) ==> (for {
+           p <- l.path
+           f <- p.writeWithEncoding(s.value, c)
+           r <- f.readWithEncoding(c)
+         } yield r ==== s.value.some))
+       }
+
+    Read lines from a file
+
+      ${ prop((s: List[S], l: LocalTemporary) => for {
+           p <- l.path
+           f <- p.writeLines(s.map(noNewLines))
+           r <- f.readLines
+         } yield r ==== s.map(noNewLines).some)
+       }
+
+    Read a file using an InputStream
+
+      ${ prop((s: S, l: LocalTemporary) => {
+           var x: String = "";
+           for {
+             f <- l.fileWithContent(s.value)
+             _ <- f.readUnsafe(in => for {
+               v <- Streams.read(in)
+               _ <- RIO.safe(x = v)
+             } yield ())
+           } yield x ==== s.value
+         })
+       }
+
+    Run a function for every line read in as a String
+
+      ${ prop((list: List[S], l: LocalTemporary) => {
+           var i = scala.collection.mutable.ListBuffer[String]()
+           for {
+             p <- l.path
+             f <- p.writeLines(list.map(noNewLines))
+             r <- f.doPerLine(s =>
+               RIO.safe({ i += s; () }))
+           } yield i.toList ==== list.map(noNewLines)
+         })
+       }
+
+    Fold over each line read, keeping an accumulator
+
+      ${ prop((list: List[S], l: LocalTemporary) => for {
            p <- l.path
            f <- p.writeLines(list.map(noNewLines))
-           r <- f.doPerLine(s =>
-             RIO.safe(i += s))
-         } yield i.toList ==== list.map(noNewLines)
-       })
-     }
+           r <- f.readPerLine(scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
+         } yield r.toList ==== list.map(noNewLines))
+       }
 
-   ${ prop((list: List[S], l: LocalTemporary) => for {
-         p <- l.path
-         f <- p.writeLines(list.map(noNewLines))
-         r <- f.readPerLine(scala.collection.mutable.ListBuffer[String]())((s, b) => { b +=s; b})
-       } yield r.toList ==== list.map(noNewLines))
-     }
+    Read lines with a specific encoding from a file
 
-     ${ prop((s: List[S], c: Codec, l: LocalTemporary) => s.map(validForCodec(_, c)).suml ==> (
-         l.path.flatMap(_.writeLinesWithEncoding(s.map(noNewLines), c).flatMap(_.readLinesWithEncoding(c))) must beOkValue(s.map(noNewLines).some)) )}
+      ${ prop((s: List[S], c: Codec, l: LocalTemporary) => s.map(validForCodec(_, c)).suml ==> (for {
+           p <- l.path
+           f <- p.writeLinesWithEncoding(s.map(noNewLines), c)
+           r <- f.readLinesWithEncoding(c)
+         } yield r ==== s.map(noNewLines).some))
+       }
 
-    ${ prop((bs: Array[Byte], l: LocalTemporary) => l.path.flatMap(p => p.writeBytes(bs).flatMap(f => f.readBytes.map(_.map(_.toList)))) must
-         beOkValue(bs.toList.some)) }
+    Read bytes from a file
 
-    ${ prop((s: S, l: LocalTemporary) => l.fileWithContent(s.value).flatMap(_.readOrFail) must beOkValue(s.value)) }
+      ${ prop((bs: Array[Byte], l: LocalTemporary) => for {
+           p <- l.path
+           f <- p.writeBytes(bs)
+           r <- f.readBytes
+         } yield r.map(_.toList) ==== bs.toList.some)
+       }
 
-   Handle failure cases
+    Read string from a file or fail
 
-    ${ prop((l: LocalTemporary) => l.file.flatMap(f => f.delete >> f.read) must beOkLike(_ must beNone)) }
+      ${ prop((s: S, l: LocalTemporary) => for {
+           f <- l.fileWithContent(s.value)
+           r <- f.readOrFail
+         } yield r ==== s.value)
+       }
 
-    ${ prop((l: LocalTemporary) => l.file.flatMap(f => f.delete >> f.readOrFail) must beFail) }
+    Handle failure cases
+
+     ${ prop((l: LocalTemporary) => l.file.flatMap(f => f.delete >> f.read) must beOkLike(_ must beNone)) }
+
+     ${ prop((l: LocalTemporary) => l.file.flatMap(f => f.delete >> f.readOrFail) must beFail) }
 
 
   LocalFile should be able to append different content to files that exist
 
-    ${ prop((d: DistinctPair[S], l: LocalTemporary) => l.path.flatMap(_.write(d.first.value)).flatMap(f => f.append(d.second.value) >> f.read) must
-         beOkValue((d.first.value ++ d.second.value).some)) }
+    Append a string to a file
 
-    ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) => (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
-         p <- l.path
-         f <- p.writeWithEncoding(d.first.value, c)
-         _ <- f.appendWithEncoding(d.second.value, c)
-         r <- f.readWithEncoding(c)
-       } yield r ==== (d.first.value ++ d.second.value).some))
-     }
+      ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
+           p <- l.path
+           f <- p.write(d.first.value)
+           _ <- f.append(d.second.value)
+           r <- f.read
+         } yield r ==== (d.first.value ++ d.second.value).some)
+       }
 
-    ${ prop((i: List[S], s: List[S], l: LocalTemporary) => l.path.flatMap(_.writeLines(i.map(noNewLines))).flatMap(f =>
-         f.appendLines(s.map(noNewLines)) >> f.readLines) must beOkValue((i ++ s).map(noNewLines).some)) }
+    Append a string with a specific encoding to a file
 
-    ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) => (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
-         p <- l.path
-         f <- p.writeLinesWithEncoding(i.map(noNewLines), c)
-         _ <- f.appendLinesWithEncoding(s.map(noNewLines), c)
-         r <- f.readLinesWithEncoding(c)
-       } yield r ==== (i ++ s).map(noNewLines).some))
-     }
+      ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) =>
+           (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
+             p <- l.path
+             f <- p.writeWithEncoding(d.first.value, c)
+             _ <- f.appendWithEncoding(d.second.value, c)
+             r <- f.readWithEncoding(c)
+           } yield r ==== (d.first.value ++ d.second.value).some))
+       }
 
-    ${ prop((i: Array[Byte], s: Array[Byte], l: LocalTemporary) => l.path.flatMap(_.writeBytes(i)).flatMap(f =>
-         f.appendBytes(s) >> f.readBytes.map(_.map(_.toList))) must beOkValue((i ++ s).toList.some)) }
+    Append list of strings to a file
 
+      ${ prop((i: List[S], s: List[S], l: LocalTemporary) => for {
+           p <- l.path
+           f <- p.writeLines(i.map(noNewLines))
+           _ <- f.appendLines(s.map(noNewLines))
+           r <- f.readLines
+         } yield r ==== (i ++ s).map(noNewLines).some)
+       }
+
+    Append list of strings with a specific encoding to a file
+
+      ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) =>
+           (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
+             p <- l.path
+             f <- p.writeLinesWithEncoding(i.map(noNewLines), c)
+             _ <- f.appendLinesWithEncoding(s.map(noNewLines), c)
+             r <- f.readLinesWithEncoding(c)
+           } yield r ==== (i ++ s).map(noNewLines).some))
+       }
+
+    Append bytes to a file
+
+      ${ prop((i: Array[Byte], s: Array[Byte], l: LocalTemporary) => for {
+           p <- l.path
+           f <- p.writeBytes(i)
+           _ <- f.appendBytes(s)
+           r <- f.readBytes
+         } yield r.map(_.toList) ==== (i ++ s).toList.some)
+       }
 
   LocalFile should be able to write different content to files using different Encodings and Mode's.
-  Content includes streams, strings, lines and bytes.
 
     ${ prop((s: S, l: LocalTemporary) => for {
          a <- l.fileWithContent(s.value)
@@ -262,7 +372,8 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
     Can write lines with different Codec's and Mode's
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> (for {
            p <- l.path
            f <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- f.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Append)
@@ -270,7 +381,8 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
          } yield r ==== (a ++ b).map(noNewLines).some))
        }
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> (for {
            p <- l.path
            f <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- f.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Overwrite)
@@ -278,7 +390,8 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
          } yield r ==== (b.map(noNewLines).some)))
        }
 
-      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) => (a ++ b).map(validForCodec(_, c)).suml ==> { (for {
+      ${ prop((a: List[S], b: List[S], c: Codec, l: LocalTemporary) =>
+         (a ++ b).map(validForCodec(_, c)).suml ==> { (for {
            p <- l.path
            f <- p.writeLinesWithEncoding(a.map(noNewLines), c)
            _ <- f.writeLinesWithEncodingMode(b.map(noNewLines), c, WriteMode.Fail)
@@ -313,44 +426,68 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
   LocalFile should be able to overwrite content in files
 
-    ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
-         p <- l.path
-         f <- p.write(d.first.value)
-         _ <- f.overwrite(d.second.value)
-         r <- f.read
-       } yield r ==== d.second.value.some)
-     }
+    Overwrite a string in a file that exists and has content
 
-    ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
-         p <- l.path
-         f <- p.write(d.first.value)
-         _ <- f.delete
-         _ <- f.overwrite(d.second.value)
-         r <- f.read
-       } yield r ==== d.second.value.some)
-     }
-
-      ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) => (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
+      ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
            p <- l.path
-           f <- p.writeWithEncoding(d.first.value, c)
-           _ <- f.overwriteWithEncoding(d.second.value, c)
-           r <- f.readWithEncoding(c)
-         } yield r ==== d.second.value.some))
+           f <- p.write(d.first.value)
+           _ <- f.overwrite(d.second.value)
+           r <- f.read
+         } yield r ==== d.second.value.some)
        }
 
-      ${ prop((i: S, s: List[S], l: LocalTemporary) => l.path.flatMap(_.write(i.value)).flatMap(f =>
-           f.overwriteLines(s.map(noNewLines)) >> f.readLines) must beOkValue(s.map(noNewLines).some)) }
+    Overwrite a string in a file that doesn't exist
 
-      ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) => (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
+      ${ prop((d: DistinctPair[S], l: LocalTemporary) => for {
            p <- l.path
-           f <- p.writeLinesWithEncoding(i.map(noNewLines), c)
-           _ <- f.overwriteLinesWithEncoding(s.map(noNewLines), c)
-           r <- f.readLinesWithEncoding(c)
-         } yield r ==== s.map(noNewLines).some))
+           f <- p.write(d.first.value)
+           _ <- f.delete
+           _ <- f.overwrite(d.second.value)
+           r <- f.read
+         } yield r ==== d.second.value.some)
        }
 
-      ${ prop((i: Array[Byte], s: Array[Byte], l: LocalTemporary) => l.path.flatMap(_.writeBytes(i)).flatMap(f =>
-           f.overwriteBytes(s) >> f.readBytes.map(_.map(_.toList))) must beOkValue((s).toList.some)) }
+     Overwrite a string with a specific encoding in a file that exists and has content
+
+       ${ prop((d: DistinctPair[S], c: Codec, l: LocalTemporary) =>
+          (validForCodec(d.first, c) && validForCodec(d.second, c)) ==> (for {
+            p <- l.path
+            f <- p.writeWithEncoding(d.first.value, c)
+            _ <- f.overwriteWithEncoding(d.second.value, c)
+            r <- f.readWithEncoding(c)
+          } yield r ==== d.second.value.some))
+        }
+
+     Overwrite a list of strings in a file that exists and has content
+
+       ${ prop((i: S, s: List[S], l: LocalTemporary) => for {
+            p <- l.path
+            f <- p.write(i.value)
+            _ <- f.overwriteLines(s.map(noNewLines))
+            r <- f.readLines
+          } yield r ==== s.map(noNewLines).some)
+        }
+
+     Overwrite a list of strings with a specific encoding in a file that exists and has content
+
+       ${ prop((i: List[S], s: List[S], c: Codec, l: LocalTemporary) =>
+          (i.map(validForCodec(_, c)) ++ s.map(validForCodec(_, c))).suml ==> (for {
+            p <- l.path
+            f <- p.writeLinesWithEncoding(i.map(noNewLines), c)
+            _ <- f.overwriteLinesWithEncoding(s.map(noNewLines), c)
+            r <- f.readLinesWithEncoding(c)
+          } yield r ==== s.map(noNewLines).some))
+        }
+
+     Overwrite bytes in a file that exists and has content
+
+       ${ prop((i: Array[Byte], s: Array[Byte], l: LocalTemporary) => for {
+            p <- l.path
+            f <- p.writeBytes(i)
+            _ <- f.overwriteBytes(s)
+            r <- f.readBytes
+          } yield r.map(_.toList) ==== s.toList.some)
+        }
 
   LocalFile should be able to move files
 
@@ -415,51 +552,59 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
   LocalFile should be able to copy files and handle copy failures
 
-    ${ prop((s: S, l: LocalTemporary) => for {
-         p <- l.path
-         f <- l.fileWithContent(s.value)
-         n <- f.copy(p)
-         e <- f.exists
-         r <- n.readOrFail
-       } yield e -> r ==== true -> s.value)
-     }
+    Copying a file should leave the original file intact
 
-    ${ prop((s: S, l: LocalTemporary) => for {
-         p <- l.path
-         d <- l.directory
-         f <- l.fileWithContent(s.value)
-         n <- f.copyTo(d)
-         a <- f.exists
-         r <- n.readOrFail
-       } yield a -> r ==== true -> s.value)
-     }
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           f <- l.fileWithContent(s.value)
+           n <- f.copy(p)
+           e <- f.exists
+           r <- n.readOrFail
+         } yield e -> r ==== true -> s.value)
+       }
 
-    ${ prop((s: S, l: LocalTemporary) => for {
-         p <- l.path
-         d <- l.directory
-         f <- p.write(s.value)
-         n <- f.copyTo(d)
-       } yield n.toLocalPath ==== (d.toLocalPath | p.basename.get))
-     }
+    Copying a file to a directory, should put the file inside the directory
 
-    ${ prop((s: S, l: LocalTemporary) => for {
-         p <- l.path
-         _ <- p.touch
-         f <- l.fileWithContent(s.value)
-         n <- f.copyWithMode(p, TargetMode.Overwrite)
-         r <- n.readOrFail
-       } yield r ==== s.value)
-     }
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           d <- l.directory
+           f <- l.fileWithContent(s.value)
+           n <- f.copyTo(d)
+           a <- f.exists
+           r <- n.readOrFail
+         } yield a -> r ==== true -> s.value)
+       }
 
-    ${ prop((s: S, l: LocalTemporary) => (for {
-         p <- l.path
-         _ <- p.touch
-         f <- l.fileWithContent(s.value)
-         n <- f.copyWithMode(p, TargetMode.Fail)
-       } yield ()) must beFail)
-     }
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           d <- l.directory
+           f <- p.write(s.value)
+           n <- f.copyTo(d)
+         } yield n.toLocalPath ==== (d.toLocalPath | p.basename.get))
+       }
 
-    Handle copy failures
+    Copying a file with the 'Overwrite' mode should not fail when the target exists
+
+      ${ prop((s: S, l: LocalTemporary) => for {
+           p <- l.path
+           _ <- p.touch
+           f <- l.fileWithContent(s.value)
+           n <- f.copyWithMode(p, TargetMode.Overwrite)
+           r <- n.readOrFail
+         } yield r ==== s.value)
+       }
+
+    Copying a file with the 'Fail' mode should fail when the target exists
+
+      ${ prop((s: S, l: LocalTemporary) => (for {
+           p <- l.path
+           _ <- p.touch
+           f <- l.fileWithContent(s.value)
+           n <- f.copyWithMode(p, TargetMode.Fail)
+         } yield ()) must beFail)
+       }
+
+    Copying a file should fail when the souce no longer exists
 
       ${ prop((s: S, l: LocalTemporary) => (for {
            p <- l.path
@@ -469,6 +614,8 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
            _ <- f.copy(p)
          } yield ()) must beFail)
        }
+
+    Copying a file should fail when the target exists
 
       ${ prop((s: S, l: LocalTemporary) => (for {
            p <- l.path

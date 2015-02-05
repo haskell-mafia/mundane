@@ -1,7 +1,7 @@
 package com.ambiata.mundane.testing
 
 import com.ambiata.mundane.control.{Error, Ok, Result}
-import org.specs2.execute.{Result => SpecsResult, _}
+import org.specs2.execute.{Result => SpecsResult, Error => _, _}
 import org.specs2.matcher._
 
 import scalaz.\&/

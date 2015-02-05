@@ -3,7 +3,6 @@ package com.ambiata.mundane.io
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.data._
 import com.ambiata.mundane.path._
-import com.ambiata.mundane.io.LocalFile._
 import java.io._
 import java.net.URI
 import java.util.UUID
@@ -23,12 +22,18 @@ class LocalFile private (val path: Path) extends AnyVal {
   def toFile: File =
     new File(path.path)
 
+  def toInputStream: RIO[InputStream] =
+    RIO.safe(new FileInputStream(path.path))
+
 // ============= Operations =================
 
-  def exists: RIO[Boolean] = RIO.safe[Boolean] {
-    val file = toFile
-    file.exists && file.isFile
-  }
+  def exists: RIO[Boolean] = for {
+    f <- RIO.safe(toFile.isFile)
+    d <- RIO.safe(toFile.isDirectory)
+    r <- if (f)      RIO.ok(true)
+         else if (d) RIO.fail(s"An internal invariant has been violated, the $path points to a directory.")
+         else        RIO.ok(false)
+  } yield r
 
   def onExists[A](success: => RIO[A], missing: => RIO[A]): RIO[A] =
     exists >>= (e =>
@@ -49,7 +54,7 @@ class LocalFile private (val path: Path) extends AnyVal {
     onExists(RIO.failIO(error), thunk)
 
   def delete: RIO[Unit] =
-    whenExists(RIO.safe(toFile.delete))
+    whenExists(RIO.safe(toFile.delete).void)
 
   def read: RIO[Option[String]] =
     readWithEncoding(Codec.UTF8)
@@ -101,6 +106,18 @@ class LocalFile private (val path: Path) extends AnyVal {
 
   def readBytes: RIO[Option[Array[Byte]]] =
     optionExists(RIO.using(this.toInputStream)(Streams.readBytes(_)))
+
+  def checksum(algorithm: ChecksumAlgorithm): RIO[Option[Checksum]] =
+    optionExists(RIO.using(toInputStream)(in => Checksum.stream(in, algorithm)))
+
+  def lineCount: RIO[Option[Int]] =
+    optionExists(RIO.io({
+      val reader = new LineNumberReader(new FileReader(toFile))
+      try {
+        while (reader.readLine != null) {}
+          reader.getLineNumber
+      } finally reader.close
+    }))
 
   def writeStream(content: InputStream): RIO[Unit] = for {
     _ <- toLocalPath.dirname.mkdirs
@@ -209,37 +226,66 @@ class LocalFile private (val path: Path) extends AnyVal {
 
 object LocalFile {
   /** Construct a path from a java.io.File. */
-  def fromFile(f: File): LocalFile =
-    Option(f.getParentFile) match {
+  def fromFile(f: File): RIO[LocalFile] = for {
+    o <- RIO.io(Option(f.getParentFile))
+    r <- o match {
       case None =>
-        val base = if (f.isAbsolute) new LocalFile(Root) else new LocalFile(Relative)
-        if (f.getName.isEmpty) base else new LocalFile(Components(base.path, Component.unsafe(f.getName)))
+        RIO.safe({
+          val base = if (f.isAbsolute) new LocalFile(Root) else new LocalFile(Relative)
+          if (f.getName.isEmpty) base else new LocalFile(Components(base.path, Component.unsafe(f.getName)))
+        })
       case Some(p) =>
-        new LocalFile(fromFile(p).path | Component.unsafe(f.getName))
+        fromFile(p).map(p => new LocalFile(p.path | Component.unsafe(f.getName)))
     }
+  } yield r
 
-  def fromString(s: String): Option[LocalFile] =
+  def fromString(s: String): RIO[Option[LocalFile]] =
     s.split("/").toList match {
       case "" :: Nil =>
-        None
+        none.pure[RIO]
       case "" :: parts =>
-        parts.traverse(Component.create).map(fromList(Root, _))
+        parts.traverse(Component.create).map(fromList(Root, _)).sequence.map(_.flatten)
       case parts =>
-        parts.traverse(Component.create).map(fromList(Relative, _))
+        parts.traverse(Component.create).map(fromList(Relative, _)).sequence.map(_.flatten)
     }
 
-  def fromList(dir: Path, parts: List[Component]): LocalFile =
+  def fromList(dir: Path, parts: List[Component]): RIO[Option[LocalFile]] = {
+    val f = fromListP(dir, parts)
+    f.optionExists(f.pure[RIO])
+  }
+
+  private def fromStringP(s: String): Option[LocalFile] =
+    s.split("/").toList match {
+      case "" :: Nil =>
+        none
+      case "" :: parts =>
+        parts.traverse(Component.create).map(fromListP(Root, _))
+      case parts =>
+        parts.traverse(Component.create).map(fromListP(Relative, _))
+    }
+
+  private def fromListP(dir: Path, parts: List[Component]): LocalFile =
     new LocalFile(parts.foldLeft(dir)((acc, el) => acc | el))
 
-  def fromURI(s: URI): Option[LocalFile] =
-    fromString(s.getPath)
+  def fromURI(s: URI): RIO[Option[LocalFile]] =
+    s.getScheme match {
+      case "file" =>
+        fromString(s.getPath)
+      case null =>
+        fromString(s.getPath)
+      case _ =>
+        none.pure[RIO]
+    }
 
-  def unsafe(s: String): LocalFile =
-    fromString(s).getOrElse(sys.error(s"LocalFile.unsafe on an invalid string. String($s)"))
+  private[io] def unsafe(s: String): LocalFile =
+    fromStringP(s).getOrElse(sys.error(s"LocalFile.unsafe on an invalid string. String($s)"))
+
+  def filterHidden(l: List[LocalFile]): List[LocalFile] =
+    l.filter(f => !List(".", "_").exists(c => f.toPath.basename.exists(_.name.startsWith(c))))
 
   implicit def LocalFileOrder: Order[LocalFile] =
     Order.order((x, y) => x.path.?|?(y.path))
 
-  implicit def LocalFileOrdering =
+  implicit def LocalFileOrdering: scala.Ordering[LocalFile] =
     LocalFileOrder.toScalaOrdering
 }

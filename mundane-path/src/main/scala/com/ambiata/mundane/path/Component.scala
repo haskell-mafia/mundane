@@ -30,10 +30,10 @@ object Component {
     Component.unsafe(".")
 
   def apply(s: String): Component =
-    macro Macros.foo
+    macro Macros.attempt
 
   object Macros extends MacrosCompat {
-    def foo(c: Context)(s: c.Expr[String]): c.Expr[Component] = {
+    def attempt(c: Context)(s: c.Expr[String]): c.Expr[Component] = {
       import c.universe._
       s match {
         case Expr(Literal(Constant(v: String))) =>
@@ -53,6 +53,6 @@ object Component {
   implicit def ComponentOrder: Order[Component] =
     Order.order((x, y) => x.name.?|?(y.name))
 
-  implicit def ComponentOrdering =
+  implicit def ComponentOrdering: scala.Ordering[Component] =
     ComponentOrder.toScalaOrdering
 }

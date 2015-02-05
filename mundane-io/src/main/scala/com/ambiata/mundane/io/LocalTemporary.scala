@@ -5,13 +5,13 @@ import com.ambiata.mundane.io.Temporary._
 import java.util.concurrent.atomic.AtomicInteger
 import scalaz._, Scalaz._
 
-case class LocalTemporary(seed: String) {
+case class LocalTemporary(base: LocalPath, seed: String) {
   private val step: AtomicInteger = new AtomicInteger(0)
 
   def path: RIO[LocalPath] = {
-    val (base, path) = setup
+    val path = setup
     val filePath = path /- java.util.UUID.randomUUID().toString
-    run(base, s"LocalPath($filePath.path)") >>
+    run(s"LocalPath($filePath.path)") >>
       RIO.ok(filePath)
   }
 
@@ -29,37 +29,35 @@ case class LocalTemporary(seed: String) {
   } yield r
 
   def directory: RIO[LocalDirectory] = {
-    val (base, path) = setup
+    val path = setup
     path.mkdirs >>= (d =>
-      run(base, s"LocalDirectory($path.path)") >>
+      run(s"LocalDirectory($path.path)") >>
         RIO.ok(d))
   }
 
-  /** (base, path) */
-  def setup: (LocalPath, LocalPath) = {
-    val base = uniqueLocalPath
+  def setup: LocalPath = {
     val incr = step.incrementAndGet.toString
-    val path = base /- incr /- seed
-    (base, path)
+    val path = base /- seed /- incr
+    path
   }
 
-  def run(base: LocalPath, msg: String): RIO[Unit] =
-    addCleanupFinalizer(base, msg) >>
+  def run(msg: String): RIO[Unit] =
+    addCleanupFinalizer(msg) >>
       addPrintFinalizer(msg)
 
-  def addCleanupFinalizer(path: LocalPath, str: String): RIO[Unit] =
+  def addCleanupFinalizer(str: String): RIO[Unit] =
     if (skipCleanup) forceAddPrintFinalizer(str)
-    else             RIO.addFinalizer(Finalizer(path.delete))
+    else             RIO.addFinalizer(Finalizer(base.delete))
 
   def addPrintFinalizer(str: String): RIO[Unit] =
     if (print && !skipCleanup) forceAddPrintFinalizer(str)
     else                       RIO.unit
 
   def forceAddPrintFinalizer(str: String): RIO[Unit] =
-    RIO.addFinalizer(Finalizer(RIO.putStrLn(s"Temporary: $str")))
+    RIO.addFinalizer(Finalizer(RIO.putStrLn(s"LocalTemporary: $str")))
 }
 
 object LocalTemporary {
   def random: LocalTemporary =
-    LocalTemporary(s"temporary-${java.util.UUID.randomUUID().toString}/")
+    LocalTemporary(uniqueLocalPath, s"temporary-${java.util.UUID.randomUUID().toString}/")
 }

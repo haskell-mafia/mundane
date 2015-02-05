@@ -4,7 +4,7 @@ import com.ambiata.mundane.control._
 import com.ambiata.mundane.path._
 import java.io._
 import java.net.URI
-import scalaz._, Scalaz._, effect._
+import scalaz._, Scalaz._
 
 /**
  * 'LocalDirectory' represents a directory that exists on a local file system
@@ -16,10 +16,8 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def toFile: File =
     new File(path.path)
 
-  def exists: RIO[Boolean] = RIO.safe[Boolean] {
-    val file = toFile
-    file.exists && file.isDirectory
-  }
+  def exists: RIO[Boolean] =
+    RIO.safe[Boolean](toFile.isDirectory)
 
   def onExists[A](success: => RIO[A], missing: => RIO[A]): RIO[A] =
     exists >>= (e =>
@@ -49,17 +47,12 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   */
   def delete: RIO[Unit] = for {
     f <- RIO.safe(Option(path.toFile.listFiles).cata(_.toList, List()))
-    _ <- f.traverse(p => (toLocalPath | Component.unsafe(p.getName)).delete)
+    _ <- f.traverse(p => (toLocalPath /- p.getName).delete)
     _ <- RIO.safe(toFile.delete)
   } yield ()
 
   def parent: Option[LocalDirectory] =
-    path.parent match {
-      case Some(p) =>
-        new LocalDirectory(p).some
-      case None =>
-        none
-    }
+    path.parent.map(new LocalDirectory(_))
 
   def move(destination: LocalPath): RIO[LocalDirectory] =
     path.basename match {
@@ -174,6 +167,8 @@ object LocalDirectory {
 
   def fromString(s: String): Option[LocalDirectory] =
     s.split("/").toList match {
+      case Nil =>
+        new LocalDirectory(Root).some
       case "" :: Nil =>
         None
       case "" :: parts =>

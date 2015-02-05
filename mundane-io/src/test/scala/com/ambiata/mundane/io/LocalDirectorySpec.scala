@@ -3,15 +3,12 @@ package com.ambiata.mundane.io
 import com.ambiata.disorder._
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.io.Arbitraries._
-import com.ambiata.mundane.io.Temporary._
-import com.ambiata.mundane.io.LocalPath._
 import com.ambiata.mundane.path._
 import com.ambiata.mundane.path.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
 import java.io.File
 import java.net.URI
 
-import org.scalacheck._
 import org.specs2._
 import org.specs2.matcher.Matcher
 
