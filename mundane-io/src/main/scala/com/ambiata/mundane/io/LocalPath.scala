@@ -4,6 +4,7 @@ import com.ambiata.mundane.control._
 import com.ambiata.mundane.data._
 import com.ambiata.mundane.path._
 import java.io._
+import java.net.URI
 import java.util.Date
 import scala.io.Codec
 import scalaz._, Scalaz._, effect._, Effect._
@@ -80,7 +81,17 @@ case class LocalPath(path: Path) {
   }
 
   def determinef[A](file: LocalFile => RIO[A], directory: LocalDirectory => RIO[A]): RIO[A] =
-    determinefWith(file, directory, RIO.failIO("Not a valid File or Directory"))
+    determinefWith(file, directory, RIO.failIO(s"Not a valid File or Directory. LocalPath($path)"))
+
+  def determinefWithPure[A](file: LocalFile => A, directory: LocalDirectory => A, none: A): RIO[A] =
+    determine >>= ({
+      case Some(\/-(v)) =>
+        directory(v).pure[RIO]
+      case Some(-\/(v)) =>
+        file(v).pure[RIO]
+      case None =>
+        none.pure[RIO]
+    })
 
   def determinefWith[A](file: LocalFile => RIO[A], directory: LocalDirectory => RIO[A], none: RIO[A]): RIO[A] =
     determine >>= ({
@@ -93,10 +104,10 @@ case class LocalPath(path: Path) {
     })
 
   def determineFile: RIO[LocalFile] =
-    determinef(_.pure[RIO], _ => RIO.fail("Not a valid file"))
+    determinef(_.pure[RIO], _ => RIO.fail(s"Not a valid file. LocalDirectory($path)"))
 
   def determineDirectory: RIO[LocalDirectory] =
-    determinef(_ => RIO.fail("Not a valid directory"), _.pure[RIO])
+    determinef(_ => RIO.fail(s"Not a valid directory. LocalFile($path)"), _.pure[RIO])
 
   def readWith[A](thunk: LocalFile => RIO[A]): RIO[A] =
     determinefWith(
@@ -304,26 +315,32 @@ object LocalPath {
   implicit def LocalPathOrdering: scala.Ordering[LocalPath] =
     LocalPathOrder.toScalaOrdering
 
-  def fromString(s: String): Option[LocalPath] =
-    s.split("/").toList match {
-      case "" :: Nil =>
-        none
-      case "" :: parts =>
-        parts.traverse(Component.create).map(fromList(Root, _))
-      case parts =>
-        parts.traverse(Component.create).map(fromList(Relative, _))
-    }
+  def fromList(dir: Path, components: List[Component]): LocalPath =
+    LocalPath(Path.fromList(dir, components))
 
-  def fromList(dir: Path, parts: List[Component]): LocalPath =
-    new LocalPath(parts.foldLeft(dir)((acc, el) => acc | el))
+  def fromString(s: String): LocalPath =
+    LocalPath(Path(s))
 
-  def fromFile(f: File): LocalPath =
-    Option(f.getParentFile) match {
+  def fromFile(f: File): RIO[LocalPath] = for {
+    o <- RIO.io(Option(f.getParentFile))
+    r <- o match {
       case None =>
-        val base = if (f.isAbsolute) new LocalPath(Root) else new LocalPath(Relative)
-        if (f.getName.isEmpty) base else new LocalPath(Components(base.path, Component.unsafe(f.getName)))
+        RIO.safe({
+          val base = if (f.isAbsolute) new LocalPath(Root) else new LocalPath(Relative)
+          if (f.getName.isEmpty) base else new LocalPath(Components(base.path, Component.unsafe(f.getName)))
+        })
       case Some(p) =>
-        new LocalPath(fromFile(p).path | Component.unsafe(f.getName))
+        fromFile(p).map(p => new LocalPath(p.path | Component.unsafe(f.getName)))
     }
+  } yield r
 
+  def fromURI(s: URI): Option[LocalPath] =
+    s.getScheme match {
+      case "file" =>
+        fromString(s.getPath).some
+      case null =>
+        fromString(s.getPath).some
+      case _ =>
+        none
+    }
 }

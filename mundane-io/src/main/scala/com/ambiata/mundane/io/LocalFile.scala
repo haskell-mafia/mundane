@@ -225,60 +225,20 @@ class LocalFile private (val path: Path) extends AnyVal {
 }
 
 object LocalFile {
-  /** Construct a path from a java.io.File. */
-  def fromFile(f: File): RIO[LocalFile] = for {
-    o <- RIO.io(Option(f.getParentFile))
-    r <- o match {
-      case None =>
-        RIO.safe({
-          val base = if (f.isAbsolute) new LocalFile(Root) else new LocalFile(Relative)
-          if (f.getName.isEmpty) base else new LocalFile(Components(base.path, Component.unsafe(f.getName)))
-        })
-      case Some(p) =>
-        fromFile(p).map(p => new LocalFile(p.path | Component.unsafe(f.getName)))
-    }
-  } yield r
+  def fromFile(f: File): RIO[LocalFile] =
+    LocalPath.fromFile(f).flatMap(_.determineFile)
 
   def fromString(s: String): RIO[Option[LocalFile]] =
-    s.split("/").toList match {
-      case "" :: Nil =>
-        none.pure[RIO]
-      case "" :: parts =>
-        parts.traverse(Component.create).map(fromList(Root, _)).sequence.map(_.flatten)
-      case parts =>
-        parts.traverse(Component.create).map(fromList(Relative, _)).sequence.map(_.flatten)
-    }
+    LocalPath.fromString(s).determinefWithPure(_.some, _ => none, none)
 
-  def fromList(dir: Path, parts: List[Component]): RIO[Option[LocalFile]] = {
-    val f = fromListP(dir, parts)
-    f.optionExists(f.pure[RIO])
-  }
-
-  private def fromStringP(s: String): Option[LocalFile] =
-    s.split("/").toList match {
-      case "" :: Nil =>
-        none
-      case "" :: parts =>
-        parts.traverse(Component.create).map(fromListP(Root, _))
-      case parts =>
-        parts.traverse(Component.create).map(fromListP(Relative, _))
-    }
-
-  private def fromListP(dir: Path, parts: List[Component]): LocalFile =
-    new LocalFile(parts.foldLeft(dir)((acc, el) => acc | el))
+  def fromList(dir: Path, parts: List[Component]): RIO[Option[LocalFile]] =
+    LocalPath.fromList(dir, parts).determinefWithPure(_.some, _ => none, none)
 
   def fromURI(s: URI): RIO[Option[LocalFile]] =
-    s.getScheme match {
-      case "file" =>
-        fromString(s.getPath)
-      case null =>
-        fromString(s.getPath)
-      case _ =>
-        none.pure[RIO]
-    }
+    LocalPath.fromURI(s).map(_.determineFile).sequence
 
   private[io] def unsafe(s: String): LocalFile =
-    fromStringP(s).getOrElse(sys.error(s"LocalFile.unsafe on an invalid string. String($s)"))
+    new LocalFile(Path(s))
 
   def filterHidden(l: List[LocalFile]): List[LocalFile] =
     l.filter(f => !List(".", "_").exists(c => f.toPath.basename.exists(_.name.startsWith(c))))

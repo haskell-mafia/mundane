@@ -54,7 +54,7 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
 
   'LocalPath.fromFile' is symmetric with Path#toFile:
 
-    ${ prop((p: Path) => LocalPath.fromFile(p.toFile).path ==== p) }
+    ${ prop((p: Path) => LocalPath.fromFile(p.toFile).map(_.path) must beOkValue(p)) }
 
  LocalPath IO
  ============
