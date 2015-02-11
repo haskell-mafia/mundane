@@ -1,8 +1,8 @@
-package com.ambiata.mundane
-package io
+package com.ambiata.mundane.io
+
+import java.io._
 
 import com.ambiata.mundane.testing.RIOMatcher._
-import java.io._
 import org.specs2._
 import scalaz._, Scalaz._
 

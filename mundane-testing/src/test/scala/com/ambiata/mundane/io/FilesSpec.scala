@@ -1,6 +1,6 @@
 package com.ambiata.mundane.io
 
-import com.ambiata.mundane.io.Arbitraries._
+import com.ambiata.mundane.testing.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
 import org.specs2._
 import scalaz._, Scalaz._

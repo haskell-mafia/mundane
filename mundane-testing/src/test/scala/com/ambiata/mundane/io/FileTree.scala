@@ -1,10 +1,10 @@
 package com.ambiata.mundane.io
 
 import com.ambiata.mundane.control._
-import java.io._
-import org.scalacheck._, Arbitrary._
-import scalaz._, Scalaz._
-import scalaz.effect.IO
+import org.scalacheck.Arbitrary._
+import org.scalacheck._
+
+import scalaz.Scalaz._
 
 sealed trait FileTree {
   def files(base: DirPath): List[FilePath] =
