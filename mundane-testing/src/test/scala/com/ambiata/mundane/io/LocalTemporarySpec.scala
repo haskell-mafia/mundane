@@ -3,7 +3,7 @@ package com.ambiata.mundane.io
 import com.ambiata.disorder._
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.testing.RIOMatcher._
-import com.ambiata.mundane.io.Arbitraries._
+import com.ambiata.mundane.testing.Arbitraries._
 
 import org.specs2._
 

@@ -65,7 +65,7 @@ object build extends Build {
     )
   )
 
-  lazy val io = Project(
+  lazy val io: Project = Project(
     id = "io"
   , base = file("mundane-io")
   , settings = standardSettings ++ lib("io") ++ Seq[Settings](
@@ -75,7 +75,7 @@ object build extends Build {
                               depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
-  .dependsOn(control, data, reflect, testing % "test")
+  .dependsOn(control, data, reflect)
 
   lazy val parse = Project(
     id = "parse"
@@ -102,16 +102,16 @@ object build extends Build {
       name := "mundane-store"
     ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream)
   )
-  .dependsOn(control, data, io, testing % "test", io % "test->test")
+  .dependsOn(control, data, io, testing % "test", io)
 
   lazy val testing = Project(
     id = "testing"
   , base = file("mundane-testing")
   , settings = standardSettings ++ lib("testing") ++ Seq[Settings](
       name := "mundane-testing"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.specs2 ++ depend.disorder)
   )
-  .dependsOn(control)
+  .dependsOn(control, io % "compile->compile")
 
   lazy val testingExtra = Project(
     id = "testing-extra"

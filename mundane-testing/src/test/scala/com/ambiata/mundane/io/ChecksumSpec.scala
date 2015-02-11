@@ -1,13 +1,9 @@
-package com.ambiata.mundane.io
-
-import com.ambiata.mundane.control.RIO
-import com.ambiata.mundane.io.Arbitraries._
-import com.ambiata.mundane.testing.RIOMatcher._
+package com.ambiata.mundane
+package io
 
 import org.specs2._
-import org.scalacheck._, Arbitrary._
-
-import scalaz._, Scalaz._
+import testing.RIOMatcher._
+import testing.Arbitraries._
 
 class ChecksumSpec extends Specification with ScalaCheck { def is = s2"""
 

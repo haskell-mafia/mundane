@@ -1,5 +1,6 @@
 package com.ambiata.mundane.testing
 
+import com.ambiata.mundane.io.LocalTemporary
 import org.scalacheck._
 import Arbitrary._
 import scalaz._, Scalaz._, effect.IO
@@ -31,5 +32,12 @@ object Arbitraries {
       arbitrary[A].map(-\/(_)),
       arbitrary[B].map(\/-(_))
     ))
+
+  implicit def LocalTemporaryArbitrary: Arbitrary[LocalTemporary] = Arbitrary(for {
+    i <- Gen.choose(1, 5)
+    a <- Gen.listOfN(i, Gen.identifier)
+    z = a.mkString("/")
+    f <- Gen.oneOf("", "/")
+  } yield LocalTemporary(s"temporary-${java.util.UUID.randomUUID().toString}/" + z + f))
 
 }
