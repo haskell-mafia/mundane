@@ -5,7 +5,7 @@ import com.ambiata.mundane.testing.Arbitraries._
 import com.ambiata.mundane.testing.Laws._
 import com.ambiata.mundane.testing.RIOMatcher._
 import org.specs2._, specification._, matcher._
-import scalaz._, Scalaz._, \&/._, effect.IO
+import scalaz._, Scalaz._, \&/._, effect.IO, effect.Resource
 
 class RIOSpec extends Specification with ScalaCheck { def is = s2"""
 
@@ -41,6 +41,7 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
  ==============
 
    clean up resources                  $cleanup
+   clean up for resources              $cleanupRes
    handles failure                     $handlesFailure
    clean up resources with failure     $cleanupFailure
 
@@ -105,6 +106,13 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
     RIO.addFinalizer(Finalizer(RIO.safe(v = 1))).unsafePerformIO
     v ==== 1
   }
+
+  def cleanupRes = {
+    var v = 0
+    RIO.addResourceFinalizer(())(Resource.resource(_ => IO(v = 1))).unsafePerformIO
+    v ==== 1
+  }
+
 
   def handlesFailure = {
     var v = 0

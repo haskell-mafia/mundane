@@ -78,6 +78,9 @@ object RIO {
   def addFinalizer(f: Finalizer): RIO[Unit] =
     RIO(finalizers => { finalizers.add(f); ResultT.unit })
 
+  def addResourceFinalizer[A: Resource, B <: A](r: B): RIO[Unit] =
+    addFinalizer(Finalizer(RIO.fromIO(implicitly[Resource[A]].close(r))))
+
   def unsafeFlushFinalizers: RIO[Unit] = RIO(x => {
     ResultT.safe[IO, Unit](x.asScala.toList.foreach(_.run.unsafePerformIO match {
       case Ok(_) => ()
