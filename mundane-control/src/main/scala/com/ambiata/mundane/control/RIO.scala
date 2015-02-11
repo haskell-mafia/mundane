@@ -7,9 +7,13 @@ import scalaz.effect._
 import scala.collection.JavaConverters._
 
 case class RIO[A](private val exec: java.util.concurrent.ConcurrentLinkedQueue[Finalizer] => ResultT[IO, A]) {
-  def unsafePerformIO: Result[A] = {
+  def unsafePerformIO: Result[A] =
+    unsafeIO.unsafePerformIO
+
+  /* Not safe until the end of the world */
+  def unsafeIO: IO[Result[A]] = {
     val x = new java.util.concurrent.ConcurrentLinkedQueue[Finalizer]
-    liftExceptions.ensuring(RIO.unsafeFlushFinalizers).exec(x).run.unsafePerformIO
+    liftExceptions.ensuring(RIO.unsafeFlushFinalizers).exec(x).run
   }
 
   def isOk: RIO[Boolean] =
