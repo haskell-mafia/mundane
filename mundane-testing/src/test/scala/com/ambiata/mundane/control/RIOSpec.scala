@@ -37,6 +37,11 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
    option safety (none)           $nullage
    option safety (some)           $some
 
+ RIO Exception Handlers
+ ======================
+
+   catches IO exceptions          $io
+
  RIO Finalizers
  ==============
 
@@ -90,6 +95,9 @@ class RIOSpec extends Specification with ScalaCheck { def is = s2"""
 
   def some = prop((a: Int) =>
     RIO.option[Int](a) ===== RIO.ok[Option[Int]](Some(a)))
+
+  def io = prop((t: Throwable) =>
+    RIO.fromIO(IO[Int] { throw t }).on(r => r.pure[RIO]) ===== RIO.ok(Result.exception(t)))
 
   def nullage = prop((_: Unit) =>
     RIO.option[String](bad) ===== RIO.ok[Option[String]](None))
