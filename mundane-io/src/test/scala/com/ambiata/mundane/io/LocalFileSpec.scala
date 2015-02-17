@@ -99,7 +99,7 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
     ${ var i = 0; LocalTemporary.random.file.flatMap(_.doesExist("", RIO.io({ i = 1; i }))) must beOkValue(1) }
 
-    ${ var i = 0; LocalTemporary.random.file.flatMap(_.doesNotExist("", RIO.io({ i = 1; i }))) must beFail }
+    ${ LocalTemporary.random.file.flatMap(_.doesNotExist("", RIO.unit)) must beFail }
 
     ${ var i = 0; LocalFile.unsafe("test").doesNotExist("", RIO.io({ i = 1; i })) must beOkValue(1) }
 

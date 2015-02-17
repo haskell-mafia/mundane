@@ -84,14 +84,7 @@ case class LocalPath(path: Path) {
     determinefWith(file, directory, RIO.failIO(s"Not a valid File or Directory. LocalPath($path)"))
 
   def determinefWithPure[A](file: LocalFile => A, directory: LocalDirectory => A, none: A): RIO[A] =
-    determine >>= ({
-      case Some(\/-(v)) =>
-        directory(v).pure[RIO]
-      case Some(-\/(v)) =>
-        file(v).pure[RIO]
-      case None =>
-        none.pure[RIO]
-    })
+    determinefWith(f => file(f).pure[RIO], d => directory(d).pure[RIO], none.pure[RIO])
 
   def determinefWith[A](file: LocalFile => RIO[A], directory: LocalDirectory => RIO[A], none: RIO[A]): RIO[A] =
     determine >>= ({
@@ -309,12 +302,6 @@ case class LocalPath(path: Path) {
 }
 
 object LocalPath {
-  implicit def LocalPathOrder: Order[LocalPath] =
-    Order.order((x, y) => x.path.?|?(y.path))
-
-  implicit def LocalPathOrdering: scala.Ordering[LocalPath] =
-    LocalPathOrder.toScalaOrdering
-
   def fromList(dir: Path, components: List[Component]): LocalPath =
     LocalPath(Path.fromList(dir, components))
 
@@ -343,4 +330,10 @@ object LocalPath {
       case _ =>
         none
     }
+
+  implicit def LocalPathOrder: Order[LocalPath] =
+    Order.order((x, y) => x.path.?|?(y.path))
+
+  implicit def LocalPathOrdering: scala.Ordering[LocalPath] =
+    LocalPathOrder.toScalaOrdering
 }

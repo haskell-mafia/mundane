@@ -116,7 +116,7 @@ class LocalDirectorySpec extends Specification with ScalaCheck { def is = s2"""
       ${ prop((l: LocalTemporary) => l.directory.flatMap(d => d.delete >> d.exists) must beOkValue(false)) }
 
 
-  LocalFile should be able to move a directory handling failure cases gracefully
+  LocalDirectory should be able to move a directory handling failure cases gracefully
 
     ${ prop((l: LocalTemporary) => for {
          p <- l.path

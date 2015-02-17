@@ -54,6 +54,7 @@ object RIOMatcher extends ThrownExpectations with ScalaCheckMatchers {
       result(r.isSuccess, r.message, r.message, attempt)
     }
   }
+
   def beFail[A]: Matcher[RIO[A]] =
     beFailLike(_ => Success())
 

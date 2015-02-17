@@ -133,8 +133,7 @@ class LocalFile private (val path: Path) extends AnyVal {
       , overwriteWithEncoding(content, encoding)
       , toLocalPath.writeWithEncoding(content, encoding)).void
 
-  def writeLinesWithMode(content: List[String], mode: WriteMode
-): RIO[Unit] =
+  def writeLinesWithMode(content: List[String], mode: WriteMode): RIO[Unit] =
     mode.fold(appendLines(content), overwriteLines(content), toLocalPath.writeLines(content)).void
 
   def writeLinesWithEncodingMode(content: List[String], encoding: Codec, mode: WriteMode): RIO[Unit] =
