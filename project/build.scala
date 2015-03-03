@@ -12,7 +12,7 @@ object build extends Build {
     , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
     , aggregate = Seq(cli, control, data, error, io, parse, reflect, testing, testingExtra, time, trace)
     )
-    .dependsOn(cli, control, data, error, io, parse, reflect, testing, time, trace)
+    .dependsOn(bytes, cli, control, data, error, io, parse, reflect, testing, time, trace)
 
   lazy val standardSettings = Defaults.coreDefaultSettings ++
                               projectSettings              ++
@@ -31,6 +31,14 @@ object build extends Build {
     , updateOptions := updateOptions.value.withCachedResolution(true)
     , publishArtifact in (Test, packageBin) := true
   ) ++ Seq(prompt)
+
+  lazy val bytes = Project(
+    id = "bytes"
+  , base = file("mundane-bytes")
+  , settings = standardSettings ++ lib("bytes") ++ Seq[Settings](
+      name := "mundane-bytes"
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.disorder)
+  )
 
   lazy val cli = Project(
     id = "cli"

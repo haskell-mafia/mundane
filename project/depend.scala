@@ -21,7 +21,7 @@ object depend {
   val testing = specs2.map(_ % "test")
 
   val disorder =
-    Seq("com.ambiata" %% "disorder" % "0.0.1-20150102073535-5c2d9d6" % "test")
+    Seq("com.ambiata" %% "disorder" % "0.0.1-20150219021345-bfcf0db" % "test")
 
   def reflect(version: String) =
     Seq("org.scala-lang" % "scala-compiler" % version, "org.scala-lang" % "scala-reflect" % version) ++
