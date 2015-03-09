@@ -10,7 +10,7 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
-    , aggregate = Seq(cli, control, data, error, io, parse, reflect, testing, testingExtra, time, trace)
+    , aggregate = Seq(bytes, cli, control, data, error, io, parse, reflect, testing, testingExtra, time, trace)
     )
     .dependsOn(bytes, cli, control, data, error, io, parse, reflect, testing, time, trace)
 
