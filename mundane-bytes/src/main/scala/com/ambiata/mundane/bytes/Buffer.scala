@@ -65,6 +65,9 @@ object Buffer {
     wrapArray(b.bytes, b.offset + o, b.length - o)
   }
 
+  def reset(b: Buffer): Unit =
+    b._length = 0
+
   /** Ensure there is enough space in the array, and if not return a _new_ [[Buffer]] and array with the original values */
   def allocate(b1: Buffer, i: Int): Buffer =
     if (b1.length + i <= b1.bytes.length) {

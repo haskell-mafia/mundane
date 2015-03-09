@@ -21,6 +21,9 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
   Shifting the offset fails when the value is greater than the buffer length
     $shiftFail
 
+  Resetting the buffer will set the length to zero
+    $reset
+
   Allocated buffer will increment the length
     $allocateLength
 
@@ -62,6 +65,11 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
   def shiftFail = prop((b: Buffer, n: NaturalIntSmall) =>
     Buffer.shift(b, b.length + n.value) must throwA[RuntimeException]
   )
+
+  def reset = prop((b: Buffer) => {
+    Buffer.reset(b)
+    b.length ==== 0
+  })
 
   def allocateLength = prop((b1: Buffer, n: NaturalIntSmall) => {
     val length = b1.length
