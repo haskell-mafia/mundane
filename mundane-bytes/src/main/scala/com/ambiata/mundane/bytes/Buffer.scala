@@ -51,8 +51,6 @@ object Buffer {
     wrapArray(new Array[Byte](initialSize), 0, 0)
 
   def wrapArray(bytes: Array[Byte], offset: Int, length: Int): Buffer = {
-    if (bytes.length == 0)
-      sys.error("Cannot wrap an empty array")
     if (offset < 0 || offset >= bytes.length)
       sys.error(s"Invalid offset $offset for array of length ${bytes.length}")
     if (length < 0 || offset + length > bytes.length)
@@ -66,6 +64,9 @@ object Buffer {
       sys.error(s"Offset can only be increased: $o")
     wrapArray(b.bytes, b.offset + o, b.length - o)
   }
+
+  def reset(b: Buffer): Unit =
+    b._length = 0
 
   /** Ensure there is enough space in the array, and if not return a _new_ [[Buffer]] and array with the original values */
   def allocate(b1: Buffer, i: Int): Buffer =
