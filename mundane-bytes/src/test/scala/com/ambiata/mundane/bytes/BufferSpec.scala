@@ -21,10 +21,7 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
   Shifting the offset fails when the value is greater than the buffer length
     $shiftFail
 
-  Resetting the buffer will set the length to zero
-    $reset
-
-  Allocated buffer will increment the length
+  Allocated buffer will set the length
     $allocateLength
 
   Allocated buffer will always have at least the required capacity
@@ -32,6 +29,12 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
 
   Allocated buffer will always have the same bytes up to the original buffer length
     $allocateCopy
+
+  Grow will always increase the length
+    $growLength
+
+  Grow will always have at least the required capacity
+    $growHasCapacity
 
   Slice returns an exact fit of the buffer data
     $slice
@@ -66,26 +69,29 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
     Buffer.shift(b, b.length + n.value) must throwA[RuntimeException]
   )
 
-  def reset = prop((b: Buffer) => {
-    Buffer.reset(b)
-    b.length ==== 0
-  })
-
-  def allocateLength = prop((b1: Buffer, n: NaturalIntSmall) => {
-    val length = b1.length
-    val b2 = Buffer.allocate(b1, n.value)
-    b2.length ==== length + n.value
-  })
+  def allocateLength = prop((b1: Buffer, n: NaturalIntSmall) =>
+    Buffer.allocate(b1, n.value).length ==== n.value
+  )
 
   def allocateHasCapacity = prop((b1: Buffer, n: NaturalIntSmall) => {
-    val length = b1.length
     val b2 = Buffer.allocate(b1, n.value)
-    b2.bytes.length must beGreaterThanOrEqualTo(length + n.value)
+    (b2.offset + b2.length) must beLessThanOrEqualTo(b2.bytes.length)
   })
 
   def allocateCopy = prop((b1: Buffer, n: NaturalIntSmall) => b1.bytes.length > 0 ==> {
     val b2 = Buffer.allocate(b1, n.value)
     b2.bytes.toList.take(b1.bytes.length) ==== b1.bytes.toList
+  })
+
+  def growLength = prop((b1: Buffer, n: NaturalIntSmall) => {
+    val oldLength = b1.length
+    val b2 = Buffer.grow(b1, n.value)
+    b2.length must beGreaterThan(oldLength)
+  })
+
+  def growHasCapacity = prop((b1: Buffer, n: NaturalIntSmall) => {
+    val b2 = Buffer.grow(b1, n.value)
+    (b2.offset + b2.length) must beLessThanOrEqualTo(b2.bytes.length)
   })
 
   def slice = prop((b: Buffer) =>
