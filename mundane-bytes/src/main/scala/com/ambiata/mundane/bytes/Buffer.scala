@@ -65,20 +65,19 @@ object Buffer {
     wrapArray(b.bytes, b.offset + o, b.length - o)
   }
 
-  def reset(b: Buffer): Unit =
-    b._length = 0
-
   /** Ensure there is enough space in the array, and if not return a _new_ [[Buffer]] and array with the original values */
   def allocate(b1: Buffer, i: Int): Buffer =
-    if (b1.length + i <= b1.bytes.length) {
-      b1._length += i
+    if (b1.offset + i <= b1.bytes.length) {
+      b1._length = i
       b1
-    }
-    else {
-      val b2 = new Buffer(new Array(math.max(b1.bytes.length + i, b1.bytes.length * 2)), b1.offset, b1.length + i)
+    } else {
+      val b2 = new Buffer(new Array(math.max(b1.offset + i, b1.bytes.length * 2)), b1.offset, i)
       System.arraycopy(b1.bytes, 0, b2.bytes, 0, b1.bytes.length)
       b2
     }
+
+  def grow(b1: Buffer, i: Int): Buffer =
+    allocate(b1, b1.length + i)
 
   /** Returns an exact-fitting array based on the offset/length */
   def slice(b: Buffer): Array[Byte] = {
