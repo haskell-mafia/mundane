@@ -128,7 +128,7 @@ object build extends Build {
       name := "mundane-testing"
     ) ++ Seq[Settings](libraryDependencies ++= depend.specs2)
   )
-  .dependsOn(control)
+  .dependsOn(control, parse)
 
   lazy val testingExtra = Project(
     id = "testing-extra"
