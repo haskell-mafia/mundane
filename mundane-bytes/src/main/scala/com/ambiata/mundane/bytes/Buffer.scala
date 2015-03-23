@@ -51,7 +51,7 @@ object Buffer {
     wrapArray(new Array[Byte](initialSize), 0, 0)
 
   def wrapArray(bytes: Array[Byte], offset: Int, length: Int): Buffer = {
-    if (offset < 0 || offset >= bytes.length)
+    if (offset < 0 || offset > bytes.length)
       sys.error(s"Invalid offset $offset for array of length ${bytes.length}")
     if (length < 0 || offset + length > bytes.length)
       sys.error(s"Invalid length $length with offset $offset and array of length ${bytes.length}")
