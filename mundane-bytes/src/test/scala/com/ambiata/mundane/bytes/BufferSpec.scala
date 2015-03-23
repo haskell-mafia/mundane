@@ -65,7 +65,7 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
     Buffer.shift(b, o).offset ==== (b.offset + o)
   })
 
-  def shiftFail = prop((b: Buffer, n: NaturalIntSmall) =>
+  def shiftFail = prop((b: Buffer, n: PositiveIntSmall) =>
     Buffer.shift(b, b.length + n.value) must throwA[RuntimeException]
   )
 
@@ -86,7 +86,7 @@ class BufferSpec extends Specification with ScalaCheck { def is = s2"""
   def growLength = prop((b1: Buffer, n: NaturalIntSmall) => {
     val oldLength = b1.length
     val b2 = Buffer.grow(b1, n.value)
-    b2.length must beGreaterThan(oldLength)
+    b2.length must beGreaterThanOrEqualTo(oldLength)
   })
 
   def growHasCapacity = prop((b1: Buffer, n: NaturalIntSmall) => {
