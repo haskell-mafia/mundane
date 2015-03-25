@@ -25,7 +25,7 @@ object TextEscaping {
         b.append(escapeChar)
         b.append('r')
       } else {
-        if (c == delim || c == '\\') {
+        if (c == delim || c == escapeChar) {
           b.append(escapeChar)
         }
         b.append(c)
@@ -51,7 +51,7 @@ object TextEscaping {
     while (i < s.length) {
       lastCharWasDelim = false
       val c = s.charAt(i)
-      if (c == '\\') {
+      if (c == escapeChar) {
         i += 1
         if (i < s.length) {
           val c2 = s.charAt(i)
@@ -59,7 +59,7 @@ object TextEscaping {
             b.append('\n')
           } else if (c2 == 'r') {
             b.append('\r')
-          } else if (c2 == delim || c2 == '\\') {
+          } else if (c2 == delim || c2 == escapeChar) {
             b.append(c2)
           } else {
             // Otherwise keep both characters
