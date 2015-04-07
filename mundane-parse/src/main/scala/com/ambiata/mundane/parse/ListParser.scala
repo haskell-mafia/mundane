@@ -1,5 +1,7 @@
 package com.ambiata.mundane.parse
 
+import com.ambiata.mundane.csv.DelimitedValuesParser
+
 import scalaz._, Scalaz._
 import org.joda.time._
 import format.DateTimeFormat
@@ -271,29 +273,43 @@ object ListParser {
   /**
    * A parser for a pair of 2 delimited values
    */
-  def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char): ListParser[(A, B)] =
+  def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char): ListParser[(A, B)] = {
+    val delimitedParser = DelimitedValuesParser.delimited(delimiter)
+
     ListParser((position, state) => state match {
-      case h :: t   =>
-        Delimited.parseRow(h, delimiter) match {
-          case a :: b :: Nil =>
+      case h :: t =>
+        delimitedParser.parse(h) match {
+          case \/-(a :: b :: Nil) =>
             pa.parse(List(a)).flatMap { case (_, _, ra) => pb.parse(List(b)).map { case (_, _, rb) => (position + 1, t, (ra, rb)) } }
-          case other => (position, s"$other is not a pair delimited by $delimiter").failure
+
+          case other =>
+            (position, s"$other is not a pair delimited by $delimiter").failure
         }
 
-      case Nil    => (position, s"Expected string at position $position to be non empty").failure
+      case Nil => (position, s"Expected string at position $position to be non empty").failure
     })
+  }
 
   /**
    * A parser for a list delimited values of the same type
    */
-  def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[List[A]] =
+  def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[List[A]] = {
+    val delimitedParser = DelimitedValuesParser.delimited(delimiter)
+
     ListParser((position, state) => state match {
       case h :: t =>
-        val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter).filter(_.nonEmpty))
-        parsed.map { case (_, _, as) => (position + 1, t, as) }
+        delimitedParser.parse(h) match {
+          case \/-(list) =>
+            val parsed = repeat(p).parse(list.filter(_.nonEmpty))
+            parsed.map { case (_, _, as) => (position + 1, t, as) }
+
+          case -\/(failed) =>
+            (position, s"$h is not a list of $delimiter-delimited values: $failed").failure
+        }
 
       case Nil => (position, Nil, Nil).success
     })
+  }
 
   /**
    * A parser that repeats the application of another parser until all the input is consumed

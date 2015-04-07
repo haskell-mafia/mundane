@@ -10,9 +10,9 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
-    , aggregate = Seq(bytes, cli, control, data, error, io, parse, reflect, ssh, testing, testingExtra, time, trace)
+    , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, ssh, testing, testingExtra, time, trace)
     )
-    .dependsOn(bytes, cli, control, data, error, io, parse, reflect, ssh, testing, time, trace)
+    .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, ssh, testing, time, trace)
 
   lazy val standardSettings = Defaults.coreDefaultSettings ++
                               projectSettings              ++
@@ -65,6 +65,19 @@ object build extends Build {
     ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.rng ++ depend.testing ++ depend.kiama)
   )
 
+  lazy val csv = Project(
+    id = "csv"
+    , base = file("mundane-csv")
+    , settings = standardSettings ++ lib("csv") ++ Seq[Settings](
+      name := "mundane-csv"
+    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.simpleCsv ++ depend.parboiled(sv) ++ depend.testing ++ depend.disorder ++ depend.caliper)) ++
+      // enable forking in run
+    Seq(fork in run := true,
+    // we need to add the runtime classpath as a "-cp" argument to the `javaOptions in run`, otherwise caliper
+    // will not see the right classpath and die with a ConfigurationException
+    javaOptions in run ++= Seq("-cp", Attributed.data((fullClasspath in Runtime).value).mkString(":")))
+  ).dependsOn(control)
+
   lazy val error = Project(
     id = "error"
   , base = file("mundane-error")
@@ -92,7 +105,7 @@ object build extends Build {
       name := "mundane-parse"
     ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.parboiled(sv) ++ depend.joda ++ depend.testing))
   )
-  .dependsOn(control)
+  .dependsOn(control, csv)
 
   lazy val reflect = Project(
     id = "reflect"
