@@ -53,6 +53,7 @@ Examples
    extract a pair of values                                                          $pair
    extract delimited strings                                                         $delimitedStrings
    extract delimited values                                                          $delimitedValues
+   delimited values don't blow the stack                                             $delimitedStackSafe
    extract key/value maps                                                            $keyValueMaps
    extract bracketed values                                                          $bracketedValues
    optionally provide a name in case of a failure                                    $named
@@ -288,6 +289,11 @@ Convenience methods
     val parser = int.delimited(delimiter = delimiter.d)
     val input  = if (ints.isEmpty) Nil else List(ints.mkString(delimiter.s))
     parser.parse(input).toEither must beRight((input.size, Nil, ints))
+  }
+
+  def delimitedStackSafe = {
+    val bigList = Array.fill(12000)(1).toList
+    int.commaDelimited.run(bigList.mkString(",").pure[List]).toEither must beRight(bigList)
   }
 
   def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
