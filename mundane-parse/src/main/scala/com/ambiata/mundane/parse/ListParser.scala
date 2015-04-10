@@ -273,13 +273,12 @@ object ListParser {
    */
   def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char): ListParser[(A, B)] =
     ListParser((position, state) => state match {
-      case h :: t   =>
+      case h :: t =>
         Delimited.parseRow(h, delimiter) match {
           case a :: b :: Nil =>
-            pa.parse(List(a)).flatMap { case (_, _, ra) => pb.parse(List(b)).map { case (_, _, rb) => (position + 1, t, (ra, rb)) } }
+            (pa.run(List(a)) |@| pb.run(List(b)))((a,b) => (position + 1, t, a -> b )).leftMap(e => position -> e)
           case other => (position, s"$other is not a pair delimited by $delimiter").failure
         }
-
       case Nil    => (position, s"Expected string at position $position to be non empty").failure
     })
 
@@ -289,17 +288,19 @@ object ListParser {
   def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[List[A]] =
     ListParser((position, state) => state match {
       case h :: t =>
-        val parsed = repeat(p).parse(Delimited.parseRow(h, delimiter).filter(_.nonEmpty))
-        parsed.map { case (_, _, as) => (position + 1, t, as) }
-
+        import scala.annotation.tailrec
+        @tailrec def traverseListParser[B](p: ListParser[B], ls: List[String], as: List[B]): Validation[String, List[B]] = ls match {
+          case h :: t => p.run(h.pure[List]) match {
+            case Success(a)   => traverseListParser(p, t, a :: as)
+            case e@Failure(_) => e
+          }
+          case _ => Success(as.reverse)
+        }
+        val splitList = Delimited.parseRow(h, delimiter).filter(_.nonEmpty)
+        val parsed = traverseListParser[A](p, splitList, Nil)
+        parsed.map { case as => (position + 1, t, as) }.leftMap(e => position -> e)
       case Nil => (position, Nil, Nil).success
     })
-
-  /**
-   * A parser that repeats the application of another parser until all the input is consumed
-   */
-  def repeat[A](p: ListParser[A]): ListParser[List[A]] =
-    emptyList ||| p.flatMap(a => repeat(p).map(seq => a +: seq))
 
   /**
    * A parser for a value that is surrounded by 2 other characters
