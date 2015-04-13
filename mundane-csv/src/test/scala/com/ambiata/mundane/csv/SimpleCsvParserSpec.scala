@@ -11,6 +11,10 @@ class SimpleCsvParserSpec extends Specification with ScalaCheck with Disjunction
    comma-separated values $csv
    quoted fields          $quoted
 
+   test ${
+  SimpleCsv.delimited('~').parse("a~b") must be_\/-(List("a", "b"))
+}
+
  but it does not reject some lines with unquoted characters in quoted fields $malformed
 
  Common test case sets

@@ -14,7 +14,7 @@ import scalaz._, Scalaz._
  * like "a "good day"
  *
  */
-case class SimpleCsv(delimiter: Char, quoteCharacter: Option[Char], escapeCharacter: Option[Char]) {
+case class SimpleCsv(delimiter: Char, quoteCharacter: Option[Char], escapeCharacter: Option[Char]) extends CsvParser {
   private[this] val parser: net.quux00.simplecsv.CsvParser = {
     val builder = new CsvParserBuilder
     (quoteCharacter, escapeCharacter) match {
