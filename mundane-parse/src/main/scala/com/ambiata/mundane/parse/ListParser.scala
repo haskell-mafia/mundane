@@ -1,10 +1,10 @@
 package com.ambiata.mundane.parse
 
+import com.ambiata.mundane.csv._
 import scalaz._, Scalaz._
 import org.joda.time._
 import format.DateTimeFormat
 import scalaz.Failure
-import scala.Some
 import scalaz.Success
 import ListParser._
 import scalaz.Validation.FlatMap._
@@ -269,39 +269,62 @@ object ListParser {
     ListParser((pos, str) => (str.length, Nil, ()).success)
 
   /**
-   * A parser for a pair of 2 delimited values
+   * A parser for a delimited pair of values
+   *
+   * It uses the SimpleCsv parser which will *not* reject quoted fields containing unquoted quotes
    */
   def pair[A, B](pa: ListParser[A], pb: ListParser[B], delimiter: Char): ListParser[(A, B)] =
+    csvPair(pa, pb, SimpleCsv.delimited(delimiter))
+
+  /**
+   * A parser for a pair of values which can be read as comma-pipe-tab-separated
+   */
+  def csvPair[A, B](pa: ListParser[A], pb: ListParser[B], parser: CsvParser): ListParser[(A, B)] = {
     ListParser((position, state) => state match {
       case h :: t =>
-        Delimited.parseRow(h, delimiter) match {
+        csvResultToParseResult(position, parser.parse(h)).flatMap {
           case a :: b :: Nil =>
             (pa.run(List(a)) |@| pb.run(List(b)))((a,b) => (position + 1, t, a -> b )).leftMap(e => position -> e)
-          case other => (position, s"$other is not a pair delimited by $delimiter").failure
+          case other => (position, s"$other cannot be parsed as a pair").failure
         }
       case Nil    => (position, s"Expected string at position $position to be non empty").failure
     })
+  }
 
   /**
    * A parser for a list delimited values of the same type
+   *
+   * It uses the SimpleCsv parser which will *not* reject quoted fields containing unquoted quotes
    */
   def delimitedValues[A](p: ListParser[A], delimiter: Char): ListParser[List[A]] =
+    csvValues(p, SimpleCsv.delimited(delimiter))
+
+  /**
+   * A parser for csv values
+   */
+  def csvValues[A](p: ListParser[A], parser: CsvParser): ListParser[List[A]] = {
     ListParser((position, state) => state match {
       case h :: t =>
         import scala.annotation.tailrec
         @tailrec def traverseListParser[B](p: ListParser[B], ls: List[String], as: List[B]): Validation[String, List[B]] = ls match {
-          case h :: t => p.run(h.pure[List]) match {
-            case Success(a)   => traverseListParser(p, t, a :: as)
+          case h1 :: t1 => p.run(h1.pure[List]) match {
+            case Success(a)   => traverseListParser(p, t1, a :: as)
             case e@Failure(_) => e
           }
           case _ => Success(as.reverse)
         }
-        val splitList = Delimited.parseRow(h, delimiter).filter(_.nonEmpty)
-        val parsed = traverseListParser[A](p, splitList, Nil)
-        parsed.map { case as => (position + 1, t, as) }.leftMap(e => position -> e)
+        csvResultToParseResult(position, parser.parse(h)).filter(_.nonEmpty).flatMap { splitList =>
+          val parsed = traverseListParser[A](p, splitList, Nil)
+          parsed.map { case as => (position + 1, t, as) }.leftMap((position, _))
+        }
       case Nil => (position, Nil, Nil).success
     })
+  }
 
+  /** transform the result of parsing csv fields into a ListParse result */
+  def csvResultToParseResult(position: Int, result: String \/ List[String]): Validation[(Int, String), List[String]] =
+    Validation.fromEither(result.toEither.leftMap((position, _)))
+  
   /**
    * A parser for a value that is surrounded by 2 other characters
    */

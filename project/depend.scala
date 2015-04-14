@@ -23,6 +23,8 @@ object depend {
 
   val testing = specs2.map(_ % "test")
 
+  val caliper = Seq("com.google.caliper"   %  "caliper"         % "0.5-rc1",
+                    "com.google.guava"     %  "guava"           % "14.0.1" force())
   val disorder =
     Seq("com.ambiata" %% "disorder" % "0.0.1-20150317050225-9c1f81e" % "test")
 
@@ -44,6 +46,8 @@ object depend {
   val rng =      Seq("com.nicta"            %% "rng"            % "1.3.0")
 
   val kiama =    Seq("com.googlecode.kiama" %% "kiama"          % "1.6.0")
+
+  val simpleCsv  = Seq("net.quux00.simplecsv" % "simplecsv" % "2.0")
 
   val resolvers = Seq(
       Resolver.sonatypeRepo("releases")
