@@ -276,8 +276,8 @@ Convenience methods
          |not an int: 'bbb' (position: 2)""".stripMargin)
   }
 
-  def pair = prop((i: Int, d: Double, c: Char) =>
-    ListParser.pair(int, double, delimiter = c).run(List(s"$i$c$d")).toEither must beRight((i, d)))
+  def pair = prop((i: Int, j: Double, d: Delimiter) =>
+    ListParser.pair(int, double, delimiter = d.d).run(List(s"$i${d.d}$j")).toEither must beRight((i, j)))
 
   def delimitedStrings = prop { (strings: List[SimpleString], delimiter: Delimiter) =>
     val parser = simpleString.delimited(delimiter = delimiter.d)
@@ -287,7 +287,7 @@ Convenience methods
 
   def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
     val parser = int.delimited(delimiter = delimiter.d)
-    val input  = if (ints.isEmpty) Nil else List(ints.mkString(delimiter.s))
+    val input  = List(ints.mkString(delimiter.s))
     parser.parse(input).toEither must beRight((input.size, Nil, ints))
   }
 
@@ -299,7 +299,7 @@ Convenience methods
   def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
     val parser = ListParser.keyValueMap(simpleString, int, entriesDelimiter = entryDelimiter.d, keyValueDelimiter = keyValueDelimiter.d)
     val zipped = strings.toList.zip(ints.toList)
-    val input  = if (zipped.isEmpty) Nil else  List(zipped.map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
+    val input  = List(zipped.map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
 
     parser.run(input).toEither must beRight(zipped.toMap[SimpleString, Int])
   }
