@@ -316,7 +316,7 @@ object ListParser {
           case _ => Success(as.reverse)
         }
 
-        if (h.isEmpty) (position + 1, Nil, Nil).success
+        if (h.isEmpty) (position + 1, t, Nil).success
         else
           csvResultToParseResult(position, parser.parse(h)).flatMap { splitList =>
             val parsed = traverseListParser[A](p, splitList, Nil)

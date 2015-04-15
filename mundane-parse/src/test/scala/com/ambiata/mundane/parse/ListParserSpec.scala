@@ -287,8 +287,8 @@ Convenience methods
 
   def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
     val parser = int.delimited(delimiter = delimiter.d)
-    val input  = List(ints.mkString(delimiter.s))
-    parser.parse(input).toEither must beRight((input.size, Nil, ints))
+    val input  = List(ints.mkString(delimiter.s), "rest")
+    parser.parse(input).toEither must beRight((1, List("rest"), ints))
   }
 
   def delimitedStackSafe = {
