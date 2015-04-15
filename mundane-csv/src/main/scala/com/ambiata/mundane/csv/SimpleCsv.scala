@@ -3,7 +3,7 @@ package csv
 
 import net.quux00.simplecsv._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scalaz._, Scalaz._
 
 /**
@@ -29,8 +29,14 @@ case class SimpleCsv(delimiter: Char, quoteCharacter: Option[Char], escapeCharac
   def parse(line: String): String \/ List[String] =
     \/.fromTryCatchNonFatal {
       if (line.isEmpty) List("")
-      else parser.parse(line).toList
+      else parser.parse(line).asScala.toList
     }.leftMap(_.getMessage)
+
+  def setQuoteCharacter(quote: Char): SimpleCsv =
+    copy(quoteCharacter = Some(quote))
+
+  def setEscapeCharacter(escape: Char): SimpleCsv =
+    copy(escapeCharacter = Some(escape))
 }
 
 object SimpleCsv {

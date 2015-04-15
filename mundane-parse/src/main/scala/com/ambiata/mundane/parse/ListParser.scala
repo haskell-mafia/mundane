@@ -282,12 +282,14 @@ object ListParser {
   def csvPair[A, B](pa: ListParser[A], pb: ListParser[B], parser: CsvParser): ListParser[(A, B)] = {
     ListParser((position, state) => state match {
       case h :: t =>
-        csvResultToParseResult(position, parser.parse(h)).flatMap {
-          case a :: b :: Nil =>
-            (pa.run(List(a)) |@| pb.run(List(b)))((a,b) => (position + 1, t, a -> b )).leftMap(e => position -> e)
-          case other => (position, s"$other cannot be parsed as a pair").failure
-        }
-      case Nil    => (position, s"Expected string at position $position to be non empty").failure
+        if (h.isEmpty) (position, s"Expected string at position $position to be non empty").failure
+        else
+          csvResultToParseResult(position, parser.parse(h)).flatMap {
+            case a :: b :: Nil =>
+              (pa.run(List(a)) |@| pb.run(List(b)))((a,b) => (position + 1, t, a -> b )).leftMap(e => position -> e)
+            case other => (position, s"$other cannot be parsed as a pair").failure
+          }
+      case Nil => (position, s"Expected string at position $position to be non empty").failure
     })
   }
 
@@ -313,10 +315,13 @@ object ListParser {
           }
           case _ => Success(as.reverse)
         }
-        csvResultToParseResult(position, parser.parse(h)).filter(_.nonEmpty).flatMap { splitList =>
-          val parsed = traverseListParser[A](p, splitList, Nil)
-          parsed.map { case as => (position + 1, t, as) }.leftMap((position, _))
-        }
+
+        if (h.isEmpty) (position + 1, Nil, Nil).success
+        else
+          csvResultToParseResult(position, parser.parse(h)).flatMap { splitList =>
+            val parsed = traverseListParser[A](p, splitList, Nil)
+            parsed.map { case as => (position + 1, t, as) }.leftMap((position, _))
+          }
       case Nil => (position, Nil, Nil).success
     })
   }
