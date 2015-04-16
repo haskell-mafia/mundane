@@ -285,10 +285,10 @@ Convenience methods
     parser.run(input).toEither must beRight(strings)
   }
 
-  def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter) =>
+  def delimitedValues = prop { (ints: List[Int], delimiter: Delimiter, rest: List[String]) =>
     val parser = int.delimited(delimiter = delimiter.d)
-    val input  = List(ints.mkString(delimiter.s), "rest")
-    parser.parse(input).toEither must beRight((1, List("rest"), ints))
+    val input  = List(ints.mkString(delimiter.s)) ++ rest
+    parser.parse(input).toEither must beRight((1, rest, ints))
   }
 
   def delimitedStackSafe = {
@@ -296,18 +296,18 @@ Convenience methods
     int.commaDelimited.run(bigList.mkString(",").pure[List]).toEither must beRight(bigList)
   }
 
-  def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2) =>
+  def keyValueMaps = prop { (strings: List[SimpleString], ints: List[Int], entryDelimiter: Delimiter, keyValueDelimiter: Delimiter2, rest: List[String]) =>
     val parser = ListParser.keyValueMap(simpleString, int, entriesDelimiter = entryDelimiter.d, keyValueDelimiter = keyValueDelimiter.d)
     val zipped = strings.toList.zip(ints.toList)
     val input  = List(zipped.map { case (a, b) => s"${a.s}${keyValueDelimiter.d}$b" }.mkString(entryDelimiter.s))
 
-    parser.run(input).toEither must beRight(zipped.toMap[SimpleString, Int])
+    parser.parse(input ++ rest).toEither must beRight((1, rest, zipped.toMap[SimpleString, Int]))
   }
 
-  def bracketedValues = prop { (string: SimpleString, brackets: Brackets) =>
+  def bracketedValues = prop { (string: SimpleString, brackets: Brackets, rest: List[String]) =>
     val parser = simpleString.bracketed(opening = brackets.opening, closing = brackets.closing)
     val input  = List(brackets.opening + string.s + brackets.closing)
-    parser.run(input).toEither must beRight(string)
+    parser.parse(input ++ rest).toEither must beRight((1, rest, string))
   }
 
   def named = prop { str: String =>
