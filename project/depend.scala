@@ -12,9 +12,6 @@ object depend {
 
   val stream = Seq(  "org.scalaz.stream"    %% "scalaz-stream"     % "0.5a")
 
-  val ssh    = Seq(  "com.decodified"       %% "scala-ssh"         % "0.7.0"
-                  ,  "org.apache.sshd"      %  "sshd-core"         % "0.14.0" % "test")
-
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-scalacheck"
                    , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5")
