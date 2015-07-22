@@ -3,10 +3,11 @@ package com.ambiata.mundane.io
 import java.io.File
 import java.net.URI
 
-import org.specs2.Specification
+import org.scalacheck._, Arbitrary._, Gen._
+import org.specs2.{ScalaCheck, Specification}
 import org.specs2.matcher.Matcher
 
-class FilePathSpec extends Specification { def is = s2"""
+class FilePathSpec extends Specification with ScalaCheck { def is = s2"""
 
  Paths are of 2 sorts:
 
@@ -74,10 +75,15 @@ class FilePathSpec extends Specification { def is = s2"""
    ${ ("test" </> "hello" </> "world").dirPath must_== "test/hello/world/" }
 
    get a portion of the path
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  === "world" </> "eric" }
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("test" </> "hello")  must beRelative }
-   ${ ("test" </> "hello" </> "world" <|> "eric").relativeTo("test" </> "hello")  must beRelative }
-   ${ ("test" </> "hello" </> "world" </> "eric").relativeTo("other" </> "hello") === "test" </> "hello" </> "world" </> "eric" }
+   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).asAbsolute.relativeTo(dir1.asAbsolute) === dir2.asRelative) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> "this" </> dir2).relativeTo(dir1 </> "that") === (dir1 </> "this" </> dir2)) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => (dir1 </> dir2).asRelative.relativeTo(dir1) === (dir1 </> dir2).asRelative) }
+
+   ${ prop((dir1: DirPath, dir2: DirPath) =>
+        dir1.asAbsolute.commonPrefix(dir2.asAbsolute) </> dir1.asAbsolute.removeCommonPrefix(dir2.asAbsolute) ===
+        dir1.asAbsolute) }
+   ${ prop((dir1: DirPath, dir2: DirPath) => dir1.removeCommonPrefix(dir2).isRelative === dir1.isRelative) }
+
    ${ ("test" </> "hello" </> "world").fromRoot === "hello" </> "world" }
    ${ ("test" </> "hello" </> "world").names === List("test", "hello", "world").map(FileName.unsafe) }
    ${ ("test" </> "hello" </> "world" </> "hi").up(2) === "test" </> "hello" }
@@ -122,4 +128,18 @@ class FilePathSpec extends Specification { def is = s2"""
     (filePath.isAbsolute, s"${filePath} is not absolute")
   }
 
+  implicit def ArbitraryFilePath: Arbitrary[FilePath] =
+    Arbitrary(arbitrary[DirPath].map(_.toFilePath))
+
+  implicit def ArbitraryDirPath: Arbitrary[DirPath] = Arbitrary {
+    for {
+      n        <- choose(0, 5)
+      names    <- listOfN(n, arbitrary[FileName])
+      absolute <- arbitrary[Boolean]
+    } yield DirPath(names.toVector, isAbsolute = absolute)
+  }
+
+  implicit def ArbitraryFileName: Arbitrary[FileName] = Arbitrary {
+    nonEmptyListOf(alphaChar).map(_.mkString).suchThat(_.forall(_.isLetter)).map(FileName.unsafe)
+  }
 }
