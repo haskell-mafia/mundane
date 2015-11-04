@@ -37,7 +37,7 @@ object build extends Build {
   , base = file("mundane-bytes")
   , settings = standardSettings ++ lib("bytes") ++ Seq[Settings](
       name := "mundane-bytes"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.disorder)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.disorder)
   )
 
   lazy val cli = Project(
@@ -53,7 +53,7 @@ object build extends Build {
   , base = file("mundane-control")
   , settings = standardSettings ++ lib("control") ++ Seq[Settings](
       name := "mundane-control"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
   )
   .dependsOn(error)
 
@@ -62,7 +62,7 @@ object build extends Build {
   , base = file("mundane-data")
   , settings = standardSettings ++ lib("data") ++ Seq[Settings](
       name := "mundane-data"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.rng ++ depend.testing ++ depend.kiama)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.rng ++ depend.specs2 ++ depend.kiama)
   )
 
   lazy val csv = Project(
@@ -70,7 +70,7 @@ object build extends Build {
     , base = file("mundane-csv")
     , settings = standardSettings ++ lib("csv") ++ Seq[Settings](
       name := "mundane-csv"
-    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.simpleCsv ++ depend.parboiled(sv) ++ depend.testing ++ depend.disorder ++ depend.caliper)) ++
+    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.simpleCsv ++ depend.parboiled(sv) ++ depend.specs2 ++ depend.disorder ++ depend.caliper)) ++
       // enable forking in run
     Seq(fork in run := true,
     // we need to add the runtime classpath as a "-cp" argument to the `javaOptions in run`, otherwise caliper
@@ -92,18 +92,18 @@ object build extends Build {
   , settings = standardSettings ++ lib("io") ++ Seq[Settings](
       name := "mundane-io"
     ) ++ Seq[Settings](
-      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing ++
+      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++
                               depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
-  .dependsOn(control, data, reflect, testing % "test")
+  .dependsOn(control, data, reflect, testing % "test->test")
 
   lazy val parse = Project(
     id = "parse"
   , base = file("mundane-parse")
   , settings = standardSettings ++ lib("parse") ++ Seq[Settings](
       name := "mundane-parse"
-    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.parboiled(sv) ++ depend.joda ++ depend.testing))
+    ) ++ Seq[Settings](libraryDependencies <++= scalaVersion(sv => depend.parboiled(sv) ++ depend.joda ++ depend.specs2))
   )
   .dependsOn(control, csv)
 
@@ -112,7 +112,7 @@ object build extends Build {
   , base = file("mundane-reflect")
   , settings = standardSettings ++ lib("reflect") ++ Seq[Settings](
         name := "mundane-reflect"
-      , libraryDependencies ++= depend.reflect(scalaVersion.value) ++ depend.testing
+      , libraryDependencies ++= depend.reflect(scalaVersion.value) ++ depend.specs2
     )
   )
 
@@ -121,9 +121,9 @@ object build extends Build {
   , base = file("mundane-store")
   , settings = standardSettings ++ lib("store") ++ Seq[Settings](
       name := "mundane-store"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing ++ depend.bits ++ depend.stream)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2 ++ depend.bits ++ depend.stream)
   )
-  .dependsOn(control, data, io, testing % "test", io % "test->test")
+  .dependsOn(control, data, io, testing % "test->test", io % "test->test")
 
   lazy val testing = Project(
     id = "testing"
@@ -140,14 +140,14 @@ object build extends Build {
     , settings = standardSettings ++ lib("testing") ++ Seq[Settings](
       name := "mundane-testing-extra"
     ) ++ Seq[Settings](libraryDependencies ++= depend.specs2 ++ depend.specs2Extra)
-  ).dependsOn(testing)
+  )
 
   lazy val time = Project(
     id = "time"
   , base = file("mundane-time")
   , settings = standardSettings ++ lib("time") ++ Seq[Settings](
       name := "mundane-time"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.testing)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2)
   ).dependsOn(data)
 
   lazy val trace = Project(
@@ -155,9 +155,9 @@ object build extends Build {
   , base = file("mundane-trace")
   , settings = standardSettings ++ lib("trace") ++ Seq[Settings](
       name := "mundane-trace"
-    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.testing)
+    ) ++ Seq[Settings](libraryDependencies ++= depend.scalaz ++ depend.specs2)
   )
-  .dependsOn(data, control, io, testing % "test")
+  .dependsOn(data, control, io, testing % "test->test")
 
   lazy val compilationSettings: Seq[Settings] = Seq(
     javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
@@ -174,7 +174,7 @@ object build extends Build {
     promulgate.library(s"com.ambiata.mundane.$name", "ambiata-oss")
 
   lazy val testingSettings: Seq[Settings] = Seq(
-    initialCommands in console := "import org.specs2._",
+    initialCommands in (Test, console) := "import org.specs2._",
     logBuffered := false,
     cancelable := true,
     javaOptions += "-Xmx3G"

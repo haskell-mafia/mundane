@@ -1,10 +1,8 @@
-package com.ambiata.mundane
-package testing
+package com.ambiata.mundane.testing
 
-import control._
-import org.specs2._
-import matcher._
-import execute.{Result => SpecsResult, Error => SpecsError, _}
+import com.ambiata.mundane.control.{Error, Ok, Result}
+import org.specs2.execute.{Result => SpecsResult, _}
+import org.specs2.matcher._
 
 import scalaz.\&/
 import scalaz.\&/.This

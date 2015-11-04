@@ -1,11 +1,10 @@
 package com.ambiata.mundane.testing
 
-import org.specs2._
-import specification._
-import matcher._
-import execute._
-import main._
-import time._
+import org.specs2.execute._
+import org.specs2.main._
+import org.specs2.matcher._
+import org.specs2.specification._
+import org.specs2.time._
 
 /**
  * This trait can be used to add a global time out to each example or for a specific one:

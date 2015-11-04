@@ -1,7 +1,8 @@
 package com.ambiata.mundane
 
-import scalaz.effect.IO
 import org.specs2.execute.AsResult
+
+import scalaz.effect.IO
 
 package object testing {
 

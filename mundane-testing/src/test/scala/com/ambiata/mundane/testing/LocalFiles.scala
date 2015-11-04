@@ -1,7 +1,6 @@
 package com.ambiata.mundane.testing
 
-import java.io.{FileOutputStream, File, PrintStream}
-import java.util.UUID
+import java.io.{File, PrintStream}
 
 // FIX this is messy and should not exists
 

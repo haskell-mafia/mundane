@@ -1,9 +1,10 @@
 package com.ambiata.mundane.testing
 
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Prop._
 import org.scalacheck._
-import Prop._
-import Arbitrary._
-import scalaz._, Scalaz._
+
+import scalaz._
 
 /**
  * WARNING: can't use scalaz-scalacheck-binding because of specs/scalacheck/scalaz compatibility at the moment
