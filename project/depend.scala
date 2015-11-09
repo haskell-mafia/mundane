@@ -14,11 +14,9 @@ object depend {
 
   val specs2 = Seq(  "org.specs2"           %% "specs2-core"
                    , "org.specs2"           %% "specs2-scalacheck"
-                   , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5")
+                   , "org.specs2"           %% "specs2-junit").map(_ % "2.4.5" % "test")
 
-  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.4.5" excludeAll ExclusionRule(organization = "org.scalamacros"))
-
-  val testing = specs2.map(_ % "test")
+  val specs2Extra = Seq("org.specs2"         %% "specs2-matcher-extra" % "2.4.5" % "test" excludeAll ExclusionRule(organization = "org.scalamacros"))
 
   val caliper = Seq("com.google.caliper"   %  "caliper"         % "0.5-rc1",
                     "com.google.guava"     %  "guava"           % "14.0.1" force())

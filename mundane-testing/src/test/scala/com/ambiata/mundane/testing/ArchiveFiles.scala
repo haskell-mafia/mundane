@@ -1,6 +1,6 @@
 package com.ambiata.mundane.testing
 
-import java.io.{PrintStream, FileOutputStream, File}
+import java.io.{File, FileOutputStream, PrintStream}
 
 // FIX this should be production code
 trait ArchiveFiles {

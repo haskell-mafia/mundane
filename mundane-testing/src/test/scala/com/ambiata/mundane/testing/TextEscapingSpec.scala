@@ -1,10 +1,7 @@
-package com.ambiata.mundane
-package testing
+package com.ambiata.mundane.testing
 
 import com.ambiata.mundane.parse._
 import org.specs2._
-
-import scalaz._, Scalaz._
 
 class TextEscapingSpec extends Specification with ScalaCheck { def is = s2"""
 
