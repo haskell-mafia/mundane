@@ -47,9 +47,9 @@ Trace Demonstration
   def empty = prop((x: Vector[String], y: Vector[String]) =>
     run(Trace.empty[WriterS], x, y) must_== Vector())
 
-  def stream = prop((x: Vector[String]) =>
-    capture(out => { val trace = Trace.stream(out); x.traverseU(trace(one, _)) })(_ must_==
-     Lists.prepareForFile(x.toList)))
+  def stream = prop((x: Vector[SimpleString]) =>
+    capture(out => { val trace = Trace.stream(out); x.map(_.value).traverseU(trace(one, _)) })(_ must_==
+     Lists.prepareForFile(x.map(_.value).toList)))
 
   def blacklist = prop((x: Vector[String], y: Vector[String]) =>
     run(Trace.writer[Id].not(List(two)), x, y) must_== x)
@@ -108,4 +108,10 @@ Trace Demonstration
     val out = new PrintStream(baos, true, "UTF-8")
     (f(out) must beOk) and check(new String(baos.toString))
   }
+
+  case class SimpleString(value: String)
+
+  implicit def ArbitrarySimpleString: Arbitrary[SimpleString] =
+    Arbitrary(Gen.identifier.map(SimpleString))
+
 }
