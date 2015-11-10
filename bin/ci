@@ -1,3 +1,5 @@
 #!/bin/sh
 
+echo $LANG
+
 ./sbt -ivy ~/.ivy_project/mundane -Dsbt.log.noformat=true "; clean; stats; test-only -- console junitxml; publish;  echo-version"
