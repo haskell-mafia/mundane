@@ -104,7 +104,7 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       case "" :: t => (position + 1, t, None).success
       case xs => parse(position, xs).map(_.map(Option.apply[A]))
     })
-
+    
   def commaDelimited: ListParser[List[A]] =
     delimited(',')
 
@@ -388,7 +388,14 @@ object ListParser {
   def intOrZero: ListParser[Int] =
     empty(0) ||| int
 
+  /** parser for string enumerations */
+  def oneOf(name: String, names: String*): ListParser[String] = 
+    oneOfList(name +: names.toList)
 
+  /** parser for string enumerations */
+  def oneOfList(names: List[String]): ListParser[String] = {
+    parseAttempt(s => if (names.contains(s)) Some(s) else None, s"${names.mkString(",")} does not contain")
+  }
 
   implicit def ListParserMonad: Monad[ListParser] = new Monad[ListParser] {
     def bind[A, B](r: ListParser[A])(f: A => ListParser[B]) = r flatMap f

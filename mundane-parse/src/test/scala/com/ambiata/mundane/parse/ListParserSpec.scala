@@ -57,6 +57,8 @@ Examples
    extract key/value maps                                                            $keyValueMaps
    extract bracketed values                                                          $bracketedValues
    optionally provide a name in case of a failure                                    $named
+   extract one of many accepted values                                               $enumeration
+   extract one of many accepted values - fail case                                   $enumerationFail
 
 Properties
 ==========
@@ -313,6 +315,18 @@ Convenience methods
   def named = prop { str: String =>
     val parser = fail("this is a failed parser").named("field number 1")
     parser.run(List(str)).toEither must beLeft(contain("field number 1"))
+  }
+  
+  def enumeration = prop { (s1: String, rest: List[String]) =>
+    val parser = ListParser.oneOf(s1, rest:_*)
+    (s1 +: rest) must contain { s: String =>
+      parser.run(List(s)).toEither must beRight(s)
+    }.forall    
+  }
+
+  def enumerationFail = prop { (s1: String, rest: List[String], random: Char) =>
+    val parser = ListParser.oneOf(s1, rest:_*)
+      parser.run(List(random.toString)).toEither must beLeft
   }
 
   def orCombinator1 = prop((msg: String, str: String) =>
