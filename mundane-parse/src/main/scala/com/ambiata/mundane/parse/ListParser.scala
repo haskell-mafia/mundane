@@ -104,7 +104,7 @@ case class ListParser[A](parse: (Int, List[String]) => ParseResult[A]) {
       case "" :: t => (position + 1, t, None).success
       case xs => parse(position, xs).map(_.map(Option.apply[A]))
     })
-    
+
   def commaDelimited: ListParser[List[A]] =
     delimited(',')
 
@@ -329,7 +329,7 @@ object ListParser {
   /** transform the result of parsing csv fields into a ListParse result */
   def csvResultToParseResult(position: Int, result: String \/ List[String]): Validation[(Int, String), List[String]] =
     Validation.fromEither(result.toEither.leftMap((position, _)))
-  
+
   /**
    * A parser for a value that is surrounded by 2 other characters
    */
@@ -389,7 +389,7 @@ object ListParser {
     empty(0) ||| int
 
   /** parser for string enumerations */
-  def oneOf(name: String, names: String*): ListParser[String] = 
+  def oneOf(name: String, names: String*): ListParser[String] =
     oneOfList(name +: names.toList)
 
   /** parser for string enumerations */
