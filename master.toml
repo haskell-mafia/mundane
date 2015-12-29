@@ -1,0 +1,10 @@
+[master]
+   version = 1
+   runner = "s3://ambiata-dist/master-ambiata/master-scala-oss-0.0.1-20151221033046-cc886a4"
+
+[build.master]
+   PUBLISH = "true"
+
+[build.branches]
+   PUBLISH = "false"
+

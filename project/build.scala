@@ -9,7 +9,7 @@ object build extends Build {
   lazy val mundane = Project(
       id = "mundane"
     , base = file(".")
-    , settings = standardSettings ++ promulgate.library("com.ambiata.mundane", "ambiata-oss")
+    , settings = standardSettings ++ lib("com.ambiata.mundane")
     , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, testing, testingExtra, time, trace)
     )
     .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, testing, time, trace)
@@ -170,8 +170,11 @@ object build extends Build {
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
-  def lib(name: String) =
-    promulgate.library(s"com.ambiata.mundane.$name", "ambiata-oss")
+  lazy val ossBucket: String = 
+    sys.env.getOrElse("AMBIATA_IVY_OSS", "ambiata-oss")
+
+  def lib(name: String): Seq[Settings] =
+    promulgate.library(s"com.ambiata.mundane.$name", ossBucket)
 
   lazy val testingSettings: Seq[Settings] = Seq(
     initialCommands in (Test, console) := "import org.specs2._",
