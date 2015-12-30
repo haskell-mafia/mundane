@@ -3,7 +3,7 @@
    runner = "s3://ambiata-dist/master-ambiata/master-scala-oss-0.0.1-20151221033046-cc886a4"
    sha1 = "13a01b88cc798fa6a89400ab1a77d80adf5dfe32"
 
-[build.master]
+[build.dist]
    PUBLISH = "true"
 
 [build.branches]
