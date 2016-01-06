@@ -2,7 +2,6 @@ package com.ambiata.mundane.io
 
 import com.ambiata.disorder._
 import com.ambiata.mundane.path._
-import com.ambiata.mundane.path.Arbitraries._
 import com.ambiata.mundane.control._
 import com.ambiata.mundane.io.Arbitraries._
 import com.ambiata.mundane.testing.RIOMatcher._
@@ -27,13 +26,14 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
  Path
  ====
 
-  'LocalFile.fromFile' is symmetric with Path#toFile:
+  'LocalFile.fromFile.toPath' is symmetric
 
-    ${ prop((p: Path) => LocalFile.fromFile(p.toFile).map(_.path) must beOkValue(p)) }
-
-  'LocalFile.fromFile' is consistent with Path.apply:
-
-    ${ prop((p: Path) => LocalFile.fromFile(new java.io.File(p.path)).map(_.path) must beOkValue(p)) }
+    ${ prop((l: LocalTemporary) => for {
+         p <- l.path
+         f <- p.touch
+         n <- LocalFile.fromFile(f.toFile)
+       } yield p.path ==== n.toPath)
+     }
 
   'LocalFile.toLocalPath' is symmetric with Path#determine
 
@@ -50,14 +50,19 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
 
    a File
 
-     ${ LocalFile.fromFile(new File("hello/world")).map(_.path.path) must beOkValue("hello/world") }
+     ${ prop((l: LocalTemporary) => for {
+          p <- l.path
+          f <- p.touch
+          n <- LocalFile.fromFile(f.toFile)
+        } yield f ==== n)
+      }
 
    a URI
 
      ${ prop((l: LocalTemporary) => for {
           p <- l.path
           f <- p.touch
-          u = new java.io.File(f.path.path).toURI()
+          u = new File(f.path.path).toURI()
           n <- LocalFile.fromURI(u)
         } yield f.some ==== n)
       }

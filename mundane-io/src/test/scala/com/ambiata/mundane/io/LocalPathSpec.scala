@@ -73,17 +73,17 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
 
     ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineFile) must beOk }
 
-    ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineFile) must beFailWithMessage("Not a valid file") }
+    ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineFile) must beFail }
 
-    ${ LocalTemporary.random.path.flatMap(path => path.determineFile) must beFailWithMessage("Not a valid File or Directory") }
+    ${ LocalTemporary.random.path.flatMap(path => path.determineFile) must beFail }
 
   LocalPath can determine a directory and handle failure cases
 
-    ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineDirectory) must beFailWithMessage("Not a valid directory") }
+    ${ LocalTemporary.random.path.flatMap(path => path.touch >> path.determineDirectory) must beFail }
 
     ${ LocalTemporary.random.path.flatMap(path => path.mkdirs >> path.determineDirectory) must beOk }
 
-    ${ LocalTemporary.random.path.flatMap(path => path.determineDirectory) must beFailWithMessage("Not a valid File or Directory") }
+    ${ LocalTemporary.random.path.flatMap(path => path.determineDirectory) must beFail }
 
 
   LocalPath should be able to perform these basic operations
