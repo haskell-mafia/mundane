@@ -26,9 +26,10 @@ trait Dirs {
     tmpFile
   }
 
-  def rmdir(d: File) {
+  def rmdir(d: File): Unit = {
     if(d.isDirectory) d.listFiles.foreach(rmdir) else d.delete
     d.delete
+    ()
   }
 }
 

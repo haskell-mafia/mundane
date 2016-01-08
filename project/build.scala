@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 import com.ambiata.promulgate.project.ProjectPlugin._
+import scoverage.ScoverageSbtPlugin._
 
 object build extends Build {
   type Settings = Def.Setting[_]
@@ -10,9 +11,9 @@ object build extends Build {
       id = "mundane"
     , base = file(".")
     , settings = standardSettings ++ lib("com.ambiata.mundane")
-    , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, testing, testingExtra, time, trace)
+    , aggregate = Seq(bytes, cli, control, csv, data, error, io, parse, reflect, testing, testingExtra, time, trace, path)
     )
-    .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, testing, time, trace)
+    .dependsOn(bytes, cli, control, data, csv, error, io, parse, reflect, testing, time, trace, path)
 
   lazy val standardSettings = Defaults.coreDefaultSettings ++
                               projectSettings              ++
@@ -26,6 +27,7 @@ object build extends Build {
     , organization := "com.ambiata"
     , scalaVersion := "2.11.2"
     , crossScalaVersions := Seq(scalaVersion.value)
+    , fork in run  := true
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
     , updateOptions := updateOptions.value.withCachedResolution(true)
@@ -96,7 +98,19 @@ object build extends Build {
                               depend.reflect(scalaVersion.value) ++ depend.disorder
     )
   )
-  .dependsOn(control, data, reflect, testing % "test->test")
+  .dependsOn(control, data, reflect, path, path % "test->test", testing % "test->test")
+
+  lazy val path = Project(
+    id = "path"
+  , base = file("mundane-path")
+  , settings = standardSettings ++ lib("path") ++ Seq[Settings](
+      name := "mundane-path"
+    ) ++ Seq[Settings](
+      libraryDependencies ++= depend.scalaz ++ depend.joda ++ depend.specs2 ++
+                              depend.reflect(scalaVersion.value)
+    )
+  )
+  .dependsOn(control, reflect, testing % "test->test")
 
   lazy val parse = Project(
     id = "parse"
@@ -160,14 +174,34 @@ object build extends Build {
   .dependsOn(data, control, io, testing % "test->test")
 
   lazy val compilationSettings: Seq[Settings] = Seq(
-    javacOptions ++= Seq("-Xmx3G", "-Xms512m", "-Xss4m"),
-    maxErrors := 10,
-    scalacOptions <++= scalaVersion.map({
-      case x if x.contains("2.11") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Xlint")
-      case x if x.contains("2.10") => Seq("-deprecation", "-unchecked", "-feature", "-language:_", "-Ywarn-all", "-Xlint")
-      case x => sys.error("Unsupported scala version: " + x)
-    }),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    javaOptions ++= Seq(
+      "-Xmx3G"
+    , "-Xms512m"
+    , "-Xss4m"
+    )
+  , javacOptions ++= Seq(
+      "-source"
+    , "1.6"
+    , "-target"
+    , "1.6"
+    )
+  , maxErrors := 10
+  , scalacOptions ++= Seq(
+      "-target:jvm-1.6"
+    , "-deprecation"
+    , "-unchecked"
+    , "-feature"
+    , "-language:_"
+    , "-Ywarn-unused-import"
+    , "-Ywarn-value-discard"
+    , "-Yno-adapted-args"
+    , "-Xlint"
+    , "-Xfatal-warnings"
+    , "-Yinline-warnings"
+    )
+  , scalacOptions in (Compile,console) := Seq("-language:_", "-feature")
+  , scalacOptions in (Test) ++= Seq("-Yrangepos")
+  , scalacOptions in (Test,console) := Seq("-language:_", "-feature")
   )
 
   lazy val ossBucket: String = 

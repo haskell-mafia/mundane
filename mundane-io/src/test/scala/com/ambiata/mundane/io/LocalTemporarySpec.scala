@@ -24,30 +24,30 @@ class LocalTemporarySpec extends Specification with ScalaCheck { def is = s2"""
   /** Testing Temporary clean up finalizers */
   def file = prop((data: String, tmp: LocalTemporary) => for {
     f <- tmp.fileWithContent(data)
-    e <- Files.exists(f)
+    e <- f.exists
     _ <- RIO.unsafeFlushFinalizers
-    z <- Files.exists(f)
+    z <- f.exists
   } yield e -> z ==== true -> false)
 
   /** Testing Temporary clean up finalizers */
   def directory = prop((data: String, id: Ident, local: LocalTemporary) => for {
     d <- local.directory
-    f = d </> FilePath.unsafe(id.value)
-    _ <- Files.write(f , data)
-    e <- Files.exists(f)
+    f = d.toLocalPath /- id.value
+    _ <- f.write(data)
+    e <- f.exists
     _ <- RIO.unsafeFlushFinalizers
-    z <- Directories.exists(d)
+    z <- d.toLocalPath.exists
   } yield e -> z ==== true -> false)
 
   def getFile = prop((data: String, local: LocalTemporary) => for {
     f <- local.fileWithContent(data)
-    e <- Files.exists(f)
-    d <- Files.read(f)
-  } yield e -> d ==== true -> data)
+    e <- f.exists
+    d <- f.read
+  } yield e -> d ==== true -> data.some)
 
   def getDirectory = prop((local: LocalTemporary) => for {
-    d <- local.directoryThatExists
-    e <- Directories.exists(d)
+    d <- local.directory
+    e <- d.toLocalPath.exists
   } yield e ==== true)
 
   def conflicts = prop((local: LocalTemporary, i: NaturalInt) => i.value > 0 ==> (for {

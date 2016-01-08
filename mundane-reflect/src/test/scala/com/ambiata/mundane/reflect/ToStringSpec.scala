@@ -3,7 +3,6 @@ package com.ambiata.mundane.reflect
 import org.specs2._
 
 class ToStringSpec extends Specification { def is =
-  skipAllIf(true) ^ // skip for now, we need to find a way to pass the test in 2.10
   s2"""
 
  A case class "toString" method can be implemented with a macro
@@ -31,4 +30,3 @@ case class Point(x: Int, y: Int) {
   override def toString: String =
     ToString.toStringWithNames
 }
-

@@ -1,7 +1,6 @@
 package com.ambiata.mundane.testing
 
-import org.specs2._, specification._, matcher._
-import scalaz._, Scalaz._
+import org.specs2._
 
 class PathsSpec extends Specification with ScalaCheck { def is = s2"""
 

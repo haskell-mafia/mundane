@@ -2,12 +2,9 @@ package com.ambiata.mundane.testing
 
 import com.ambiata.mundane.control._
 import org.scalacheck.Prop
-import org.specs2._
-import org.specs2.execute.{Error => SpecsError, Result => SpecsResult, _}
-import org.specs2.matcher._
+import org.specs2._, matcher._, execute.{Result => SpecsResult, Error => _, _}
 
-import scalaz.\&/._
-import scalaz.{Failure => _, Success => _, _}
+import scalaz.{Success => _, Failure => _, _}, effect.IO, \&/._
 
 object RIOMatcher extends ThrownExpectations with ScalaCheckMatchers {
   implicit def RIOAsResult[A: AsResult]: AsResult[RIO[A]] = new AsResult[RIO[A]] {
@@ -57,6 +54,7 @@ object RIOMatcher extends ThrownExpectations with ScalaCheckMatchers {
       result(r.isSuccess, r.message, r.message, attempt)
     }
   }
+
   def beFail[A]: Matcher[RIO[A]] =
     beFailLike(_ => Success())
 

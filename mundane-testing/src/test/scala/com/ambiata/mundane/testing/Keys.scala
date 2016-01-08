@@ -1,7 +1,6 @@
 package com.ambiata.mundane.testing
 
 import org.scalacheck._
-
 import scala.collection.JavaConversions._
 
 case class KeyEntry(path: String, value: Int) {

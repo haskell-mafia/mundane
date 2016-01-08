@@ -3,9 +3,8 @@ package com.ambiata.mundane.control
 import com.ambiata.mundane.control.RIOSpec._
 import com.ambiata.mundane.testing.Arbitraries._
 import com.ambiata.mundane.testing.Laws._
-import com.ambiata.mundane.testing.RIOMatcher._
-import org.specs2._, specification._, matcher._
-import scalaz._, Scalaz._, \&/._, effect.IO, effect.Resource
+import org.specs2._
+import scalaz._, Scalaz._, effect.IO, effect.Resource
 
 class RIOSpec extends Specification with ScalaCheck { def is = s2"""
 

@@ -1,12 +1,11 @@
 package com.ambiata.mundane.trace
 
 import com.ambiata.mundane.control._
-import com.ambiata.mundane.data._
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import java.util.concurrent.atomic.AtomicLong
 
-import scalaz._, Scalaz._, effect._, \&/._
+import scalaz._, Scalaz._
 
 /*
  * A profiling tool supporting section timings and counters.
@@ -95,7 +94,7 @@ object Profiler {
       RIO.io { Option(counters.get(c)).getOrElse({
         counters.putIfAbsent(c, new AtomicLong(0L))
         counters.get(c)
-      }).addAndGet(n) }
+      }).addAndGet(n) }.void
 
     Profiler[RIO](
       s => start(s)

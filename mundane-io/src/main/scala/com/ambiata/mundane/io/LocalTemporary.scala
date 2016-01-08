@@ -5,63 +5,59 @@ import com.ambiata.mundane.io.Temporary._
 import java.util.concurrent.atomic.AtomicInteger
 import scalaz._, Scalaz._
 
-case class LocalTemporary(seed: String) {
+case class LocalTemporary(base: LocalPath, seed: String) {
   private val step: AtomicInteger = new AtomicInteger(0)
 
-  def file: RIO[FilePath] = {
-    val (base, path) = setup
-    val filePath = path </> FilePath.unsafe(java.util.UUID.randomUUID().toString)
-    run(base, s"File($filePath.path)") >>
+  def path: RIO[LocalPath] = {
+    val path = setup
+    val filePath = path /- java.util.UUID.randomUUID().toString
+    run(s"LocalPath($filePath.path)") >>
       RIO.ok(filePath)
   }
 
-  def fileThatExists: RIO[FilePath] =
+  def file: RIO[LocalFile] =
     fileWithContent("")
 
-  def fileWithParent: RIO[FilePath] =
-    file.flatMap(f => Directories.mkdirs(f.dirname).as(f))
-
-  def fileWithContent(content: String): RIO[FilePath] = for {
-    f <- file
-    _ <- Files.write(f, content)
+  def pathWithParent: RIO[LocalPath] = for {
+    f <- path
+    _ <- f.dirname.mkdirs
   } yield f
 
-  def directory: RIO[DirPath] = {
-    val (base, path) = setup
-    run(base, s"Directory($path.path)") >>
-      RIO.ok(path)
+  def fileWithContent(content: String): RIO[LocalFile] = for {
+    f <- path
+    r <- f.write(content)
+  } yield r
+
+  def directory: RIO[LocalDirectory] = {
+    val path = setup
+    path.mkdirs >>= (d =>
+      run(s"LocalDirectory($path.path)") >>
+        RIO.ok(d))
   }
 
-  def directoryThatExists: RIO[DirPath] = for {
-    d <- directory
-    _ <- Directories.mkdirs(d)
-  } yield d
-
-  /** (base, path) */
-  def setup: (DirPath, DirPath) = {
-    val base = uniqueDirPath
+  def setup: LocalPath = {
     val incr = step.incrementAndGet.toString
-    val path = base </> DirPath.unsafe(incr) </> DirPath.unsafe(seed)
-    (base, path)
+    val path = base /- seed /- incr
+    path
   }
 
-  def run(base: DirPath, msg: String): RIO[Unit] =
-    addCleanupFinalizer(base, msg) >>
+  def run(msg: String): RIO[Unit] =
+    addCleanupFinalizer(msg) >>
       addPrintFinalizer(msg)
 
-  def addCleanupFinalizer(path: DirPath, str: String): RIO[Unit] =
+  def addCleanupFinalizer(str: String): RIO[Unit] =
     if (skipCleanup) forceAddPrintFinalizer(str)
-    else             RIO.addFinalizer(Finalizer(Directories.delete(path).void))
+    else             RIO.addFinalizer(Finalizer(base.delete))
 
   def addPrintFinalizer(str: String): RIO[Unit] =
     if (print && !skipCleanup) forceAddPrintFinalizer(str)
     else                       RIO.unit
 
   def forceAddPrintFinalizer(str: String): RIO[Unit] =
-    RIO.addFinalizer(Finalizer(RIO.putStrLn(s"Temporary: $str")))
+    RIO.addFinalizer(Finalizer(RIO.putStrLn(s"LocalTemporary: $str")))
 }
 
 object LocalTemporary {
   def random: LocalTemporary =
-    LocalTemporary(s"temporary-${java.util.UUID.randomUUID().toString}/")
+    LocalTemporary(uniqueLocalPath, s"temporary-${java.util.UUID.randomUUID().toString}/")
 }
