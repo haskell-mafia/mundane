@@ -28,6 +28,7 @@ object build extends Build {
     , scalaVersion := "2.11.2"
     , crossScalaVersions := Seq(scalaVersion.value)
     , fork in run  := true
+    , publishArtifact in packageDoc := false
     // https://gist.github.com/djspiewak/976cd8ac65e20e136f05
     , unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / s"scala-${scalaBinaryVersion.value}"
     , updateOptions := updateOptions.value.withCachedResolution(true)
