@@ -56,6 +56,9 @@ class LocalFile private (val path: Path) extends AnyVal {
   def delete: RIO[Unit] =
     whenExists(RIO.safe(toFile.delete).void)
 
+  def readWith[A](f: InputStream => RIO[A]): RIO[A] =
+    RIO.using(this.toInputStream)(f)
+
   def read: RIO[Option[String]] =
     readWithEncoding(Codec.UTF8)
 
@@ -72,10 +75,10 @@ class LocalFile private (val path: Path) extends AnyVal {
     optionExists(readPerLineWithEncoding(encoding, scala.collection.mutable.ListBuffer[String]())((s, b) => { b += s; b }).map(_.toList))
 
   def readUnsafe(f: java.io.InputStream => RIO[Unit]): RIO[Unit] =
-    RIO.using(this.toInputStream)(f)
+    readWith(f)
 
   def doPerLine[A](f: String => RIO[Unit]): RIO[Unit] =
-    RIO.using(this.toInputStream)(in =>
+    readWith(in =>
       RIO.io {
         val reader = new java.io.BufferedReader(new java.io.InputStreamReader(in, "UTF-8"))
         var line: String = null

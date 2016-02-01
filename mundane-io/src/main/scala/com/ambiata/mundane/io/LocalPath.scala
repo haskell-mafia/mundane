@@ -102,53 +102,56 @@ case class LocalPath(path: Path) {
   def determineDirectory: RIO[LocalDirectory] =
     determinef(_ => RIO.fail(s"Not a valid directory. LocalFile($path)"), _.pure[RIO])
 
-  def readWith[A](thunk: LocalFile => RIO[A]): RIO[A] =
+  def readWith[A](f: InputStream => RIO[A]): RIO[A] =
+    readWithFile(_.readWith(f))
+
+  def readWithFile[A](thunk: LocalFile => RIO[A]): RIO[A] =
     determinefWith(
         thunk
       , _ => RIO.fail(s"Can not read a directory, LocalDirectory($path).")
       , RIO.fail(s"Can not read nothing, $path."))
 
   def checksum(algorithm: ChecksumAlgorithm): RIO[Option[Checksum]] =
-    readWithOption(_.checksum(algorithm))
+    readWithFileOption(_.checksum(algorithm))
 
   def lineCount: RIO[Option[Int]] =
-    readWithOption(_.lineCount)
+    readWithFileOption(_.lineCount)
 
-  def readWithOption[A](thunk: LocalFile => RIO[Option[A]]): RIO[Option[A]] =
+  def readWithFileOption[A](thunk: LocalFile => RIO[Option[A]]): RIO[Option[A]] =
     determinefWith(
         thunk
       , _ => RIO.fail(s"Can not read a directory, LocalDirectory($path).")
       , none.pure[RIO])
 
   def read: RIO[Option[String]] =
-    readWithOption(_.read)
+    readWithFileOption(_.read)
 
   def readOrFail: RIO[String] =
-    readWith(_.readOrFail)
+    readWithFile(_.readOrFail)
 
   def readWithEncoding(encoding: Codec): RIO[Option[String]] =
-    readWithOption(_.readWithEncoding(encoding))
+    readWithFileOption(_.readWithEncoding(encoding))
 
   def readLines: RIO[Option[List[String]]] =
-    readWithOption(_.readLines)
+    readWithFileOption(_.readLines)
 
   def readLinesWithEncoding(encoding: Codec): RIO[Option[List[String]]] =
-    readWithOption(_.readLinesWithEncoding(encoding))
+    readWithFileOption(_.readLinesWithEncoding(encoding))
 
   def readUnsafe(f: java.io.InputStream => RIO[Unit]): RIO[Unit] =
-    readWith(_.readUnsafe(f))
+    readWithFile(_.readUnsafe(f))
 
   def doPerLine[A](f: String => RIO[Unit]): RIO[Unit] =
-    readWith(_.doPerLine(f))
+    readWithFile(_.doPerLine(f))
 
   def readPerLine[A](empty: => A)(f: (String, A) => A): RIO[A] =
-    readWith(_.readPerLine(empty)(f))
+    readWithFile(_.readPerLine(empty)(f))
 
   def readPerLineWithEncoding[A](codec: Codec, empty: => A)(f: (String, A) => A): RIO[A] =
-    readWith(_.readPerLineWithEncoding(codec, empty)(f))
+    readWithFile(_.readPerLineWithEncoding(codec, empty)(f))
 
   def readBytes: RIO[Option[Array[Byte]]] =
-    readWithOption(_.readBytes)
+    readWithFileOption(_.readBytes)
 
   def touch: RIO[LocalFile] = {
     for {
