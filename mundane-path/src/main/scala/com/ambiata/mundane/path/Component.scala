@@ -32,6 +32,9 @@ object Component {
   def apply(s: String): Component =
     macro Macros.attempt
 
+  def unapply(c: Component): Option[String] =
+    c.name.some
+
   object Macros extends MacrosCompat {
     def attempt(c: Context)(s: c.Expr[String]): c.Expr[Component] = {
       import c.universe._
