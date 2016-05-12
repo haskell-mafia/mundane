@@ -327,7 +327,7 @@ object LocalPath {
   def fromURI(s: URI): Option[LocalPath] =
     s.getScheme match {
       case "file" =>
-        fromString(s.getPath).some
+        fromString(s.toURL.getFile).some
       case null =>
         fromString(s.getPath).some
       case _ =>

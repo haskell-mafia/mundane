@@ -56,6 +56,12 @@ class LocalPathSpec extends Specification with ScalaCheck with DisjunctionMatche
 
     ${ prop((p: Path) => LocalPath.fromFile(p.toFile).map(_.path) must beOkValue(p)) }
 
+  LocalPath.fromURI can extract local paths from URI's
+
+    ${ prop((p: Path) => p != Relative ==> { LocalPath.fromURI(new java.net.URI(s"file:${p.path}")) ==== LocalPath(p).some }) }
+
+    ${ prop((p: Path) => p.isAbsolute ==> { LocalPath.fromURI(new java.net.URI(s"file://${p.path}")) ==== LocalPath(p).some }) }
+
  LocalPath IO
  ============
 
