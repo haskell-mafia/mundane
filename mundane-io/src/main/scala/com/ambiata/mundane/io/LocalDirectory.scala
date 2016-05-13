@@ -13,6 +13,9 @@ class LocalDirectory private (val path: Path) extends AnyVal {
   def toLocalPath: LocalPath =
     LocalPath(path)
 
+  def toPath: Path =
+    path
+
   def toFile: File =
     new File(path.path)
 
@@ -156,33 +159,27 @@ class LocalDirectory private (val path: Path) extends AnyVal {
 }
 
 object LocalDirectory {
-  def Root: Path =
-    com.ambiata.mundane.path.Root
+  def fromFile(f: File): RIO[LocalDirectory] =
+    LocalPath.fromFile(f).flatMap(_.determineDirectory)
 
-  def Relative: Path =
-    com.ambiata.mundane.path.Relative
+  def fromString(s: String): RIO[Option[LocalDirectory]] =
+    LocalPath.fromString(s).determinefWithPure(_ => none, _.some, none)
 
-  def fromFile(f: File): LocalDirectory =
-    unsafe(f.getPath)
+  def fromList(dir: Path, parts: List[Component]): RIO[Option[LocalDirectory]] =
+    LocalPath.fromList(dir, parts).determinefWithPure(_ => none, _.some, none)
 
-  def fromString(s: String): Option[LocalDirectory] =
-    s.split("/").toList match {
-      case Nil =>
-        new LocalDirectory(Root).some
-      case "" :: Nil =>
-        None
-      case "" :: parts =>
-        parts.traverse(Component.create).map(fromList(Root, _))
-      case parts =>
-        parts.traverse(Component.create).map(fromList(Relative, _))
-    }
+  def fromURI(s: URI): RIO[Option[LocalDirectory]] =
+    LocalPath.fromURI(s).map(_.determineDirectory).sequence
 
-  def fromList(dir: Path, parts: List[Component]): LocalDirectory =
-    new LocalDirectory(parts.foldLeft(dir)((acc, el) => acc | el))
+  private[io] def unsafe(s: String): LocalDirectory =
+    new LocalDirectory(Path(s))
 
-  def unsafe(s: String): LocalDirectory =
-    fromString(s).getOrElse(sys.error("LocalDirectory.unsafe on an invalid string."))
+  def filterHidden(l: List[LocalDirectory]): List[LocalDirectory] =
+    l.filter(f => !List(".", "_").exists(c => f.toPath.basename.exists(_.name.startsWith(c))))
 
-  def fromURI(s: URI): Option[LocalDirectory] =
-    fromString(s.getPath)
+  implicit def LocalDirectoryOrder: Order[LocalDirectory] =
+    Order.order((x, y) => x.path.?|?(y.path))
+
+  implicit def LocalDirectoryOrdering: scala.Ordering[LocalDirectory] =
+    LocalDirectoryOrder.toScalaOrdering
 }
