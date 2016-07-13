@@ -71,7 +71,9 @@ case class LocalPath(path: Path) {
     for {
       e <- RIO.safe[Boolean](file.exists)
       o <- if (e)
-        RIO.safe[Boolean](file.isFile) >>= ((f: Boolean) => (
+        // Subtle reason why !file.isDirectory over file.isFile. isFile will return
+        // false for pipes but they can still be read.
+        RIO.safe[Boolean](!file.isDirectory) >>= ((f: Boolean) => (
           if (f) LocalFile.unsafe(path.path).left
           else   LocalDirectory.unsafe(path.path).right
         ).some.pure[RIO])
