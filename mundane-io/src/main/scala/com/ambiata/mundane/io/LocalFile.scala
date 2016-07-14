@@ -28,11 +28,14 @@ class LocalFile private (val path: Path) extends AnyVal {
 // ============= Operations =================
 
   def exists: RIO[Boolean] = for {
-    f <- RIO.safe(toFile.isFile)
+    e <- RIO.safe(toFile.exists)
     d <- RIO.safe(toFile.isDirectory)
-    r <- if (f)      RIO.ok(true)
-         else if (d) RIO.fail(s"An internal invariant has been violated, the $path points to a directory.")
-         else        RIO.ok(false)
+    r <- if (e && !d)
+           RIO.ok(true)
+         else if (d)
+           RIO.fail(s"An internal invariant has been violated, the $path points to a directory.")
+         else
+           RIO.ok(false)
   } yield r
 
   def onExists[A](success: => RIO[A], missing: => RIO[A]): RIO[A] =
