@@ -67,14 +67,6 @@ class LocalFileSpec extends Specification with ScalaCheck { def is = s2"""
         } yield f.some ==== n)
       }
 
-   get the path as a string
-
-     ${ LocalFile.unsafe("test").path.path must_== "test" }
-
-     ${ (LocalDirectory.Relative /- "test" /- "hello" /- "world").path must_== "test/hello/world" }
-
-     ${ (LocalDirectory.Relative /- "test" /- "hello" / LocalDirectory.Relative).path must_== "test/hello" }
-
    filter hidden files from a list
 
      ${ LocalFile.filterHidden(List(LocalFile.unsafe("hello/.world"), LocalFile.unsafe("hello/world"),

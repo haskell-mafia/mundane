@@ -28,69 +28,35 @@ class LocalDirectorySpec extends Specification with ScalaCheck { def is = s2"""
  LocalDirectories
  ================
 
- A LocalDirectory can be created from
+A LocalDirectory can be created from
    a String
 
-     ${ LocalDirectory.fromString("hello/world").map(_.path.path) === Some("hello/world")  }
+     ${ LocalDirectory.unsafe("hello/world").path.path === "hello/world"  }
 
-   a File
+   a Directory
 
-     ${ LocalDirectory.fromFile(new File("/hello/world")).path.path === "/hello/world"  }
+     ${ prop((l: LocalTemporary) => for {
+          p <- l.path
+          f <- p.touch
+          d <- p.dirname.determineDirectory
+          n <- LocalDirectory.fromFile(d.toFile)
+        } yield d ==== n)
+      }
 
    a URI
 
-     ${ LocalDirectory.fromURI(new URI("hello/world")).map(_.path.path) === Some("hello/world")  }
+     ${ prop((l: LocalTemporary) => for {
+          p <- l.path
+          f <- p.touch
+          d <- p.dirname.determineDirectory
+          u = new File(d.path.path).toURI()
+          n <- LocalDirectory.fromURI(u)
+        } yield d.some ==== n)
+      }
 
-     ${ LocalDirectory.fromURI(new URI("hdfs://100.100.1:9000/hello/world")).map(_.path.path) === Some("/hello/world") }
+ A LocalDirectory can be ordered
 
-     ${ LocalDirectory.fromURI(new URI("hdfs:/hello/world")).map(_.path.path) === Some("/hello/world")  }
-
-     ${ LocalDirectory.fromURI(new URI("file:/hello/world")).map(_.path.path) === Some("/hello/world")  }
-
-     ${ LocalDirectory.fromURI(new URI("s3://hello/world")).map(_.path.path) === Some("/world")  }
-
- An absolute dir path can be built from
-
-   a string starting with a /
-
-     ${ LocalDirectory.fromString("/hello/world").exists(_.path.isAbsolute) }
-
-   the LocalDirectory.Root object
-
-     ${ (LocalDirectory.Root /- "world").isAbsolute }
-
-   appending a LocalDirectory to the Root
-
-     ${ (LocalDirectory.Root / (LocalDirectory.Relative /- "world")).isAbsolute }
-
-   // this combination is accepted but should not be valid...
-     ${ (LocalDirectory.Root / (LocalDirectory.Root /- "world")).isAbsolute }
-
- A relative dir path can be built from
-
-   a string not starting with a
-
-     ${ LocalDirectory.fromString("hello/world").exists(_.path.isRelative) }
-
-   the LocalDirectory.Relative object
-
-     ${ (LocalDirectory.Relative /- "world").isRelative }
-
- Basic operations can be executed on a LocalDirectory
-
-   get the parent
-
-     ${ LocalDirectory.Root.parent must beNone }
-
-     ${ LocalDirectory.unsafe("test").parent.map(_.path) ==== LocalDirectory.Relative.some }
-
-     ${ (LocalDirectory.Root /- "test").parent ==== Some(LocalDirectory.Root) }
-
-   get the path as a string
-
-     ${ LocalDirectory.Root.path must_== "/" }
-
-     ${ LocalDirectory.unsafe("test").path.path must_== "test" }
+   ${ List(LocalDirectory.unsafe("z"), LocalDirectory.unsafe("a")).sorted ==== List(LocalDirectory.unsafe("a"), LocalDirectory.unsafe("z")) }
 
  IO
  ==
